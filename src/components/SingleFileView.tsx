@@ -1,7 +1,7 @@
 import { ArrowLeft, Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { QuestionCard } from "./QuestionCard";
+import { QuestionCard, QuestionCardData } from "./QuestionCard";
 
 interface SingleFileViewProps {
   fileName: string;
