@@ -34,7 +34,7 @@ export function AppSidebar() {
       </div>
 
       {/* Navigation Section */}
-      <div className="flex-1 p-2 grid gap-3">
+      <div className="flex-1 p-2 grid gap-3 content-start">
         <div className="px-2 text-xs font-medium leading-tight tracking-tight text-sidebar-subheader-text">
           AdviserGPT
         </div>
