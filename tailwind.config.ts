@@ -71,7 +71,14 @@ export default {
           'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))'
-        }
+        },
+        // App-specific sidebar colors
+        'sidebar-account-bg': 'hsl(var(--sidebar-account-bg))',
+        'sidebar-account-text': 'hsl(var(--sidebar-account-text))',
+        'sidebar-icon-default': 'hsl(var(--sidebar-icon-default))',
+        'sidebar-subheader-text': 'hsl(var(--sidebar-subheader-text))',
+        'sidebar-item-bg': 'hsl(var(--sidebar-item-bg))',
+        'sidebar-item-active-bg': 'hsl(var(--sidebar-item-active-bg))'
       },
 			borderRadius: {
 				lg: 'var(--radius)',
