@@ -1,10 +1,9 @@
-import { Copy, Mail, Edit } from "lucide-react";
+import { Copy, Mail, Edit, Check } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useToast } from "@/hooks/use-toast";
 
 export interface QuestionCardData {
   id: string;
@@ -25,29 +24,32 @@ interface QuestionCardProps {
 }
 
 export function QuestionCard({ data, hideFileName = false, onEdit }: QuestionCardProps) {
-  const { toast } = useToast();
-  
   // Custom cursor-following tooltip state
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [isSticky, setIsSticky] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
   const answerRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
   const stickyTimeoutRef = useRef<NodeJS.Timeout>();
+  const copiedTimeoutRef = useRef<NodeJS.Timeout>();
 
   const handleCopyAnswer = async () => {
     try {
       await navigator.clipboard.writeText(data.answer);
-      toast({
-        title: "Copied!",
-        description: "Answer copied to clipboard",
-      });
+      setIsCopied(true);
+      setTooltipVisible(true);
+      setIsSticky(true);
+      
+      // Reset copied state after 3 seconds
+      clearTimeout(copiedTimeoutRef.current);
+      copiedTimeoutRef.current = setTimeout(() => {
+        setIsCopied(false);
+        setTooltipVisible(false);
+        setIsSticky(false);
+      }, 3000);
     } catch (error) {
-      toast({
-        title: "Copy failed",
-        description: "Could not copy answer",
-        variant: "destructive",
-      });
+      // Silently fail - could add error state if needed
     }
   };
 
@@ -89,6 +91,9 @@ export function QuestionCard({ data, hideFileName = false, onEdit }: QuestionCar
   };
 
   const handleMouseLeave = () => {
+    // Don't hide tooltip if in copied state
+    if (isCopied) return;
+    
     clearTimeout(timeoutRef.current);
     clearTimeout(stickyTimeoutRef.current);
     setTooltipVisible(false);
@@ -154,9 +159,11 @@ export function QuestionCard({ data, hideFileName = false, onEdit }: QuestionCar
           {/* Custom cursor-following tooltip */}
           {tooltipVisible && (
             <div 
-              className={`absolute pointer-events-none z-50 px-3 py-2 text-sm font-medium bg-foreground text-background rounded-md shadow-lg transition-opacity duration-200 ${
-                isSticky ? 'opacity-100' : 'opacity-90'
-              }`}
+              className={`absolute pointer-events-none z-50 px-3 py-2 text-sm font-medium rounded-md shadow-lg transition-all duration-300 flex items-center gap-2 ${
+                isCopied 
+                  ? 'bg-green-600 text-white' 
+                  : 'bg-foreground text-background'
+              } ${isSticky ? 'opacity-100' : 'opacity-90'}`}
               style={{
                 left: `${tooltipPosition.x}px`,
                 top: `${tooltipPosition.y}px`,
@@ -164,8 +171,15 @@ export function QuestionCard({ data, hideFileName = false, onEdit }: QuestionCar
                 transition: isSticky ? 'all 0.3s ease-out' : 'opacity 0.2s ease-out',
               }}
             >
-              Click anywhere to copy answer
-              {isSticky && (
+              {isCopied ? (
+                <>
+                  <Check className="h-4 w-4" />
+                  Copied!
+                </>
+              ) : (
+                'Click anywhere to copy answer'
+              )}
+              {isSticky && !isCopied && (
                 <div className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
               )}
             </div>
