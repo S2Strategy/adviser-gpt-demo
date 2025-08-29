@@ -1,4 +1,4 @@
-import { Copy, Mail, Edit, Check, Bookmark, Clock, User, Tag, Plus, X } from "lucide-react";
+import { Copy, Mail, Edit, Check, Bookmark, Clock, User, Tag, Plus, X, ChevronDown, ChevronUp } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useBookmarks } from "@/hooks/useBookmarks";
+import { useToast } from "@/hooks/use-toast";
 
 export interface QuestionCardData {
   id: string;
@@ -39,6 +40,7 @@ export function QuestionCard({
   onTagRemove, 
   onQuickEdit 
 }: QuestionCardProps) {
+  const { toast } = useToast();
   // Custom cursor-following tooltip state
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
@@ -50,19 +52,35 @@ export function QuestionCard({
   const [newTag, setNewTag] = useState("");
   const [editingStrategy, setEditingStrategy] = useState(false);
   
+  // Expand/collapse state for long answers
+  const [isExpanded, setIsExpanded] = useState(false);
+  
   const answerRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
   const stickyTimeoutRef = useRef<NodeJS.Timeout>();
   const copiedTimeoutRef = useRef<NodeJS.Timeout>();
   
   const { toggleBookmark, isBookmarked } = useBookmarks();
+  
+  // Check if answer is long enough to need expansion
+  const isLongAnswer = data.answer.length > 400;
+  const displayAnswer = isLongAnswer && !isExpanded 
+    ? data.answer.substring(0, 400) + "..."
+    : data.answer;
 
   const handleCopyAnswer = async () => {
     try {
+      // Always copy the full answer, regardless of display state
       await navigator.clipboard.writeText(data.answer);
       setIsCopied(true);
       setTooltipVisible(true);
       setIsSticky(true);
+      
+      toast({
+        title: "Full answer copied",
+        description: `${data.answer.length} characters copied to clipboard`,
+        duration: 2000,
+      });
       
       // Reset copied state after 3 seconds
       clearTimeout(copiedTimeoutRef.current);
@@ -72,7 +90,12 @@ export function QuestionCard({
         setIsSticky(false);
       }, 3000);
     } catch (error) {
-      // Silently fail - could add error state if needed
+      toast({
+        title: "Copy failed",
+        description: "Unable to copy to clipboard",
+        variant: "destructive",
+        duration: 2000,
+      });
     }
   };
 
@@ -306,17 +329,27 @@ export function QuestionCard({
         </p>
       )}
 
-      {/* Answer with improved interaction */}
+      {/* Answer with improved interaction and expand/collapse */}
       <div className="relative group/answer">
         <div 
           ref={answerRef}
-          className="text-base text-foreground leading-relaxed mb-4 cursor-pointer transition-all duration-200 hover:bg-muted/50 -mx-3 px-3 py-3 rounded-lg relative"
+          className="text-base text-foreground leading-relaxed mb-4 cursor-pointer transition-all duration-200 hover:bg-vault-card-hover -mx-3 px-3 py-3 rounded-lg relative"
           onClick={handleCopyAnswer}
           onMouseEnter={handleMouseEnter}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
         >
-          {data.answer}
+          <div className="relative">
+            {displayAnswer}
+            
+            {/* Fade gradient for collapsed long answers */}
+            {isLongAnswer && !isExpanded && (
+              <div 
+                className="absolute bottom-0 left-0 right-0 h-8 pointer-events-none"
+                style={{ background: 'var(--gradient-fade)' }}
+              />
+            )}
+          </div>
           
           {/* Custom cursor-following tooltip */}
           {tooltipVisible && (
@@ -336,10 +369,10 @@ export function QuestionCard({
               {isCopied ? (
                 <>
                   <Check className="h-4 w-4" />
-                  Copied!
+                  Full answer copied!
                 </>
               ) : (
-                'Click to copy answer'
+                'Click to copy full answer'
               )}
               {isSticky && !isCopied && (
                 <div className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
@@ -347,6 +380,33 @@ export function QuestionCard({
             </div>
           )}
         </div>
+        
+        {/* Expand/Collapse button for long answers */}
+        {isLongAnswer && (
+          <div className="flex justify-center -mt-2 mb-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsExpanded(!isExpanded);
+              }}
+              className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 interactive"
+            >
+              {isExpanded ? (
+                <>
+                  <ChevronUp className="h-3 w-3" />
+                  Show less
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-3 w-3" />
+                  Show more ({data.answer.length - 400} more characters)
+                </>
+              )}
+            </Button>
+          </div>
+        )}
         
         {/* Enhanced Floating action bar */}
         <div className="absolute bottom-2 right-3 opacity-0 group-hover/answer:opacity-100 transition-all duration-200 pointer-events-none group-hover/answer:pointer-events-auto">
@@ -363,7 +423,7 @@ export function QuestionCard({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Copy answer</p>
+                <p>Copy full answer</p>
               </TooltipContent>
             </Tooltip>
             <Tooltip>

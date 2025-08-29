@@ -1,4 +1,4 @@
-import { Building, ChevronsUpDown, Users, Home, Megaphone, ShieldCheck, Rocket, FileText, GraduationCap, UserRound, ChevronUp } from "lucide-react";
+import { Building, ChevronsUpDown, Users, Home, Megaphone, ShieldCheck, Rocket, FileText, GraduationCap, UserRound, ChevronUp, Bookmark, History, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -13,10 +13,26 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { SavedSearches } from "./SavedSearches";
+import { useState } from "react";
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  savedSearchProps?: {
+    onLoadSearch: (searchData: { query: string; filters: { strategy?: string; contentType?: string; tags?: string[]; }; }) => void;
+    currentQuery: string;
+    currentFilters: {
+      strategy?: string;
+      contentType?: string;
+      tags?: string[];
+    };
+  };
+}
+
+export function AppSidebar({ savedSearchProps }: AppSidebarProps = {}) {
+  const [searchManagementOpen, setSearchManagementOpen] = useState(true);
+  
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarHeader>
         <Popover>
           <PopoverTrigger asChild>
@@ -41,13 +57,14 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
+        {/* Main Navigation */}
         <SidebarGroup>
           <SidebarGroupLabel>AdviserGPT</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <a href="#">
+                  <a href="#" className="interactive">
                     <Home />
                     <span>Home</span>
                   </a>
@@ -55,7 +72,7 @@ export function AppSidebar() {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <a href="#">
+                  <a href="#" className="interactive">
                     <Megaphone />
                     <span>Commentary</span>
                   </a>
@@ -63,7 +80,7 @@ export function AppSidebar() {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive>
-                  <a href="#">
+                  <a href="#" className="interactive">
                     <ShieldCheck />
                     <span>Vault</span>
                   </a>
@@ -71,6 +88,53 @@ export function AppSidebar() {
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Search Management Section */}
+        <SidebarGroup>
+          <SidebarGroupLabel>
+            <button
+              onClick={() => setSearchManagementOpen(!searchManagementOpen)}
+              className="flex items-center gap-2 w-full text-left interactive"
+            >
+              <Bookmark className="h-4 w-4" />
+              Search Management
+              <ChevronUp className={`ml-auto h-4 w-4 transition-transform ${searchManagementOpen ? 'rotate-180' : ''}`} />
+            </button>
+          </SidebarGroupLabel>
+          {searchManagementOpen && (
+            <SidebarGroupContent>
+              <div className="space-y-4 px-2">
+                {/* Saved Searches */}
+                {savedSearchProps && (
+                  <SavedSearches
+                    onLoadSearch={savedSearchProps.onLoadSearch}
+                    currentQuery={savedSearchProps.currentQuery}
+                    currentFilters={savedSearchProps.currentFilters}
+                  />
+                )}
+                
+                {/* Quick Actions */}
+                <div className="space-y-2">
+                  <h4 className="text-xs font-medium text-muted-foreground px-2">Quick Actions</h4>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton size="sm" className="interactive">
+                        <Star className="h-4 w-4" />
+                        <span>Bookmarked Items</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton size="sm" className="interactive">
+                        <History className="h-4 w-4" />
+                        <span>Recent Activity</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </div>
+              </div>
+            </SidebarGroupContent>
+          )}
         </SidebarGroup>
       </SidebarContent>
 

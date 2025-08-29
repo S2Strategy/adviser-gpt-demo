@@ -41,7 +41,7 @@ export function SavedSearches({ onLoadSearch, currentQuery, currentFilters }: Sa
     onLoadSearch(loadedSearch);
   };
 
-  const canSaveCurrentSearch = currentQuery.trim() || 
+  const canSaveCurrentSearch = (currentQuery && currentQuery.trim()) || 
     (currentFilters.strategy && currentFilters.strategy !== "All Strategies") ||
     (currentFilters.contentType && currentFilters.contentType !== "All Types") ||
     (currentFilters.tags && currentFilters.tags.length > 0);

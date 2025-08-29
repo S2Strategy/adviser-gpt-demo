@@ -240,33 +240,33 @@ export function VaultLayout() {
 
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <AppSidebar 
+        savedSearchProps={{
+          onLoadSearch: handleLoadSavedSearch,
+          currentQuery: searchQuery,
+          currentFilters: {
+            strategy: selectedStrategy,
+            contentType: selectedContentType,
+            tags: selectedTags
+          }
+        }}
+      />
       <SidebarInset>
-        {/* Simplified Header */}
-        <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-          <div className="flex h-16 items-center gap-4 px-4">
+        {/* Clean Header - Essential Actions Only */}
+        <header className="sticky top-0 z-40 bg-vault-header/95 backdrop-blur supports-[backdrop-filter]:bg-vault-header/60 border-b">
+          <div className="flex h-16 items-center gap-4 px-6">
             <SidebarTrigger className="-ml-1" />
-            <h1 className="text-xl font-semibold">Vault</h1>
+            <h1 className="text-xl font-semibold text-vault-header-foreground">Vault</h1>
             
-            <div className="ml-auto flex items-center gap-2">
-              <SavedSearches 
-                onLoadSearch={handleLoadSavedSearch}
-                currentQuery={searchQuery}
-                currentFilters={{
-                  strategy: selectedStrategy,
-                  contentType: selectedContentType,
-                  tags: selectedTags
-                }}
-              />
-              
+            <div className="ml-auto flex items-center gap-3">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="interactive">
                     AI Actions
                     <ChevronDown className="h-4 w-4 ml-2" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 bg-popover border z-50">
+                <DropdownMenuContent align="end" className="w-56 dropdown-content z-50">
                   <DropdownMenuItem>
                     <Copy className="h-4 w-4 mr-2" />
                     <div>
@@ -291,7 +291,7 @@ export function VaultLayout() {
                 </DropdownMenuContent>
               </DropdownMenu>
               
-              <Button size="sm">
+              <Button size="sm" className="interactive">
                 <Upload className="h-4 w-4 mr-2" />
                 Upload
               </Button>
@@ -299,8 +299,9 @@ export function VaultLayout() {
           </div>
         </header>
 
-        {/* Main Content */}
-        <div className="flex flex-col gap-6 p-6 max-w-5xl mx-auto">
+        {/* Main Content - Fixed Width Container */}
+        <div className="flex-1 w-full">
+          <div className="max-w-6xl mx-auto p-6 space-y-6">
           {/* Enhanced Search Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-4">
@@ -366,7 +367,7 @@ export function VaultLayout() {
 
             {/* Results */}
             {!isLoading && (
-              <div className="border rounded-lg bg-card shadow-sm">
+              <div className="border rounded-lg bg-card vault-card">
                 {sortedItems.length === 0 ? (
                   <div className="p-12 text-center">
                     <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -374,7 +375,7 @@ export function VaultLayout() {
                     <p className="text-muted-foreground mb-4">
                       Try adjusting your search criteria or filters to find what you're looking for.
                     </p>
-                    <Button variant="outline" onClick={clearAllFilters}>
+                    <Button variant="outline" onClick={clearAllFilters} className="interactive">
                       Clear all filters
                     </Button>
                   </div>
@@ -394,6 +395,7 @@ export function VaultLayout() {
                 )}
               </div>
             )}
+            </div>
           </div>
         </div>
 
