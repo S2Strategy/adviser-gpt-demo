@@ -1,9 +1,12 @@
-import { Copy, Mail, Edit, Check } from "lucide-react";
+import { Copy, Mail, Edit, Check, Bookmark, Clock, User, Tag, Plus, X } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useBookmarks } from "@/hooks/useBookmarks";
 
 export interface QuestionCardData {
   id: string;
@@ -15,24 +18,44 @@ export interface QuestionCardData {
   duration: string;
   strategy: string;
   tags: string[];
+  contentType?: string;
+  expirationDate?: Date;
 }
 
 interface QuestionCardProps {
   data: QuestionCardData;
   hideFileName?: boolean;
   onEdit?: (data: QuestionCardData) => void;
+  onTagAdd?: (id: string, tag: string) => void;
+  onTagRemove?: (id: string, tag: string) => void;
+  onQuickEdit?: (id: string, field: string, value: string) => void;
 }
 
-export function QuestionCard({ data, hideFileName = false, onEdit }: QuestionCardProps) {
+export function QuestionCard({ 
+  data, 
+  hideFileName = false, 
+  onEdit, 
+  onTagAdd, 
+  onTagRemove, 
+  onQuickEdit 
+}: QuestionCardProps) {
   // Custom cursor-following tooltip state
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [isSticky, setIsSticky] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  
+  // Inline editing states
+  const [isAddingTag, setIsAddingTag] = useState(false);
+  const [newTag, setNewTag] = useState("");
+  const [editingStrategy, setEditingStrategy] = useState(false);
+  
   const answerRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
   const stickyTimeoutRef = useRef<NodeJS.Timeout>();
   const copiedTimeoutRef = useRef<NodeJS.Timeout>();
+  
+  const { toggleBookmark, isBookmarked } = useBookmarks();
 
   const handleCopyAnswer = async () => {
     try {
@@ -110,31 +133,166 @@ export function QuestionCard({ data, hideFileName = false, onEdit }: QuestionCar
     onEdit?.(data);
   };
 
-  return (
-    <div className="group px-6 py-6 border-b border-border last:border-0">
-      {/* Question */}
-      <h3 className="text-lg font-semibold text-foreground leading-tight mb-3">
-        {data.question}
-      </h3>
+  const handleAddTag = () => {
+    if (newTag.trim() && !data.tags.includes(newTag.trim())) {
+      onTagAdd?.(data.id, newTag.trim());
+      setNewTag("");
+      setIsAddingTag(false);
+    }
+  };
 
-      {/* Metadata */}
+  const handleRemoveTag = (tag: string) => {
+    onTagRemove?.(data.id, tag);
+  };
+
+  const handleStrategyChange = (newStrategy: string) => {
+    onQuickEdit?.(data.id, 'strategy', newStrategy);
+    setEditingStrategy(false);
+  };
+
+  const getContentTypeColor = (contentType?: string) => {
+    switch (contentType) {
+      case 'RFP': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'DDQ': return 'bg-green-100 text-green-800 border-green-200';
+      case 'Policy': return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'Commentary': return 'bg-orange-100 text-orange-800 border-orange-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const isExpiring = data.expirationDate && data.expirationDate <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+  const isExpired = data.expirationDate && data.expirationDate <= new Date();
+
+  return (
+    <div className="group px-6 py-6 border-b border-border last:border-0 hover:bg-accent/30 transition-colors">
+      {/* Header with Question and Bookmark */}
+      <div className="flex items-start justify-between gap-4 mb-3">
+        <h3 className="text-lg font-semibold text-foreground leading-tight flex-1">
+          {data.question}
+        </h3>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`h-8 w-8 p-0 ${isBookmarked(data.id) ? 'text-yellow-500' : 'text-muted-foreground'}`}
+          onClick={() => toggleBookmark(data.id)}
+        >
+          <Bookmark className={`h-4 w-4 ${isBookmarked(data.id) ? 'fill-current' : ''}`} />
+        </Button>
+      </div>
+
+      {/* Enhanced Metadata */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
-        <span className="text-xs text-muted-foreground">
-          Updated {formatDistanceToNow(data.updatedAt, { addSuffix: true })} by {data.updatedBy}
-        </span>
-        {data.tags && data.tags.length > 0 && (
-          <div className="flex gap-2">
-            {data.tags.slice(0, 3).map((tag, index) => (
-              <Badge key={index} variant="secondary" className="text-xs">
-                {tag}
-              </Badge>
-            ))}
-            {data.tags.length > 3 && (
-              <Badge variant="outline" className="text-xs">
-                +{data.tags.length - 3}
-              </Badge>
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <Clock className="h-3 w-3" />
+          Updated {formatDistanceToNow(data.updatedAt, { addSuffix: true })}
+        </div>
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <User className="h-3 w-3" />
+          {data.updatedBy}
+        </div>
+        
+        {/* Content Type */}
+        {data.contentType && (
+          <Badge className={`text-xs ${getContentTypeColor(data.contentType)}`}>
+            {data.contentType}
+          </Badge>
+        )}
+        
+        {/* Expiration Status */}
+        {isExpired && (
+          <Badge variant="destructive" className="text-xs">
+            Expired
+          </Badge>
+        )}
+        {isExpiring && !isExpired && (
+          <Badge variant="outline" className="text-xs border-yellow-500 text-yellow-700">
+            Expiring Soon
+          </Badge>
+        )}
+        
+        {/* Strategy with Quick Edit */}
+        {editingStrategy ? (
+          <Select value={data.strategy} onValueChange={handleStrategyChange}>
+            <SelectTrigger className="h-6 text-xs w-auto min-w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Firm Wide (Not Strategy Specific)">Firm Wide</SelectItem>
+              <SelectItem value="Large Cap Growth">Large Cap Growth</SelectItem>
+              <SelectItem value="Small Cap Growth">Small Cap Growth</SelectItem>
+            </SelectContent>
+          </Select>
+        ) : (
+          <Badge 
+            variant="outline" 
+            className="text-xs cursor-pointer hover:bg-accent"
+            onClick={() => setEditingStrategy(true)}
+          >
+            {data.strategy}
+          </Badge>
+        )}
+      </div>
+
+      {/* Enhanced Tags Section */}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        {data.tags.map((tag) => (
+          <Badge 
+            key={tag} 
+            variant="secondary" 
+            className="text-xs group/tag cursor-pointer hover:bg-secondary/80"
+          >
+            <Tag className="h-3 w-3 mr-1" />
+            {tag}
+            {onTagRemove && (
+              <X 
+                className="h-3 w-3 ml-1 opacity-0 group-hover/tag:opacity-100 transition-opacity"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRemoveTag(tag);
+                }}
+              />
             )}
-          </div>
+          </Badge>
+        ))}
+        
+        {/* Add Tag */}
+        {onTagAdd && (
+          isAddingTag ? (
+            <div className="flex items-center gap-1">
+              <Input
+                value={newTag}
+                onChange={(e) => setNewTag(e.target.value)}
+                placeholder="New tag"
+                className="h-6 text-xs w-20"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleAddTag();
+                  if (e.key === 'Escape') {
+                    setIsAddingTag(false);
+                    setNewTag('');
+                  }
+                }}
+                onBlur={() => {
+                  if (!newTag.trim()) {
+                    setIsAddingTag(false);
+                  }
+                }}
+                autoFocus
+              />
+              <Button size="sm" className="h-6 px-2" onClick={handleAddTag}>
+                <Check className="h-3 w-3" />
+              </Button>
+            </div>
+          ) : (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-6 px-2"
+              onClick={() => setIsAddingTag(true)}
+            >
+              <Plus className="h-3 w-3 mr-1" />
+              Add Tag
+            </Button>
+          )
         )}
       </div>
       
@@ -186,7 +344,7 @@ export function QuestionCard({ data, hideFileName = false, onEdit }: QuestionCar
           )}
         </div>
         
-        {/* Floating action bar - appears on hover */}
+        {/* Enhanced Floating action bar - appears on hover */}
         <div className="absolute bottom-2 left-1/2 -translate-x-1/2 opacity-0 group-hover/answer:opacity-100 transition-all duration-200 pointer-events-none group-hover/answer:pointer-events-auto">
           <div className="flex items-center gap-1 bg-background/95 backdrop-blur-sm border border-border rounded-lg shadow-lg p-1">
             <Tooltip>
@@ -217,6 +375,21 @@ export function QuestionCard({ data, hideFileName = false, onEdit }: QuestionCar
               </TooltipTrigger>
               <TooltipContent>
                 <p>Email answer</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={() => toggleBookmark(data.id)}
+                  variant="ghost"
+                  size="sm"
+                  className={`h-8 w-8 p-0 ${isBookmarked(data.id) ? 'text-yellow-500' : ''}`}
+                >
+                  <Bookmark className={`h-4 w-4 ${isBookmarked(data.id) ? 'fill-current' : ''}`} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{isBookmarked(data.id) ? 'Remove bookmark' : 'Add bookmark'}</p>
               </TooltipContent>
             </Tooltip>
             {onEdit && (

@@ -1,16 +1,21 @@
-import { useState } from "react";
-import { Search, Upload, Copy, Building, Tag, ChevronDown, Filter, ArrowUpDown, Download, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, Upload, Copy, Building, Tag, ChevronDown, Filter, ArrowUpDown, Download, X, Loader2, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { QuestionCard, QuestionCardData } from "./QuestionCard";
 import { QuestionSheet } from "./QuestionSheet";
 import { SingleFileView } from "./SingleFileView";
 import { AppSidebar } from "./AppSidebar";
+import { EnhancedSearchBar } from "./EnhancedSearchBar";
+import { TagCloud } from "./TagCloud";
+import { SavedSearches } from "./SavedSearches";
+import { useDebounce } from "@/hooks/useDebounce";
 
-// Mock data for all content items
+// Enhanced mock data with content types and expiration dates
 const mockContentItems: QuestionCardData[] = [
   {
     id: "1",
@@ -21,10 +26,12 @@ const mockContentItems: QuestionCardData[] = [
     answer: "II. PRE-APPROVAL REQUIREMENT Granite Peak employees are prohibited from using any AI Systems involving the consumption of data or proprietary information related to Granite Peak's business without specific authorization from the Deputy CCO and the Director of Operations.",
     duration: "Evergreen",
     strategy: "Firm Wide (Not Strategy Specific)",
-    tags: ["DDQ", "RFP"]
+    tags: ["DDQ", "RFP", "Policy", "AI"],
+    contentType: "Policy",
+    expirationDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // 1 year from now
   },
   {
-    id: "2",
+    id: "2", 
     fileName: "Large-Cap All-Star Fund: Request for Proposal (RFP)",
     updatedAt: new Date(Date.now() - 172800000), // 2 days ago
     updatedBy: "Mary",
@@ -32,7 +39,9 @@ const mockContentItems: QuestionCardData[] = [
     answer: "Our large-cap growth strategy focuses on companies with sustainable competitive advantages, strong management teams, and consistent earnings growth. We employ a fundamental research approach...",
     duration: "2 Years",
     strategy: "Large Cap Growth",
-    tags: ["Investment Strategy", "RFP"]
+    tags: ["Investment Strategy", "RFP", "Growth"],
+    contentType: "RFP",
+    expirationDate: new Date(Date.now() + 2 * 365 * 24 * 60 * 60 * 1000) // 2 years from now
   },
   {
     id: "3",
@@ -43,7 +52,9 @@ const mockContentItems: QuestionCardData[] = [
     answer: "ESG integration is fundamental to our investment process. We evaluate environmental, social, and governance factors alongside traditional financial metrics to identify sustainable investment opportunities...",
     duration: "1 Year",
     strategy: "Small Cap Growth",
-    tags: ["ESG", "Sustainability", "RFP"]
+    tags: ["ESG", "Sustainability", "RFP", "Environmental"],
+    contentType: "RFP",
+    expirationDate: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000) // 20 days from now (expiring soon)
   },
   {
     id: "4",
@@ -54,7 +65,8 @@ const mockContentItems: QuestionCardData[] = [
     answer: "Our risk management framework includes portfolio diversification, position sizing limits, stress testing, and regular risk monitoring. We employ quantitative and qualitative risk assessment tools...",
     duration: "Evergreen",
     strategy: "Firm Wide (Not Strategy Specific)",
-    tags: ["Risk Management", "Policy"]
+    tags: ["Risk Management", "Policy", "Compliance"],
+    contentType: "Policy",
   },
   {
     id: "5",
@@ -65,7 +77,9 @@ const mockContentItems: QuestionCardData[] = [
     answer: "Our management fees are tiered based on assets under management and investment strategy. For institutional accounts over $50 million, our standard fee schedule ranges from 0.75% to 1.25%...",
     duration: "6 Months",
     strategy: "Firm Wide (Not Strategy Specific)",
-    tags: ["Fees", "Commercial", "DDQ"]
+    tags: ["Fees", "Commercial", "DDQ", "Pricing"],
+    contentType: "DDQ",
+    expirationDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) // 5 days ago (expired)
   }
 ];
 
@@ -78,8 +92,9 @@ const strategies = [
 
 const contentTypes = [
   "All Types",
-  "Questions/Answers",
-  "Policies", 
+  "RFP",
+  "DDQ", 
+  "Policy",
   "Commentary"
 ];
 
@@ -93,11 +108,17 @@ export function VaultLayout() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [editingQuestion, setEditingQuestion] = useState<QuestionCardData | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   
   // Filter states
   const [selectedStrategy, setSelectedStrategy] = useState("All Strategies");
   const [selectedContentType, setSelectedContentType] = useState("All Types");
   const [sortBy, setSortBy] = useState("lastUpdated");
+  
+  // Debounced search for better performance
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   const handleFileClick = (fileName: string) => {
     setSelectedFile(fileName);
@@ -115,19 +136,54 @@ export function VaultLayout() {
     setSearchQuery("");
     setSelectedStrategy("All Strategies");
     setSelectedContentType("All Types");
+    setSelectedTags([]);
     setSortBy("lastUpdated");
   };
 
-  // Filter and sort content items
+  const handleTagClick = (tag: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
+  };
+
+  const handleTagAdd = (id: string, tag: string) => {
+    // Mock implementation - in real app would update backend
+    console.log(`Adding tag "${tag}" to item ${id}`);
+  };
+
+  const handleTagRemove = (id: string, tag: string) => {
+    // Mock implementation - in real app would update backend
+    console.log(`Removing tag "${tag}" from item ${id}`);
+  };
+
+  const handleQuickEdit = (id: string, field: string, value: string) => {
+    // Mock implementation - in real app would update backend
+    console.log(`Updating ${field} to "${value}" for item ${id}`);
+  };
+
+  const handleLoadSavedSearch = (searchData: { query: string; filters: { strategy?: string; contentType?: string; tags?: string[]; }; }) => {
+    setSearchQuery(searchData.query);
+    setSelectedStrategy(searchData.filters.strategy || "All Strategies");
+    setSelectedContentType(searchData.filters.contentType || "All Types");
+    setSelectedTags(searchData.filters.tags || []);
+  };
+
+  // Enhanced filter and sort logic
   const filteredItems = mockContentItems.filter(item => {
-    const matchesSearch = searchQuery === "" || 
-      item.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.answer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesSearch = debouncedSearchQuery === "" || 
+      item.question.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+      item.answer.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+      item.tags.some(tag => tag.toLowerCase().includes(debouncedSearchQuery.toLowerCase())) ||
+      item.strategy.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+      item.updatedBy.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
     
     const matchesStrategy = selectedStrategy === "All Strategies" || item.strategy === selectedStrategy;
+    const matchesContentType = selectedContentType === "All Types" || item.contentType === selectedContentType;
+    const matchesTags = selectedTags.length === 0 || selectedTags.some(tag => item.tags.includes(tag));
     
-    return matchesSearch && matchesStrategy;
+    return matchesSearch && matchesStrategy && matchesContentType && matchesTags;
   });
 
   const sortedItems = [...filteredItems].sort((a, b) => {
@@ -146,9 +202,10 @@ export function VaultLayout() {
   });
 
   const activeFilters = [];
-  if (searchQuery) activeFilters.push({ type: "search", value: searchQuery });
+  if (debouncedSearchQuery) activeFilters.push({ type: "search", value: debouncedSearchQuery });
   if (selectedStrategy !== "All Strategies") activeFilters.push({ type: "strategy", value: selectedStrategy });
   if (selectedContentType !== "All Types") activeFilters.push({ type: "contentType", value: selectedContentType });
+  if (selectedTags.length > 0) activeFilters.push({ type: "tags", value: selectedTags.join(", ") });
 
   const handleExport = (format: string) => {
     // Mock export functionality - in real app would implement actual export
@@ -220,20 +277,92 @@ export function VaultLayout() {
             </div>
           </div>
 
-          {/* Search and Filters */}
+          {/* Enhanced Search and Filters */}
           <div className="mt-4 space-y-4">
-            {/* Search Bar */}
-            <div className="relative flex-1 max-w-lg">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search questions and answers..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+            {/* Enhanced Search Bar */}
+            <div className="flex gap-4">
+              <div className="flex-1 max-w-2xl">
+                <EnhancedSearchBar
+                  value={searchQuery}
+                  onChange={setSearchQuery}
+                  contentItems={mockContentItems}
+                />
+              </div>
+              
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Advanced Filters
+              </Button>
             </div>
 
-            {/* Filters and Controls */}
+            {/* Advanced Filters Collapsible */}
+            <Collapsible open={showAdvancedFilters} onOpenChange={setShowAdvancedFilters}>
+              <CollapsibleContent className="space-y-4 border rounded-lg p-4 bg-muted/50">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Strategy Filter */}
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Strategy</label>
+                    <Select value={selectedStrategy} onValueChange={setSelectedStrategy}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Strategies" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover border z-50">
+                        {strategies.map(strategy => (
+                          <SelectItem key={strategy} value={strategy}>{strategy}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Content Type Filter */}
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Content Type</label>
+                    <Select value={selectedContentType} onValueChange={setSelectedContentType}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Types" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover border z-50">
+                        {contentTypes.map(type => (
+                          <SelectItem key={type} value={type}>{type}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Sort Options */}
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Sort By</label>
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger>
+                        <ArrowUpDown className="h-4 w-4 mr-2" />
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover border z-50">
+                        {sortOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Tag Cloud */}
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Filter by Tags</label>
+                  <TagCloud
+                    contentItems={mockContentItems}
+                    onTagClick={handleTagClick}
+                    selectedTags={selectedTags}
+                  />
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* Quick Filters Row */}
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-3 flex-wrap">
                 <Select value={selectedStrategy} onValueChange={setSelectedStrategy}>
@@ -305,6 +434,7 @@ export function VaultLayout() {
                           {filter.type === "search" && "Search: "}
                           {filter.type === "strategy" && "Strategy: "}
                           {filter.type === "contentType" && "Type: "}
+                          {filter.type === "tags" && "Tags: "}
                           {filter.value}
                           <X 
                             className="h-3 w-3 cursor-pointer" 
@@ -312,6 +442,7 @@ export function VaultLayout() {
                               if (filter.type === "search") setSearchQuery("");
                               if (filter.type === "strategy") setSelectedStrategy("All Strategies");
                               if (filter.type === "contentType") setSelectedContentType("All Types");
+                              if (filter.type === "tags") setSelectedTags([]);
                             }}
                           />
                         </Badge>
@@ -331,28 +462,58 @@ export function VaultLayout() {
           </div>
         </header>
 
-        {/* Main Content */}
-        <main className="p-6">
-          <div className="max-w-4xl mx-auto space-y-4">
-            {sortedItems.length === 0 ? (
-              <div className="text-center py-12">
-                <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">No results found</h3>
-                <p className="text-muted-foreground">
-                  Try adjusting your search query or filters to find what you're looking for.
-                </p>
-              </div>
-            ) : (
-              sortedItems.map((item) => (
-                <QuestionCard 
-                  key={item.id} 
-                  data={item}
-                  onEdit={handleEditQuestion}
-                />
-              ))
-            )}
-          </div>
-        </main>
+        {/* Main Content with Sidebar */}
+        <div className="flex gap-6 p-6">
+          {/* Left Sidebar - Saved Searches */}
+          <aside className="w-80 space-y-6">
+            <SavedSearches
+              onLoadSearch={handleLoadSavedSearch}
+              currentQuery={searchQuery}
+              currentFilters={{
+                strategy: selectedStrategy,
+                contentType: selectedContentType,
+                tags: selectedTags,
+              }}
+            />
+          </aside>
+
+          {/* Main Content Area */}
+          <main className="flex-1">
+            <div className="max-w-4xl space-y-4">
+              {isLoading ? (
+                <div className="text-center py-12">
+                  <Loader2 className="h-12 w-12 text-muted-foreground mx-auto mb-4 animate-spin" />
+                  <h3 className="text-lg font-medium mb-2">Loading...</h3>
+                  <p className="text-muted-foreground">Searching your vault content...</p>
+                </div>
+              ) : sortedItems.length === 0 ? (
+                <div className="text-center py-12">
+                  <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No results found</h3>
+                  <p className="text-muted-foreground">
+                    Try adjusting your search query or filters to find what you're looking for.
+                  </p>
+                  {(searchQuery || selectedStrategy !== "All Strategies" || selectedContentType !== "All Types" || selectedTags.length > 0) && (
+                    <Button variant="outline" onClick={clearAllFilters} className="mt-4">
+                      Clear all filters
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                sortedItems.map((item) => (
+                  <QuestionCard 
+                    key={item.id} 
+                    data={item}
+                    onEdit={handleEditQuestion}
+                    onTagAdd={handleTagAdd}
+                    onTagRemove={handleTagRemove}
+                    onQuickEdit={handleQuickEdit}
+                  />
+                ))
+              )}
+            </div>
+          </main>
+        </div>
 
         {/* Edit Sheet */}
         {editingQuestion && (
