@@ -17,8 +17,10 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Brand-focused primary colors with orange accent */
+    --primary: 12 100% 62%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 12 100% 68%;
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -26,37 +28,43 @@ All colors MUST be HSL.
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 12 100% 95%;
+    --accent-foreground: 12 100% 30%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --ring: 12 100% 62%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    /* Vault-specific design tokens - refined */
-    --vault-header: 0 0% 98%;
+    /* Brand-enhanced vault design tokens */
+    --vault-header: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(12 100% 98%) 100%);
     --vault-header-foreground: 222.2 84% 4.9%;
     --vault-card: 0 0% 100%;
-    --vault-card-hover: 210 40% 96.1%;
-    --vault-answer-bg: 210 40% 96.1%;
-    --vault-tag: 142.1 76.2% 36.3%;
-    --vault-tag-foreground: 355.7 100% 97.3%;
-    --vault-badge: 47.9 95.8% 53.1%;
-    --vault-badge-foreground: 26 83.3% 14.1%;
+    --vault-card-hover: 12 100% 97%;
+    --vault-answer-bg: 210 40% 97%;
     
-    /* Enhanced gradients for modern feel */
+    /* Content type colors - inspired by AdviserGPT */
+    --vault-rfp: 210 100% 56%;
+    --vault-rfp-light: 210 100% 95%;
+    --vault-ddq: 142 76% 36%;
+    --vault-ddq-light: 142 76% 95%;
+    --vault-policy: 45 93% 47%;
+    --vault-policy-light: 45 93% 95%;
+    
+    /* Enhanced gradients with brand colors */
     --gradient-fade: linear-gradient(to bottom, transparent 0%, hsl(var(--vault-answer-bg)) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(222.2 47.4% 20%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(var(--card)) 0%, hsl(210 40% 99%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-glow)) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(var(--card)) 0%, hsl(12 100% 99%) 100%);
+    --gradient-header: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(12 30% 97%) 100%);
     
-    /* Modern shadows with blur */
+    /* Enhanced shadows with brand accent */
     --shadow-vault-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-    --shadow-hover: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-hover: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1), 0 0 0 1px hsl(var(--primary) / 0.05);
+    --shadow-primary: 0 4px 14px 0 hsl(var(--primary) / 0.15);
     --shadow-sheet: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     --shadow-dropdown: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 
@@ -70,10 +78,11 @@ All colors MUST be HSL.
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    /* Animation tokens */
+    /* Enhanced animation tokens */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     --transition-fast: all 0.15s ease-out;
+    --transition-spring: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   }
 
   .dark {
@@ -86,8 +95,10 @@ All colors MUST be HSL.
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    /* Dark mode brand colors */
+    --primary: 12 100% 62%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 12 100% 68%;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -95,31 +106,36 @@ All colors MUST be HSL.
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 217.2 32.6% 20%;
+    --accent-foreground: 12 100% 70%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --ring: 12 100% 62%;
     
-    /* Dark mode vault tokens */
-    --vault-header: 222.2 84% 4.9%;
+    /* Dark mode vault tokens with brand colors */
+    --vault-header: linear-gradient(135deg, hsl(222.2 84% 4.9%) 0%, hsl(12 30% 8%) 100%);
     --vault-header-foreground: 210 40% 98%;
     --vault-card: 217.2 32.6% 17.5%;
     --vault-card-hover: 217.2 32.6% 22%;
     --vault-answer-bg: 217.2 32.6% 17.5%;
-    --vault-tag: 142.1 70.6% 45.3%;
-    --vault-tag-foreground: 0 0% 100%;
-    --vault-badge: 47.9 85.8% 63.1%;
-    --vault-badge-foreground: 26 83.3% 14.1%;
+    
+    /* Dark mode content type colors */
+    --vault-rfp: 210 100% 60%;
+    --vault-rfp-light: 210 100% 15%;
+    --vault-ddq: 142 76% 40%;
+    --vault-ddq-light: 142 76% 15%;
+    --vault-policy: 45 93% 50%;
+    --vault-policy-light: 45 93% 15%;
     
     /* Dark mode gradients */
     --gradient-fade: linear-gradient(to bottom, transparent 0%, hsl(var(--vault-answer-bg)) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(210 40% 95%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-glow)) 100%);
     --gradient-card: linear-gradient(145deg, hsl(var(--card)) 0%, hsl(217.2 32.6% 20%) 100%);
+    --gradient-header: linear-gradient(135deg, hsl(222.2 84% 4.9%) 0%, hsl(12 30% 8%) 100%);
     
     /* Dark mode shadows */
     --shadow-vault-card: 0 4px 6px -1px rgb(0 0 0 / 0.2), 0 2px 4px -2px rgb(0 0 0 / 0.1);
@@ -160,30 +176,78 @@ All colors MUST be HSL.
 }
 
 @layer components {
-  /* Custom component styles for enhanced UX */
+  /* Enhanced component styles with brand personality */
   .vault-card {
     @apply transition-all duration-300 hover:shadow-lg;
     box-shadow: var(--shadow-vault-card);
+    background: var(--gradient-card);
   }
 
   .vault-card:hover {
     box-shadow: var(--shadow-hover);
+    transform: translateY(-2px) scale(1.005);
+  }
+
+  /* Brand-enhanced buttons */
+  .btn-pill {
+    @apply rounded-full px-6 py-2.5 font-medium transition-all duration-300;
+    background: var(--gradient-hero);
+    color: hsl(var(--primary-foreground));
+  }
+  
+  .btn-pill:hover {
+    box-shadow: var(--shadow-primary);
     transform: translateY(-1px);
   }
 
   /* Enhanced dropdown styling */
   .dropdown-content {
     box-shadow: var(--shadow-dropdown);
-    @apply border border-border bg-popover/95 backdrop-blur-sm;
+    @apply border border-border bg-popover/95 backdrop-blur-sm rounded-xl;
   }
 
   /* Smooth transitions for interactive elements */
   .interactive {
-    transition: var(--transition-smooth);
+    transition: var(--transition-spring);
+  }
+
+  /* Brand header styling */
+  .vault-header {
+    background: var(--gradient-header);
+    backdrop-filter: blur(12px);
+  }
+
+  /* Content type indicators */
+  .content-type-rfp {
+    @apply border-l-4;
+    border-left-color: hsl(var(--vault-rfp));
+    background: linear-gradient(90deg, hsl(var(--vault-rfp-light)) 0%, transparent 100%);
+  }
+  
+  .content-type-ddq {
+    @apply border-l-4;
+    border-left-color: hsl(var(--vault-ddq));
+    background: linear-gradient(90deg, hsl(var(--vault-ddq-light)) 0%, transparent 100%);
+  }
+  
+  .content-type-policy {
+    @apply border-l-4;
+    border-left-color: hsl(var(--vault-policy));
+    background: linear-gradient(90deg, hsl(var(--vault-policy-light)) 0%, transparent 100%);
   }
 
   /* Loading animation */
   .loading-pulse {
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Modern pill-shaped filters */
+  .filter-pill {
+    @apply rounded-full px-4 py-2 text-sm font-medium transition-all duration-200;
+    @apply border border-border hover:border-primary/20 hover:bg-primary/5;
+  }
+  
+  .filter-pill.active {
+    @apply bg-primary text-primary-foreground border-primary;
   }
 }

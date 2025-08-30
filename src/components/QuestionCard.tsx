@@ -175,9 +175,9 @@ export function QuestionCard({
 
   const getContentTypeColor = (contentType?: string) => {
     switch (contentType) {
-      case 'RFP': return 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800';
-      case 'DDQ': return 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800';
-      case 'Policy': return 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800';
+      case 'RFP': return 'bg-vault-rfp-light text-vault-rfp border-vault-rfp/20';
+      case 'DDQ': return 'bg-vault-ddq-light text-vault-ddq border-vault-ddq/20';
+      case 'Policy': return 'bg-vault-policy-light text-vault-policy border-vault-policy/20';
       case 'Commentary': return 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-300 dark:border-orange-800';
       default: return 'bg-muted text-muted-foreground border-border';
     }
@@ -186,8 +186,22 @@ export function QuestionCard({
   const isExpiring = data.expirationDate && data.expirationDate <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
   const isExpired = data.expirationDate && data.expirationDate <= new Date();
 
+  // Helper function for content type styling
+  const getContentTypeClass = (contentType?: string) => {
+    switch (contentType?.toLowerCase()) {
+      case 'rfp': return 'content-type-rfp';
+      case 'ddq': return 'content-type-ddq';
+      case 'policy': return 'content-type-policy';
+      default: return '';
+    }
+  };
+
   return (
-    <div className="group px-6 py-8 border-b border-border last:border-0 hover:bg-accent/50 transition-all duration-200">
+    <div className={`group px-6 py-8 border-b border-border last:border-0 hover:bg-accent/30 transition-all duration-300 ${
+      getContentTypeClass(data.contentType)
+    } ${
+      isExpired ? 'opacity-60' : ''
+    }`}>
       {/* Header with Question and Bookmark */}
       <div className="flex items-start justify-between gap-4 mb-4">
         <h3 className="text-lg font-semibold text-foreground leading-tight flex-1 group-hover:text-primary transition-colors">
