@@ -33,8 +33,11 @@ export function VaultSearchResults() {
   const [query, setQueryState] = useState(searchParams.get('query') || '');
   const [isEditingQuery, setIsEditingQuery] = useState(false);
   const [editingItem, setEditingItem] = useState<ContentItem | null>(null);
-  const [queryTokenDimensions, setQueryTokenDimensions] = useState<{width: number, height: number} | null>(null);
+  const [minWidth, setMinWidth] = useState(100);
+  const [currentWidth, setCurrentWidth] = useState(100);
   const queryButtonRef = useRef<HTMLButtonElement>(null);
+  const measureRef = useRef<HTMLSpanElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [selectedStrategy, setSelectedStrategy] = useState(searchParams.get('strategy') || '');
   const [selectedType, setSelectedType] = useState(searchParams.get('type') || '');
   const [selectedStatus, setSelectedStatus] = useState(searchParams.get('status') || '');
@@ -82,6 +85,22 @@ export function VaultSearchResults() {
     
     navigate(`/vault/search?${params.toString()}`);
   };
+
+  // Dynamic width calculation
+  const measureTextWidth = (text: string) => {
+    if (!measureRef.current) return minWidth;
+    measureRef.current.textContent = `"${text}"`;
+    const measuredWidth = measureRef.current.offsetWidth;
+    return Math.max(minWidth, Math.min(measuredWidth + 16, window.innerWidth * 0.8)); // 16px for padding
+  };
+
+  // Update width when query changes in edit mode
+  useEffect(() => {
+    if (isEditingQuery) {
+      const newWidth = measureTextWidth(query);
+      setCurrentWidth(newWidth);
+    }
+  }, [query, isEditingQuery, minWidth]);
 
   const handleQueryEdit = (newQuery: string) => {
     setQueryState(newQuery);
@@ -168,9 +187,17 @@ export function VaultSearchResults() {
           {/* Title with editable query */}
           <div className="flex items-center gap-2 mb-4">
             <span className="text-lg">{filteredItems.length} Results for</span>
-            <div className="relative transition-all duration-250">
+            <div className="relative">
+              {/* Hidden measuring element */}
+              <span 
+                ref={measureRef}
+                className="absolute -top-96 left-0 font-medium text-lg px-1 pointer-events-none opacity-0"
+                aria-hidden="true"
+              />
+              
               {isEditingQuery ? (
                 <Input
+                  ref={inputRef}
                   value={query}
                   onChange={(e) => setQueryState(e.target.value)}
                   onBlur={() => {
@@ -186,11 +213,12 @@ export function VaultSearchResults() {
                       setQueryState(searchParams.get('query') || '');
                     }
                   }}
-                  className="font-medium text-lg border-dashed border-b-2 border-t-0 border-l-0 border-r-0 rounded-none px-1 py-0.5 focus-visible:ring-0 bg-transparent"
-                  style={queryTokenDimensions ? {
-                    width: `${queryTokenDimensions.width}px`,
-                    height: `${queryTokenDimensions.height}px`
-                  } : undefined}
+                  className="font-medium text-lg border-dashed border-b-2 border-t-0 border-l-0 border-r-0 rounded-none px-1 py-0.5 focus-visible:ring-0 bg-transparent transition-all duration-200"
+                  style={{
+                    width: `${currentWidth}px`,
+                    minWidth: `${minWidth}px`,
+                    maxWidth: '80vw'
+                  }}
                   autoFocus
                 />
               ) : (
@@ -199,10 +227,8 @@ export function VaultSearchResults() {
                   onClick={() => {
                     if (queryButtonRef.current) {
                       const rect = queryButtonRef.current.getBoundingClientRect();
-                      setQueryTokenDimensions({
-                        width: rect.width,
-                        height: rect.height
-                      });
+                      setMinWidth(rect.width);
+                      setCurrentWidth(rect.width);
                     }
                     setIsEditingQuery(true);
                   }}
