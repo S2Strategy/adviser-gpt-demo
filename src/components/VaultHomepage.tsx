@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { VaultSidebar } from "./VaultSidebar";
 import { 
@@ -60,43 +60,8 @@ export function VaultHomepage() {
     }
   };
 
-  // Apply filters to content items
-  const filteredContent = useMemo(() => {
-    let filtered = MOCK_CONTENT_ITEMS;
-
-    if (selectedStrategy.length > 0) {
-      filtered = filtered.filter(item => selectedStrategy.includes(item.strategy));
-    }
-
-    if (selectedType.length > 0) {
-      filtered = filtered.filter(item => selectedType.includes(item.type));  
-    }
-
-    if (selectedTags.length > 0) {
-      filtered = filtered.filter(item => 
-        selectedTags.some(tag => item.tags.includes(tag))
-      );
-    }
-
-    if (selectedStatus.length > 0) {
-      // Note: Mock data doesn't have status field, but keeping for consistency
-      // In real implementation, this would filter by status
-      filtered = filtered;
-    }
-
-    return filtered;
-  }, [selectedStrategy, selectedType, selectedTags, selectedStatus]);
-
-  // Clear all filters
-  const clearFilters = () => {
-    setSelectedStrategy([]);
-    setSelectedType([]);
-    setSelectedTags([]);
-    setSelectedStatus([]);
-  };
-
   // Group items by file for Files view
-  const fileGroups = filteredContent.reduce((acc, item) => {
+  const fileGroups = MOCK_CONTENT_ITEMS.reduce((acc, item) => {
     if (!acc[item.title]) {
       acc[item.title] = {
         name: item.title,
@@ -133,13 +98,13 @@ export function VaultHomepage() {
   // Group by type for Type view
   const typeGroups = CONTENT_TYPES.map(type => ({
     name: type,
-    totalItems: filteredContent.filter(item => item.type === type).length
+    totalItems: MOCK_CONTENT_ITEMS.filter(item => item.type === type).length
   })).filter(group => group.totalItems > 0);
 
   // Group by strategy for Strategy view
   const strategyGroups = STRATEGIES.map(strategy => ({
     name: strategy,
-    totalItems: filteredContent.filter(item => item.strategy === strategy).length
+    totalItems: MOCK_CONTENT_ITEMS.filter(item => item.strategy === strategy).length
   })).filter(group => group.totalItems > 0);
 
   return (
@@ -222,16 +187,6 @@ export function VaultHomepage() {
             >
               Find
             </Button>
-            
-            {/* Clear filters button - only show if filters are active */}
-            {(selectedStrategy.length > 0 || selectedType.length > 0 || selectedTags.length > 0 || selectedStatus.length > 0) && (
-              <Button 
-                variant="outline"
-                onClick={clearFilters}
-              >
-                Clear Filters
-              </Button>
-            )}
           </div>
         </div>
       </div>
@@ -352,7 +307,7 @@ export function VaultHomepage() {
           {/* Data View */}
           <TabsContent value="data">
             <div className="space-y-4">
-              {filteredContent
+              {MOCK_CONTENT_ITEMS
                 .filter(item => item.type === "Quantitative")
                 .map((item) => (
                   <div key={item.id} className="border rounded-lg p-4">
@@ -362,7 +317,7 @@ export function VaultHomepage() {
                     </p>
                   </div>
                 ))}
-              {filteredContent.filter(item => item.type === "Quantitative").length === 0 && (
+              {MOCK_CONTENT_ITEMS.filter(item => item.type === "Quantitative").length === 0 && (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground">No quantitative data items found.</p>
                 </div>
