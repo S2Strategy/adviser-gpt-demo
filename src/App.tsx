@@ -19,6 +19,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/vault" element={<Vault />} />
           <Route path="/vault/search" element={<Vault />} />
+          <Route path="/vault/file" element={<Vault />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

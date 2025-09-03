@@ -38,6 +38,8 @@ export function VaultSearchResults() {
   const { toast } = useToast();
   
   const [query, setQueryState] = useState(searchParams.get('query') || '');
+  const fileName = searchParams.get('fileName');
+  const fileCount = searchParams.get('count');
   const [isEditingQuery, setIsEditingQuery] = useState(false);
   const [editingItem, setEditingItem] = useState<ContentItem | null>(null);
   const [minWidth, setMinWidth] = useState(100);
@@ -288,58 +290,66 @@ export function VaultSearchResults() {
 
           {/* Title with editable query */}
           <div className="flex items-center gap-2 mb-4">
-            <span className="text-lg">{filteredItems.length} Results for</span>
-            <div className="relative">
-              {/* Hidden measuring element */}
-              <span 
-                ref={measureRef}
-                className="absolute -top-96 left-0 font-medium text-lg px-1 pointer-events-none opacity-0"
-                aria-hidden="true"
-              />
-              
-              {isEditingQuery ? (
-                <Input
-                  ref={inputRef}
-                  value={query}
-                  onChange={(e) => setQueryState(e.target.value)}
-                  onBlur={() => {
-                    setIsEditingQuery(false);
-                    handleQueryEdit(query);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      setIsEditingQuery(false);
-                      handleQueryEdit(query);
-                    } else if (e.key === 'Escape') {
-                      setIsEditingQuery(false);
-                      setQueryState(searchParams.get('query') || '');
-                    }
-                  }}
-                  className="font-medium text-lg border-dashed border-b-2 border-t-0 border-l-0 border-r-0 rounded-none px-1 py-0.5 focus-visible:ring-0 bg-transparent transition-all duration-200"
-                  style={{
-                    width: `${currentWidth}px`,
-                    minWidth: `${minWidth}px`,
-                    maxWidth: '80vw'
-                  }}
-                  autoFocus
-                />
-              ) : (
-                <button
-                  ref={queryButtonRef}
-                  onClick={() => {
-                    if (queryButtonRef.current) {
-                      const rect = queryButtonRef.current.getBoundingClientRect();
-                      setMinWidth(rect.width);
-                      setCurrentWidth(rect.width);
-                    }
-                    setIsEditingQuery(true);
-                  }}
-                  className="font-medium text-lg border-dashed border-b-2 border-foreground hover:bg-muted px-1 py-0.5 rounded-none transition-colors duration-250"
-                >
-                  "{query}"
-                </button>
-              )}
-            </div>
+            {fileName ? (
+              <span className="text-lg font-medium">
+                {fileCount} Questions in {fileName}
+              </span>
+            ) : (
+              <>
+                <span className="text-lg">{filteredItems.length} Results for</span>
+                <div className="relative">
+                  {/* Hidden measuring element */}
+                  <span 
+                    ref={measureRef}
+                    className="absolute -top-96 left-0 font-medium text-lg px-1 pointer-events-none opacity-0"
+                    aria-hidden="true"
+                  />
+                  
+                  {isEditingQuery ? (
+                    <Input
+                      ref={inputRef}
+                      value={query}
+                      onChange={(e) => setQueryState(e.target.value)}
+                      onBlur={() => {
+                        setIsEditingQuery(false);
+                        handleQueryEdit(query);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          setIsEditingQuery(false);
+                          handleQueryEdit(query);
+                        } else if (e.key === 'Escape') {
+                          setIsEditingQuery(false);
+                          setQueryState(searchParams.get('query') || '');
+                        }
+                      }}
+                      className="font-medium text-lg border-dashed border-b-2 border-t-0 border-l-0 border-r-0 rounded-none px-1 py-0.5 focus-visible:ring-0 bg-transparent transition-all duration-200"
+                      style={{
+                        width: `${currentWidth}px`,
+                        minWidth: `${minWidth}px`,
+                        maxWidth: '80vw'
+                      }}
+                      autoFocus
+                    />
+                  ) : (
+                    <button
+                      ref={queryButtonRef}
+                      onClick={() => {
+                        if (queryButtonRef.current) {
+                          const rect = queryButtonRef.current.getBoundingClientRect();
+                          setMinWidth(rect.width);
+                          setCurrentWidth(rect.width);
+                        }
+                        setIsEditingQuery(true);
+                      }}
+                      className="font-medium text-lg border-dashed border-b-2 border-foreground hover:bg-muted px-1 py-0.5 rounded-none transition-colors duration-250"
+                    >
+                      "{query}"
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Filters and Export */}
@@ -597,7 +607,7 @@ export function VaultSearchResults() {
 
                  {/* Question Section */}
                  {displayData.content?.question && (
-                   <div className="space-y-2 px-6 py-4" style={{ paddingInlineStart: '40px' }}>
+                   <div className="space-y-2 px-6 pb-4" style={{ paddingInlineStart: '40px' }}>
                      <div className="flex items-start gap-2">
                        <CornerDownRight className="h-4 w-4 mt-1 flex-shrink-0" style={{ color: '#71717A' }} />
                        <div className="space-y-2">

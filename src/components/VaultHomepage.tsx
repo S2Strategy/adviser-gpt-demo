@@ -113,7 +113,7 @@ export function VaultHomepage() {
       <VaultSidebar />
       
       {/* Main Content */}
-      <div className="flex-1 h-full flex flex-col">
+      <div className="flex-1 h-full flex flex-col ml-64">
         {/* Header */}
       <div className="border-b bg-background">
         <div className="flex items-center justify-between p-6">
@@ -243,7 +243,11 @@ export function VaultHomepage() {
                 </TableHeader>
                 <TableBody>
                   {sortedFiles.map((file, index) => (
-                    <TableRow key={index}>
+                    <TableRow 
+                      key={index} 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => navigate(`/vault/file?fileName=${encodeURIComponent(file.name)}&count=${file.totalItems}`)}
+                    >
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-3">
                           <FileText className="h-4 w-4 text-muted-foreground" />
