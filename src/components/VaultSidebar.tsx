@@ -31,7 +31,7 @@ export function VaultSidebar() {
   return (
     <div 
       className="w-64 h-screen bg-[#FAFAFA] border-r border-[#E4E4E7] grid"
-      style={{ width: "256px" }}
+      style={{ width: "256px", gridTemplateRows: "auto 1fr auto" }}
     >
       {/* Account Wrapper */}
       <div className="p-2">
@@ -84,7 +84,7 @@ export function VaultSidebar() {
       </div>
 
       {/* Navigation Section */}
-      <div className="flex-1 p-2 gap-3 grid">
+      <div className="flex-1 p-2 gap-3 grid" style={{ alignContent: "start" }}>
         {/* Subheader */}
         <div 
           className="px-2 text-[#71717A]"
