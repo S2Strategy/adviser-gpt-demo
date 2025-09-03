@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { VaultSidebar } from "./VaultSidebar";
 import { 
@@ -33,6 +33,8 @@ export function VaultSearchResults() {
   const [query, setQueryState] = useState(searchParams.get('query') || '');
   const [isEditingQuery, setIsEditingQuery] = useState(false);
   const [editingItem, setEditingItem] = useState<ContentItem | null>(null);
+  const [queryTokenDimensions, setQueryTokenDimensions] = useState<{width: number, height: number} | null>(null);
+  const queryButtonRef = useRef<HTMLButtonElement>(null);
   const [selectedStrategy, setSelectedStrategy] = useState(searchParams.get('strategy') || '');
   const [selectedType, setSelectedType] = useState(searchParams.get('type') || '');
   const [selectedStatus, setSelectedStatus] = useState(searchParams.get('status') || '');
@@ -166,34 +168,50 @@ export function VaultSearchResults() {
           {/* Title with editable query */}
           <div className="flex items-center gap-2 mb-4">
             <span className="text-lg">{filteredItems.length} Results for</span>
-            {isEditingQuery ? (
-              <Input
-                value={query}
-                onChange={(e) => setQueryState(e.target.value)}
-                onBlur={() => {
-                  setIsEditingQuery(false);
-                  handleQueryEdit(query);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
+            <div className="relative transition-all duration-250">
+              {isEditingQuery ? (
+                <Input
+                  value={query}
+                  onChange={(e) => setQueryState(e.target.value)}
+                  onBlur={() => {
                     setIsEditingQuery(false);
                     handleQueryEdit(query);
-                  } else if (e.key === 'Escape') {
-                    setIsEditingQuery(false);
-                    setQueryState(searchParams.get('query') || '');
-                  }
-                }}
-                className="font-medium text-lg border-dashed border-b-2 border-t-0 border-l-0 border-r-0 rounded-none px-1 focus-visible:ring-0"
-                autoFocus
-              />
-            ) : (
-              <button
-                onClick={() => setIsEditingQuery(true)}
-                className="font-medium text-lg border-dashed border-b-2 border-foreground hover:bg-muted px-1 py-0.5 rounded-none"
-              >
-                "{query}"
-              </button>
-            )}
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      setIsEditingQuery(false);
+                      handleQueryEdit(query);
+                    } else if (e.key === 'Escape') {
+                      setIsEditingQuery(false);
+                      setQueryState(searchParams.get('query') || '');
+                    }
+                  }}
+                  className="font-medium text-lg border-dashed border-b-2 border-t-0 border-l-0 border-r-0 rounded-none px-1 py-0.5 focus-visible:ring-0 bg-transparent"
+                  style={queryTokenDimensions ? {
+                    width: `${queryTokenDimensions.width}px`,
+                    height: `${queryTokenDimensions.height}px`
+                  } : undefined}
+                  autoFocus
+                />
+              ) : (
+                <button
+                  ref={queryButtonRef}
+                  onClick={() => {
+                    if (queryButtonRef.current) {
+                      const rect = queryButtonRef.current.getBoundingClientRect();
+                      setQueryTokenDimensions({
+                        width: rect.width,
+                        height: rect.height
+                      });
+                    }
+                    setIsEditingQuery(true);
+                  }}
+                  className="font-medium text-lg border-dashed border-b-2 border-foreground hover:bg-muted px-1 py-0.5 rounded-none transition-colors duration-250"
+                >
+                  "{query}"
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Filters and Export */}
