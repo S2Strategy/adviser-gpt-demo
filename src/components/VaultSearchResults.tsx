@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
+import { VaultSidebar } from "./VaultSidebar";
 import { 
   ChevronRight, 
   Home, 
@@ -137,8 +138,13 @@ export function VaultSearchResults() {
   };
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Header with Breadcrumbs */}
+    <div className="h-screen flex">
+      {/* Sidebar */}
+      <VaultSidebar />
+      
+      {/* Main Content */}
+      <div className="flex-1 h-full flex flex-col">
+        {/* Header with Breadcrumbs */}
       <div className="border-b bg-background">
         <div className="p-6">
           {/* Breadcrumbs */}
@@ -450,6 +456,7 @@ export function VaultSearchResults() {
           existingEdit={getEdit(editingItem.id)}
         />
       )}
+      </div>
     </div>
   );
 }

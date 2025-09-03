@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { VaultSidebar } from "./VaultSidebar";
 import { 
   Search, 
   ChevronDown, 
@@ -107,8 +108,13 @@ export function VaultHomepage() {
   })).filter(group => group.totalItems > 0);
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Header */}
+    <div className="h-screen flex">
+      {/* Sidebar */}
+      <VaultSidebar />
+      
+      {/* Main Content */}
+      <div className="flex-1 h-full flex flex-col">
+        {/* Header */}
       <div className="border-b bg-background">
         <div className="flex items-center justify-between p-6">
           <h1 className="text-2xl font-semibold">Vault</h1>
@@ -328,6 +334,7 @@ export function VaultHomepage() {
             </div>
           </TabsContent>
         </Tabs>
+        </div>
       </div>
     </div>
   );
