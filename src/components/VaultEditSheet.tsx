@@ -41,6 +41,19 @@ export function VaultEditSheet({ item, open, onClose, onSave, existingEdit }: Va
     }
   }, [item, existingEdit]);
 
+  // Body scroll lock when panel is open
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [open]);
+
   const handleSave = () => {
     const editData = {
       question,
@@ -88,8 +101,11 @@ export function VaultEditSheet({ item, open, onClose, onSave, existingEdit }: Va
       
       {/* Sheet */}
       <div 
-        className="fixed inset-y-0 right-0 z-50 w-full max-w-2xl bg-background border-l shadow-2xl transition-transform duration-300 transform translate-x-0"
+        className={`fixed top-3 right-3 bottom-3 z-50 w-full max-w-2xl bg-background border shadow-2xl rounded-lg transition-all duration-300 transform ${
+          open ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
+        }`}
         style={{
+          height: 'calc(100vh - 24px)',
           boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)'
         }}
       >

@@ -243,7 +243,7 @@ export function VaultSearchResults() {
   };
 
   return (
-    <div className="h-screen flex">
+    <div className="h-screen flex ml-64">
       {/* Sidebar */}
       <VaultSidebar />
       
@@ -513,35 +513,50 @@ export function VaultSearchResults() {
             const displayAnswer = isExpanded ? answer : answer.substring(0, 300);
             
             return (
-          <div className="border rounded-lg bg-card vault-result-card">
+          <div className="border rounded-lg bg-card vault-result-card overflow-hidden">
             {/* Header with file info and badge */}
             <div className="flex items-start justify-between pb-4 border-b border-[#E4E4E7] px-6 py-4">
-              <div className="flex items-center gap-3 text-sm" style={{ fontSize: '14px', lineHeight: '1.4' }}>
-                <FileText className="h-4 w-4" style={{ color: '#71717A' }} />
-                <span className="font-bold">{item.title}</span>
-                <Calendar className="h-4 w-4 ml-2" style={{ color: '#71717A' }} />
-                <span style={{ color: '#27272A' }}>{formatRelativeTime(item.updatedAt)}</span>
-                <span style={{ color: '#71717A' }}>({formatFullDate(item.updatedAt)})</span>
-                <UsersRound className="h-4 w-4 ml-2" style={{ color: '#71717A' }} />
-                <span>{item.updatedBy}</span>
+              <div className="flex items-center min-w-0 gap-3 flex-1 flex-wrap">
+                <FileText className="h-4 w-4 flex-shrink-0" style={{ color: '#71717A' }} />
+                <div 
+                  className="font-bold break-words flex-grow text-sm"
+                  style={{ 
+                    wordBreak: 'break-word',
+                    hyphens: 'auto',
+                    fontSize: '14px', 
+                    lineHeight: '1.4' 
+                  }}
+                >
+                  {item.title}
+                </div>
+              </div>
+              <div className="flex items-center gap-4 text-sm ml-4 flex-shrink-0" style={{ fontSize: '14px', lineHeight: '1.4' }}>
+                <div className="flex items-center gap-1 whitespace-nowrap">
+                  <Calendar className="h-4 w-4" style={{ color: '#71717A' }} />
+                  <span style={{ color: '#27272A' }}>{formatRelativeTime(item.updatedAt)}</span>
+                  <span style={{ color: '#71717A' }}>({formatFullDate(item.updatedAt)})</span>
+                </div>
+                <div className="flex items-center gap-1 whitespace-nowrap">
+                  <UsersRound className="h-4 w-4" style={{ color: '#71717A' }} />
+                  <span>{item.updatedBy}</span>
+                </div>
                 {hasEdits && (
-                  <Badge variant="outline" className="text-xs ml-2">
+                  <Badge variant="outline" className="text-xs flex-shrink-0">
                     Edited
                   </Badge>
                 )}
+                {isFirstResult && (
+                  <div className="flex items-center gap-1 px-2.5 py-1 rounded-full flex-shrink-0" style={{ backgroundColor: '#CCECB6', color: '#09090B' }}>
+                    <Star className="h-3 w-3" />
+                    <span className="text-xs font-semibold">Best Answer</span>
+                  </div>
+                )}
               </div>
-              
-              {isFirstResult && (
-                <div className="flex items-center gap-1 px-2.5 py-1 rounded-full" style={{ backgroundColor: '#CCECB6', color: '#09090B' }}>
-                  <Star className="h-3 w-3" />
-                  <span className="text-xs font-semibold">Best Answer</span>
-                </div>
-              )}
             </div>
 
                  {/* Answer Section */}
                  {displayData.content?.answer && (
-                   <div className="space-y-2 px-6 py-5">
+                   <div className="space-y-2 px-6 py-4">
                      <h4 style={{ fontSize: '12px', fontWeight: 'bold', lineHeight: '1.5', letterSpacing: '-0.2px' }}>Answer</h4>
                      <div className="bg-muted/50 rounded-md p-4">
                        <p className="text-sm leading-relaxed">
@@ -564,7 +579,7 @@ export function VaultSearchResults() {
 
                  {/* Question Section */}
                  {displayData.content?.question && (
-                   <div className="space-y-2 px-6 py-5" style={{ paddingInlineStart: '20px' }}>
+                   <div className="space-y-2 px-6 py-4" style={{ paddingInlineStart: '40px' }}>
                      <div className="flex items-start gap-2">
                        <CornerDownRight className="h-4 w-4 mt-1 flex-shrink-0" style={{ color: '#71717A' }} />
                        <div className="space-y-2">
@@ -625,7 +640,7 @@ export function VaultSearchResults() {
                  )}
 
                 {/* Action Footer */}
-                <div className="border-t border-[#E4E4E7] px-6 py-3 flex items-center justify-end gap-2" style={{ backgroundColor: '#fafafa' }}>
+                <div className="border-t border-[#E4E4E7] px-6 py-3 flex items-center justify-end gap-2 rounded-b-lg" style={{ backgroundColor: '#fafafa' }}>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button className="flex h-8 px-3 justify-center items-center gap-2 rounded-md bg-white text-sm font-medium" style={{ boxShadow: '0 0 0 1px rgba(3, 7, 18, 0.12), 0 1px 3px -1px rgba(3, 7, 18, 0.11), 0 2px 5px 0 rgba(3, 7, 18, 0.06)' }}>

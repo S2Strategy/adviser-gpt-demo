@@ -30,7 +30,7 @@ export function VaultSidebar() {
 
   return (
     <div 
-      className="w-64 h-screen bg-[#FAFAFA] border-r border-[#E4E4E7] grid"
+      className="fixed left-0 top-0 bottom-0 w-64 h-screen bg-[#FAFAFA] border-r border-[#E4E4E7] grid z-30"
       style={{ width: "256px", gridTemplateRows: "auto 1fr auto" }}
     >
       {/* Account Wrapper */}
