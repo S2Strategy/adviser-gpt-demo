@@ -12,7 +12,12 @@ import {
   Mail,
   Edit,
   Copy,
-  X
+  X,
+  Star,
+  Calendar,
+  UsersRound,
+  CornerDownRight,
+  Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +56,8 @@ export function VaultSearchResults() {
     searchParams.get('tags')?.split(',').filter(Boolean) || []
   );
   const [expandedAnswers, setExpandedAnswers] = useState<Set<string>>(new Set());
+  const [addingTagToItem, setAddingTagToItem] = useState<string | null>(null);
+  const [newTagValue, setNewTagValue] = useState("");
 
   // Helper function to merge original item with saved edits
   const getDisplayData = (item: ContentItem) => {
@@ -204,6 +211,23 @@ export function VaultSearchResults() {
     
     existingEdits[id] = { ...currentEdit, tags: currentTags.filter(t => t !== tag) };
     localStorage.setItem('vaultEdits', JSON.stringify(existingEdits));
+    // Force re-render
+    window.dispatchEvent(new Event('storage'));
+  };
+
+  const handleNewTagSave = (itemId: string) => {
+    if (newTagValue.trim()) {
+      handleTagAdd(itemId, newTagValue.trim());
+      setNewTagValue("");
+      setAddingTagToItem(null);
+      // Force re-render
+      window.dispatchEvent(new Event('storage'));
+    }
+  };
+
+  const handleNewTagCancel = () => {
+    setNewTagValue("");
+    setAddingTagToItem(null);
   };
 
   const handleQuickEdit = (id: string, field: string, value: string) => {
@@ -491,37 +515,34 @@ export function VaultSearchResults() {
             return (
           <div className="border rounded-lg p-6 bg-card space-y-4 vault-result-card">
             {/* Header with file info and badge */}
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <FileText className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <h3 className="font-medium">{item.title}</h3>
-                   <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                     <span>
-                       {formatRelativeTime(item.updatedAt)} ({formatFullDate(item.updatedAt)})
-                     </span>
-                     <User className="h-3 w-3" />
-                     <span>{item.updatedBy}</span>
-                     {hasEdits && (
-                       <Badge variant="outline" className="text-xs">
-                         Edited
-                       </Badge>
-                     )}
-                   </div>
-                </div>
+            <div className="flex items-start justify-between pb-4 border-b border-[#E4E4E7]">
+              <div className="flex items-center gap-3 text-sm" style={{ fontSize: '14px', lineHeight: '1.4' }}>
+                <FileText className="h-4 w-4" style={{ color: '#71717A' }} />
+                <span className="font-bold">{item.title}</span>
+                <Calendar className="h-4 w-4 ml-2" style={{ color: '#71717A' }} />
+                <span style={{ color: '#27272A' }}>{formatRelativeTime(item.updatedAt)}</span>
+                <span style={{ color: '#71717A' }}>({formatFullDate(item.updatedAt)})</span>
+                <UsersRound className="h-4 w-4 ml-2" style={{ color: '#71717A' }} />
+                <span>{item.updatedBy}</span>
+                {hasEdits && (
+                  <Badge variant="outline" className="text-xs ml-2">
+                    Edited
+                  </Badge>
+                )}
               </div>
               
               {isFirstResult && (
-                <Badge className="bg-green-100 text-green-800 border-green-200">
-                  Best Answer
-                </Badge>
+                <div className="flex items-center gap-1 px-2.5 py-1 rounded-full" style={{ backgroundColor: '#CCECB6', color: '#09090B' }}>
+                  <Star className="h-3 w-3" />
+                  <span className="text-xs font-semibold">Best Answer</span>
+                </div>
               )}
             </div>
 
                  {/* Answer Section */}
                  {displayData.content?.answer && (
                    <div className="space-y-2">
-                     <h4 className="font-medium">Answer</h4>
+                     <h4 style={{ fontSize: '12px', fontWeight: 'bold', lineHeight: '1.5', letterSpacing: '-0.2px' }}>Answer</h4>
                      <div className="bg-muted/50 rounded-md p-4">
                        <p className="text-sm leading-relaxed">
                          {displayAnswer}
@@ -543,27 +564,65 @@ export function VaultSearchResults() {
 
                  {/* Question Section */}
                  {displayData.content?.question && (
-                   <div className="space-y-2">
-                     <h4 className="font-medium">Question</h4>
-                     <p className="text-sm text-muted-foreground">
-                       {displayData.content.question}
-                     </p>
+                   <div className="space-y-2" style={{ paddingInlineStart: '20px' }}>
+                     <div className="flex items-start gap-2">
+                       <CornerDownRight className="h-4 w-4 mt-1 flex-shrink-0" style={{ color: '#71717A' }} />
+                       <div className="space-y-2">
+                         <h4 style={{ fontSize: '12px', fontWeight: 'bold', lineHeight: '1.5', letterSpacing: '-0.2px' }}>Question</h4>
+                         <p style={{ fontSize: '16px', lineHeight: '1.5', fontWeight: '700', letterSpacing: '-0.4px' }}>
+                           {displayData.content.question}
+                         </p>
+                         
+                         {/* Tags in Question Section */}
+                         <div className="flex flex-wrap items-center gap-2 mt-3">
+                           <Badge variant="outline" className="vault-tag" style={{ backgroundColor: '#F4F4F5' }}>Evergreen</Badge>
+                           <Badge variant="outline" className="vault-tag" style={{ backgroundColor: '#F4F4F5' }}>{displayData.strategy}</Badge>
+                           {displayData.tags.map(tag => (
+                             <Badge key={tag} variant="outline" className="text-xs vault-tag flex items-center gap-1" style={{ backgroundColor: '#F4F4F5' }}>
+                               {tag}
+                               <X 
+                                 className="h-3 w-3 cursor-pointer hover:text-red-500" 
+                                 onClick={() => handleTagRemove(item.id, tag)}
+                               />
+                             </Badge>
+                           ))}
+                           {addingTagToItem === item.id ? (
+                             <div className="flex items-center gap-1">
+                               <Input
+                                 value={newTagValue}
+                                 onChange={(e) => setNewTagValue(e.target.value)}
+                                 className="h-6 text-xs w-20"
+                                 placeholder="Tag name"
+                                 autoFocus
+                                 onKeyDown={(e) => {
+                                   if (e.key === 'Enter') handleNewTagSave(item.id);
+                                   if (e.key === 'Escape') handleNewTagCancel();
+                                 }}
+                               />
+                               <Check 
+                                 className="h-3 w-3 cursor-pointer text-green-600 hover:text-green-700" 
+                                 onClick={() => handleNewTagSave(item.id)}
+                               />
+                               <X 
+                                 className="h-3 w-3 cursor-pointer text-red-500 hover:text-red-600" 
+                                 onClick={handleNewTagCancel}
+                               />
+                             </div>
+                           ) : (
+                             <Badge 
+                               variant="outline" 
+                               className="text-xs text-muted-foreground vault-tag cursor-pointer hover:bg-muted"
+                               style={{ backgroundColor: '#F4F4F5' }}
+                               onClick={() => setAddingTagToItem(item.id)}
+                             >
+                               + New
+                             </Badge>
+                           )}
+                         </div>
+                       </div>
+                     </div>
                    </div>
                  )}
-
-                 {/* Tags */}
-                 <div className="flex flex-wrap items-center gap-2">
-                   <Badge variant="outline" className="vault-tag">Evergreen</Badge>
-                   <Badge variant="outline" className="vault-tag">{displayData.strategy}</Badge>
-                   {displayData.tags.map(tag => (
-                     <Badge key={tag} variant="outline" className="text-xs vault-tag">
-                       {tag}
-                     </Badge>
-                   ))}
-                   <Badge variant="outline" className="text-xs text-muted-foreground vault-tag">
-                     + New
-                   </Badge>
-                 </div>
 
                 {/* Actions */}
                 <div className="flex items-center gap-2">
