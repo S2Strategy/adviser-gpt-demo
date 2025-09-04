@@ -425,7 +425,7 @@ export function VaultSearchResults() {
                 }}
               />
 
-              <MultiSelectFilter
+              {/* <MultiSelectFilter
                 title="Status"
                 options={STATUS_OPTIONS}
                 selectedValues={selectedStatuses}
@@ -433,7 +433,7 @@ export function VaultSearchResults() {
                   setSelectedStatuses(values);
                   updateFiltersInUrl(query, selectedStrategies, selectedTypes, selectedTags, values);
                 }}
-              />
+              /> */}
             </div>
 
             <DropdownMenu>

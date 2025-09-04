@@ -183,13 +183,13 @@ export function VaultHomepage() {
               placeholder="All Tags"
             />
 
-            <MultiSelectFilter
+            {/* <MultiSelectFilter
               title="Status"
               options={STATUS_OPTIONS}
               selectedValues={selectedStatus}
               onSelectionChange={setSelectedStatus}
               placeholder="All Status"
-            />
+            /> */}
 
             <Button 
               onClick={handleSearch}
