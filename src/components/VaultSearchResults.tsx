@@ -232,18 +232,7 @@ export function VaultSearchResults() {
     }
   };
 
-  const handleSearchDebounced = (newQuery: string) => {
-    setQuery(newQuery);
-    setQueryState(newQuery);
-    setSearchInput(newQuery);
-    
-    // Debounce URL updates to prevent space stripping during typing
-    if (searchTimeout) clearTimeout(searchTimeout);
-    const timeout = setTimeout(() => {
-      updateFiltersInUrl(newQuery, selectedStrategies, selectedTypes, selectedTags, selectedStatuses);
-    }, 300);
-    setSearchTimeout(timeout);
-  };
+  // Removed handleSearchDebounced - search now only triggers on Enter
 
   // Update width when query changes in edit mode
   useEffect(() => {
@@ -452,12 +441,8 @@ export function VaultSearchResults() {
             <input
               type="text"
               value={searchInput}
-              onChange={(e) => {
-                const value = e.target.value;
-                setSearchInput(value);
-                // Debounce the search to prevent immediate space removal
-                handleSearchDebounced(value);
-              }}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={handleKeyPress}
               className="bg-transparent outline-none border-b-2 border-dotted border-muted-foreground text-foreground font-medium px-1 min-w-[250px]"
               placeholder="filter results"
               style={{ width: `${Math.max(searchInput.length * 12 + 20, 250)}px` }}
