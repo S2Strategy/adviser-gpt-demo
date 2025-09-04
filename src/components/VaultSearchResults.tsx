@@ -364,45 +364,26 @@ export function VaultSearchResults() {
 
           {/* Main Title and Search */}
           <div className="mb-6">
-            {query ? (
-              <div className="flex flex-wrap items-center gap-2 text-xl">
-                <span className="text-muted-foreground">
-                  {filteredItems.length} Results for
-                </span>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={query}
-                    onChange={(e) => {
-                      setQuery(e.target.value);
-                      setQueryState(e.target.value);
-                      setSearchInput(e.target.value);
-                      updateFiltersInUrl(e.target.value, selectedStrategies, selectedTypes, selectedTags, selectedStatuses);
-                    }}
-                    className="bg-transparent border-none outline-none border-b-2 border-dotted border-muted-foreground text-foreground font-medium px-1 min-w-[200px]"
-                    placeholder="enter search term"
-                    style={{ width: `${Math.max(query.length * 12 + 20, 200)}px` }}
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <h1 className="text-xl text-muted-foreground">
-                  {filteredItems.length} Results
-                </h1>
-                <Input
-                  value={searchInput}
+            <div className="flex flex-wrap items-center gap-2 text-xl">
+              <span className="text-muted-foreground">
+                {filteredItems.length} Results for
+              </span>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={query}
                   onChange={(e) => {
-                    setSearchInput(e.target.value);
                     setQuery(e.target.value);
                     setQueryState(e.target.value);
+                    setSearchInput(e.target.value);
                     updateFiltersInUrl(e.target.value, selectedStrategies, selectedTypes, selectedTags, selectedStatuses);
                   }}
-                  placeholder={fileName ? `Search within ${fileName}...` : "Search all content..."}
-                  className="min-w-[250px] max-w-xl"
+                  className="bg-transparent border-none outline-none border-b-2 border-dotted border-muted-foreground text-foreground font-medium px-1 min-w-[250px]"
+                  placeholder="enter search term"
+                  style={{ width: `${Math.max(query.length * 12 + 20, 250)}px` }}
                 />
               </div>
-            )}
+            </div>
           </div>
 
           {/* Filters and Export */}
