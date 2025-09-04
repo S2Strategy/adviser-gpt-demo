@@ -360,25 +360,28 @@ export function VaultSearchResults() {
             )}
           </div>
 
-          {/* Search Bar */}
+          {/* Inline Search with Query */}
           <div className="mb-6">
-            <div className="flex items-center gap-3">
-              <div className="relative flex-1 max-w-xl">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder={fileName ? `Search within ${fileName}...` : "Search all content..."}
-                  className="pl-10 h-10"
+            <div className="flex flex-wrap items-center gap-2 text-xl">
+              <span className="text-muted-foreground">
+                {fileName ? `Results in ${fileName} for` : 'Results for'}
+              </span>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    setQueryState(e.target.value);
+                    setSearchInput(e.target.value);
+                    updateFiltersInUrl(e.target.value, selectedStrategies, selectedTypes, selectedTags, selectedStatuses);
+                  }}
+                  className="bg-transparent border-none outline-none border-b-2 border-dotted border-muted-foreground text-foreground font-medium px-1 min-w-[200px]"
+                  placeholder="enter search term"
+                  style={{ width: `${Math.max(query.length * 12 + 20, 200)}px` }}
                 />
               </div>
-              <Button 
-                onClick={handleSearch}
-                className="bg-black text-white hover:bg-black/90 px-6"
-              >
-                Find
-              </Button>
+              <span className="text-muted-foreground">({filteredItems.length} results)</span>
             </div>
           </div>
 
