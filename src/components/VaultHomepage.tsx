@@ -9,7 +9,11 @@ import {
   ArrowUpDown,
   Copy,
   Building2,
-  Upload
+  Upload,
+  Files,
+  Type,
+  Target,
+  Database
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -203,11 +207,35 @@ export function VaultHomepage() {
         <Tabs value={state.activeView} onValueChange={(value) => setActiveView(value as any)}>
           {/* Tab Navigation */}
           <div className="flex items-center justify-between mb-6">
-            <TabsList className="grid w-fit grid-cols-4">
-              <TabsTrigger value="files">Files</TabsTrigger>
-              <TabsTrigger value="type">Type</TabsTrigger>
-              <TabsTrigger value="strategy">Strategy</TabsTrigger>
-              <TabsTrigger value="data">Data</TabsTrigger>
+            <TabsList className="inline-flex w-fit bg-transparent p-0 h-auto gap-2">
+              <TabsTrigger 
+                value="files"
+                className="inline-grid grid-flow-col items-center gap-2 px-2 py-2 h-8 rounded-lg text-[#71717A] bg-transparent hover:bg-[#F4F4F5] hover:text-[#09090B] data-[state=active]:bg-[#F4F4F5] data-[state=active]:text-[#09090B] data-[state=active]:shadow-none transition-colors"
+              >
+                <Files className="h-4 w-4" />
+                Files
+              </TabsTrigger>
+              <TabsTrigger 
+                value="type"
+                className="inline-grid grid-flow-col items-center gap-2 px-2 py-2 h-8 rounded-lg text-[#71717A] bg-transparent hover:bg-[#F4F4F5] hover:text-[#09090B] data-[state=active]:bg-[#F4F4F5] data-[state=active]:text-[#09090B] data-[state=active]:shadow-none transition-colors"
+              >
+                <Type className="h-4 w-4" />
+                Type
+              </TabsTrigger>
+              <TabsTrigger 
+                value="strategy"
+                className="inline-grid grid-flow-col items-center gap-2 px-2 py-2 h-8 rounded-lg text-[#71717A] bg-transparent hover:bg-[#F4F4F5] hover:text-[#09090B] data-[state=active]:bg-[#F4F4F5] data-[state=active]:text-[#09090B] data-[state=active]:shadow-none transition-colors"
+              >
+                <Target className="h-4 w-4" />
+                Strategy
+              </TabsTrigger>
+              <TabsTrigger 
+                value="data"
+                className="inline-grid grid-flow-col items-center gap-2 px-2 py-2 h-8 rounded-lg text-[#71717A] bg-transparent hover:bg-[#F4F4F5] hover:text-[#09090B] data-[state=active]:bg-[#F4F4F5] data-[state=active]:text-[#09090B] data-[state=active]:shadow-none transition-colors"
+              >
+                <Database className="h-4 w-4" />
+                Data
+              </TabsTrigger>
             </TabsList>
             
             <div className="flex items-center gap-4">
