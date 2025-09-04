@@ -21,7 +21,7 @@ export function MultiSelectFilter({
   selectedValues,
   onSelectionChange,
   placeholder,
-  width = "w-36"
+  width = "w-auto"
 }: MultiSelectFilterProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
