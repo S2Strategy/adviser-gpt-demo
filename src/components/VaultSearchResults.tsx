@@ -194,29 +194,21 @@ export function VaultSearchResults() {
   };
 
   const handleTagAdd = (id: string, tag: string) => {
-    // Update localStorage with new tag
-    const existingEdits = JSON.parse(localStorage.getItem('vaultEdits') || '{}');
-    const currentEdit = existingEdits[id] || {};
+    const currentEdit = getEdit(id) || {};
     const originalItem = MOCK_CONTENT_ITEMS.find(item => item.id === id);
     const currentTags = currentEdit.tags || originalItem?.tags || [];
     
     if (!currentTags.includes(tag)) {
-      existingEdits[id] = { ...currentEdit, tags: [...currentTags, tag] };
-      localStorage.setItem('vaultEdits', JSON.stringify(existingEdits));
+      saveEdit(id, { ...currentEdit, tags: [...currentTags, tag] });
     }
   };
 
   const handleTagRemove = (id: string, tag: string) => {
-    // Update localStorage removing tag
-    const existingEdits = JSON.parse(localStorage.getItem('vaultEdits') || '{}');
-    const currentEdit = existingEdits[id] || {};
+    const currentEdit = getEdit(id) || {};
     const originalItem = MOCK_CONTENT_ITEMS.find(item => item.id === id);
     const currentTags = currentEdit.tags || originalItem?.tags || [];
     
-    existingEdits[id] = { ...currentEdit, tags: currentTags.filter(t => t !== tag) };
-    localStorage.setItem('vaultEdits', JSON.stringify(existingEdits));
-    // Force re-render
-    window.dispatchEvent(new Event('storage'));
+    saveEdit(id, { ...currentEdit, tags: currentTags.filter(t => t !== tag) });
   };
 
   const handleNewTagSave = (itemId: string) => {
@@ -224,8 +216,6 @@ export function VaultSearchResults() {
       handleTagAdd(itemId, newTagValue.trim());
       setNewTagValue("");
       setAddingTagToItem(null);
-      // Force re-render
-      window.dispatchEvent(new Event('storage'));
     }
   };
 
@@ -701,14 +691,18 @@ export function VaultSearchResults() {
                                    if (e.key === 'Escape') handleNewTagCancel();
                                  }}
                                />
-                               <Check 
-                                 className="h-3 w-3 cursor-pointer text-green-600 hover:text-green-700" 
-                                 onClick={() => handleNewTagSave(item.id)}
-                               />
-                               <X 
-                                 className="h-3 w-3 cursor-pointer text-red-500 hover:text-red-600" 
-                                 onClick={handleNewTagCancel}
-                               />
+                                <button 
+                                  className="h-6 w-6 flex items-center justify-center border border-green-200 bg-white hover:bg-green-50 rounded text-green-600 hover:text-green-700 hover:border-green-300 transition-colors" 
+                                  onClick={() => handleNewTagSave(item.id)}
+                                >
+                                  <Check className="h-3 w-3" />
+                                </button>
+                                <button 
+                                  className="h-6 w-6 flex items-center justify-center border border-red-200 bg-white hover:bg-red-50 rounded text-red-500 hover:text-red-600 hover:border-red-300 transition-colors" 
+                                  onClick={handleNewTagCancel}
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
                              </div>
                            ) : (
                              <Badge 
