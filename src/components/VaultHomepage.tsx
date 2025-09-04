@@ -10,9 +10,8 @@ import {
   Copy,
   Building2,
   Upload,
-  Files,
-  Type,
-  Target,
+  Shapes,
+  Lightbulb,
   Database
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -131,15 +130,15 @@ export function VaultHomepage() {
           <h1 className="text-2xl font-semibold">Vault</h1>
           
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm">
+            <Button className="flex h-10 px-4 py-2 pl-3 justify-center items-center rounded-md border border-[#E4E4E7] bg-white">
               <Copy className="h-4 w-4 mr-2" />
               Find duplicates
             </Button>
-            <Button variant="outline" size="sm">
+            <Button className="flex h-10 px-4 py-2 pl-3 justify-center items-center rounded-md border border-[#E4E4E7] bg-white">
               <Building2 className="h-4 w-4 mr-2" />
               Edit firm details
             </Button>
-            <Button size="sm" className="bg-black text-white hover:bg-black/90">
+            <Button className="flex h-10 px-4 py-2 pl-3 justify-center items-center rounded-md bg-[#F4F4F5] shadow-[0_0_0_1px_rgba(3,7,18,0.12),0_1px_3px_-1px_rgba(3,7,18,0.11),0_2px_5px_0_rgba(3,7,18,0.06)]">
               <Upload className="h-4 w-4 mr-2" />
               Upload new
             </Button>
@@ -212,21 +211,21 @@ export function VaultHomepage() {
                 value="files"
                 className="inline-grid grid-flow-col items-center gap-2 px-2 py-2 h-8 rounded-lg text-[#71717A] bg-transparent hover:bg-[#F4F4F5] hover:text-[#09090B] data-[state=active]:bg-[#F4F4F5] data-[state=active]:text-[#09090B] data-[state=active]:shadow-none transition-colors"
               >
-                <Files className="h-4 w-4" />
+                <FileText className="h-4 w-4" />
                 Files
               </TabsTrigger>
               <TabsTrigger 
                 value="type"
                 className="inline-grid grid-flow-col items-center gap-2 px-2 py-2 h-8 rounded-lg text-[#71717A] bg-transparent hover:bg-[#F4F4F5] hover:text-[#09090B] data-[state=active]:bg-[#F4F4F5] data-[state=active]:text-[#09090B] data-[state=active]:shadow-none transition-colors"
               >
-                <Type className="h-4 w-4" />
+                <Shapes className="h-4 w-4" />
                 Type
               </TabsTrigger>
               <TabsTrigger 
                 value="strategy"
                 className="inline-grid grid-flow-col items-center gap-2 px-2 py-2 h-8 rounded-lg text-[#71717A] bg-transparent hover:bg-[#F4F4F5] hover:text-[#09090B] data-[state=active]:bg-[#F4F4F5] data-[state=active]:text-[#09090B] data-[state=active]:shadow-none transition-colors"
               >
-                <Target className="h-4 w-4" />
+                <Lightbulb className="h-4 w-4" />
                 Strategy
               </TabsTrigger>
               <TabsTrigger 
