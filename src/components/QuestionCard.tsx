@@ -269,7 +269,7 @@ export function QuestionCard({
             <Badge 
               key={tag} 
               variant="secondary" 
-              className="text-xs group/tag cursor-pointer hover:bg-secondary/80 transition-colors"
+              className="text-xs group/tag cursor-pointer transition-colors"
             >
               <Tag className="h-3 w-3 mr-1" />
               {tag}

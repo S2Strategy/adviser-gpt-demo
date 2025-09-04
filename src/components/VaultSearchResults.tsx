@@ -353,7 +353,7 @@ export function VaultSearchResults() {
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
             {fileName ? (
               <span className="text-foreground font-medium">
-                {fileCount} questions in {fileName}
+                {fileName}
               </span>
             ) : (
               <span className="text-foreground font-medium">
@@ -365,9 +365,15 @@ export function VaultSearchResults() {
           {/* Main Title and Search */}
           <div className="mb-6">
             <div className="flex flex-wrap items-center gap-2 text-xl">
+              {fileName ? (
               <span className="text-muted-foreground">
-                {filteredItems.length} Results for
+                 {query ? `${filteredItems.length}` : `${fileCount}`} Questions 
               </span>
+              ) : (
+                <span className="text-muted-foreground">
+                  {filteredItems.length} Results {query ? `for` : ""}
+                </span>
+              )}
               <div className="relative">
                 <input
                   type="text"
@@ -378,8 +384,8 @@ export function VaultSearchResults() {
                     setSearchInput(e.target.value);
                     updateFiltersInUrl(e.target.value, selectedStrategies, selectedTypes, selectedTags, selectedStatuses);
                   }}
-                  className="bg-transparent border-none outline-none border-b-2 border-dotted border-muted-foreground text-foreground font-medium px-1 min-w-[250px]"
-                  placeholder="enter search term"
+                  className="bg-transparent outline-none border-b-2 border-dotted border-muted-foreground text-foreground font-medium px-1 min-w-[250px]"
+                  placeholder="filter results"
                   style={{ width: `${Math.max(query.length * 12 + 20, 250)}px` }}
                 />
               </div>
@@ -614,8 +620,8 @@ export function VaultSearchResults() {
                          
                          {/* Tags in Question Section */}
                          <div className="flex flex-wrap items-center gap-2 mt-3">
-                           <Badge variant="outline" className="vault-tag" style={{ backgroundColor: '#F4F4F5' }}>Evergreen</Badge>
-                           <Badge variant="outline" className="vault-tag" style={{ backgroundColor: '#F4F4F5' }}>{displayData.strategy}</Badge>
+                           <Badge variant="outline" className="vault-tag">Evergreen</Badge>
+                           <Badge variant="outline" className="vault-tag">{displayData.strategy}</Badge>
                            {displayData.tags.map(tag => (
                              <Badge key={tag} variant="outline" className="text-xs vault-tag flex items-center gap-1" style={{ backgroundColor: '#F4F4F5' }}>
                                {tag}

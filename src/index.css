@@ -215,7 +215,7 @@ All colors MUST be HSL.
   }
 
   .vault-tag:hover {
-    @apply scale-105 shadow-md;
+    @apply shadow-sm;
   }
 
   .vault-tag-remove {
@@ -232,8 +232,10 @@ All colors MUST be HSL.
     @apply transition-all duration-300;
   }
 
-  .vault-result-card:hover {
-    @apply shadow-lg transform translate-y-[-2px];
+  .vault-result-card:hover,
+  .valut-result-card:focus,
+  .vault-result-card:focus-within {
+    @apply shadow-lg transform translate-y-[-1px];
   }
 }
 
