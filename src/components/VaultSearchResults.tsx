@@ -68,22 +68,15 @@ export function VaultSearchResults() {
   // Determine if we're in file view mode
   const isFileMode = location.pathname === '/vault/file' && fileName;
   
+  // Initialize state with URL parameters
   const [query, setQueryState] = useState(urlQuery);
   const [searchInput, setSearchInput] = useState(urlQuery);
   const [editingItem, setEditingItem] = useState<QuestionItem | null>(null);
   
-  const [selectedStrategies, setSelectedStrategies] = useState<string[]>(
-    searchParams.get('strategy')?.split(',').filter(Boolean) || []
-  );
-  const [selectedTypes, setSelectedTypes] = useState<string[]>(
-    searchParams.get('type')?.split(',').filter(Boolean) || []
-  );
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(
-    searchParams.get('status')?.split(',').filter(Boolean) || []
-  );
-  const [selectedTags, setSelectedTags] = useState<string[]>(
-    searchParams.get('tags')?.split(',').filter(Boolean) || []
-  );
+  const [selectedStrategies, setSelectedStrategies] = useState<string[]>([]);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [expandedAnswers, setExpandedAnswers] = useState<Set<string>>(new Set());
   const [addingTagToItem, setAddingTagToItem] = useState<string | null>(null);
   const [newTagValue, setNewTagValue] = useState("");
@@ -266,12 +259,27 @@ export function VaultSearchResults() {
 
   // Removed handleSearchDebounced - search now only triggers on Enter
 
-  // Update width when query changes in edit mode
+  // Initialize state from URL parameters on mount and when they change
   useEffect(() => {
+    // Reset all state based on URL parameters
     setQuery(urlQuery);
     setQueryState(urlQuery);
     setSearchInput(urlQuery);
-  }, [urlQuery]);
+    
+    // Reset filters based on URL parameters
+    setSelectedStrategies(
+      searchParams.get('strategy')?.split(',').filter(Boolean) || []
+    );
+    setSelectedTypes(
+      searchParams.get('type')?.split(',').filter(Boolean) || []
+    );
+    setSelectedStatuses(
+      searchParams.get('status')?.split(',').filter(Boolean) || []
+    );
+    setSelectedTags(
+      searchParams.get('tags')?.split(',').filter(Boolean) || []
+    );
+  }, [urlQuery, searchParams]);
 
   /**
  * Format an ISO date string into a human-friendly relative time.

@@ -20,5 +20,8 @@ export default function Vault() {
   const isFileRoute = location.pathname === '/vault/file';
   const shouldShowSearchResults = isSearchRoute || isFileRoute || query || fileName || hasFilters;
 
-  return shouldShowSearchResults ? <VaultSearchResults /> : <VaultHomepage />;
+  // Create a key that changes when URL parameters change to force re-render
+  const searchKey = searchParams.toString();
+  
+  return shouldShowSearchResults ? <VaultSearchResults key={searchKey} /> : <VaultHomepage />;
 }

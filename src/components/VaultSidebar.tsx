@@ -30,6 +30,33 @@ export function VaultSidebar() {
   
   const recentSearches = savedSearches.slice(0, 5);
 
+  // Helper function to generate clean search URLs
+  const generateSearchUrl = (search: any) => {
+    const params = new URLSearchParams();
+    
+    if (search.query && search.query.trim()) params.set('query', search.query.trim());
+    if (search.filters.strategies?.length > 0) {
+      const strategies = search.filters.strategies.filter((s: string) => s && s.trim());
+      if (strategies.length > 0) params.set('strategy', strategies.join(','));
+    }
+    if (search.filters.types?.length > 0) {
+      const types = search.filters.types.filter((t: string) => t && t.trim());
+      if (types.length > 0) params.set('type', types.join(','));
+    }
+    if (search.filters.tags?.length > 0) {
+      const tags = search.filters.tags.filter((t: string) => t && t.trim());
+      if (tags.length > 0) params.set('tags', tags.join(','));
+    }
+    if (search.filters.statuses?.length > 0) {
+      const statuses = search.filters.statuses.filter((s: string) => s && s.trim());
+      if (statuses.length > 0) params.set('status', statuses.join(','));
+    }
+    if (search.sort && search.sort !== 'relevance') params.set('sort', search.sort);
+    
+    const queryString = params.toString();
+    return queryString ? `/vault/search?${queryString}` : '/vault/search';
+  };
+
   const isActiveRoute = (path: string) => {
     if (path === "/vault") {
       return location.pathname === "/vault" || location.pathname.startsWith("/vault/");
@@ -208,7 +235,7 @@ export function VaultSidebar() {
                     {recentSearches.map((search) => (
                       <li key={search.id}>
                         <Link
-                          to={`/vault/search?query=${encodeURIComponent(search.query)}&strategy=${search.filters.strategies?.join(',') || ''}&type=${search.filters.types?.join(',') || ''}&tags=${search.filters.tags?.join(',') || ''}&status=${search.filters.statuses?.join(',') || ''}&sort=${search.sort || 'relevance'}`}
+                          to={generateSearchUrl(search)}
                           className="h-6 px-2 rounded-md flex items-center gap-2 text-[#71717A] hover:bg-gray-100 transition-colors"
                         >
                           <Bookmark className="w-3 h-3" />
