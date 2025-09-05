@@ -3,7 +3,7 @@ import { Bookmark, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useSavedSearches } from "@/hooks/useSavedSearches";
+import { useSavedSearches } from "@/contexts/SavedSearchesContext";
 import { useToast } from "@/hooks/use-toast";
 
 interface SaveSearchPromptProps {

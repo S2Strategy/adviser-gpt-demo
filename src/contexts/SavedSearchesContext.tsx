@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export interface SavedSearch {
   id: string;
@@ -14,9 +14,27 @@ export interface SavedSearch {
   createdAt: Date;
 }
 
+interface SavedSearchesContextType {
+  savedSearches: SavedSearch[];
+  saveSearch: (name: string, query: string, filters: SavedSearch['filters'], sort?: string) => void;
+  deleteSearch: (id: string) => void;
+  loadSearch: (search: SavedSearch) => {
+    query: string;
+    filters: SavedSearch['filters'];
+    sort?: string;
+  };
+  getRecentSearches: (limit?: number) => SavedSearch[];
+}
+
+const SavedSearchesContext = createContext<SavedSearchesContextType | undefined>(undefined);
+
 const SAVED_SEARCHES_KEY = 'vault-saved-searches';
 
-export function useSavedSearches() {
+interface SavedSearchesProviderProps {
+  children: ReactNode;
+}
+
+export function SavedSearchesProvider({ children }: SavedSearchesProviderProps) {
   const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
 
   useEffect(() => {
@@ -67,11 +85,25 @@ export function useSavedSearches() {
     return savedSearches.slice(0, limit);
   };
 
-  return {
+  const value: SavedSearchesContextType = {
     savedSearches,
     saveSearch,
     deleteSearch,
     loadSearch,
     getRecentSearches,
   };
+
+  return (
+    <SavedSearchesContext.Provider value={value}>
+      {children}
+    </SavedSearchesContext.Provider>
+  );
+}
+
+export function useSavedSearches() {
+  const context = useContext(SavedSearchesContext);
+  if (context === undefined) {
+    throw new Error('useSavedSearches must be used within a SavedSearchesProvider');
+  }
+  return context;
 }

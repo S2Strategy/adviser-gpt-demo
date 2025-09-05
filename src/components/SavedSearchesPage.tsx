@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { useSavedSearches } from "@/hooks/useSavedSearches";
+import { useSavedSearches } from "@/contexts/SavedSearchesContext";
 import { useToast } from "@/hooks/use-toast";
 import { VaultSidebar } from "./VaultSidebar";
 import { Link } from "react-router-dom";

@@ -19,16 +19,16 @@ import {
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useSavedSearches } from "@/hooks/useSavedSearches";
+import { useSavedSearches } from "@/contexts/SavedSearchesContext";
 
 export function VaultSidebar() {
   const location = useLocation();
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isSavedSearchesOpen, setIsSavedSearchesOpen] = useState(true);
-  const { getRecentSearches } = useSavedSearches();
+  const { savedSearches } = useSavedSearches();
   
-  const recentSearches = getRecentSearches(5);
+  const recentSearches = savedSearches.slice(0, 5);
 
   const isActiveRoute = (path: string) => {
     if (path === "/vault") {
