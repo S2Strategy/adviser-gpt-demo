@@ -4,6 +4,7 @@ import { VaultSidebar } from "./VaultSidebar";
 import { MultiSelectFilter } from "./MultiSelectFilter";
 import { 
   Search,
+  Archive,
   ChevronRight, 
   Home, 
   ChevronDown, 
@@ -19,19 +20,22 @@ import {
   UsersRound,
   CornerDownRight,
   Check,
-  ArrowUpDown
+  ArrowUpDown,
+  Lightbulb
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { VaultEditSheet } from "./VaultEditSheet";
 import { useVaultState, useVaultEdits } from "@/hooks/useVaultState";
 import { useToast } from "@/hooks/use-toast";
 import { MOCK_CONTENT_ITEMS } from "@/data/mockVaultData";
-import { STRATEGIES, CONTENT_TYPES, STATUS_OPTIONS } from "@/types/vault";
+import { STRATEGIES, CONTENT_TYPES, STATUS_OPTIONS, QuestionItem } from "@/types/vault";
 import { ContentItem } from "@/types/vault";
 import { smartSearch, getSemanticVariations, getSearchSuggestions } from "@/utils/smartSearch";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@radix-ui/react-tooltip";
 
 export function VaultSearchResults() {
   const navigate = useNavigate();
@@ -45,13 +49,26 @@ export function VaultSearchResults() {
   const urlQuery = searchParams.get('query') || '';
   const fileName = searchParams.get('fileName');
   const fileCount = parseInt(searchParams.get('count') || '0');
+
+  // Flatten the nested data structure for processing
+  const flattenItems = (): QuestionItem[] => {
+    return MOCK_CONTENT_ITEMS.flatMap(doc => 
+      doc.items.map(item => ({
+        ...item,
+        documentTitle: doc.title,
+        documentId: doc.id
+      }))
+    );
+  };
+
+  const allItems = flattenItems();
   
   // Determine if we're in file view mode
   const isFileMode = location.pathname === '/vault/file' && fileName;
   
   const [query, setQueryState] = useState(urlQuery);
   const [searchInput, setSearchInput] = useState(urlQuery);
-  const [editingItem, setEditingItem] = useState<ContentItem | null>(null);
+  const [editingItem, setEditingItem] = useState<QuestionItem | null>(null);
   
   const [selectedStrategies, setSelectedStrategies] = useState<string[]>(
     searchParams.get('strategy')?.split(',').filter(Boolean) || []
@@ -68,22 +85,26 @@ export function VaultSearchResults() {
   const [expandedAnswers, setExpandedAnswers] = useState<Set<string>>(new Set());
   const [addingTagToItem, setAddingTagToItem] = useState<string | null>(null);
   const [newTagValue, setNewTagValue] = useState("");
+  const [addingStrategyToItem, setAddingStrategyToItem] = useState<string | null>(null);
+  const [newStrategyValue, setNewStrategyValue] = useState("");
   
   // Get sort state from URL or default to 'relevance'
   const currentSort = searchParams.get('sort') || state.sort || 'relevance';
 
+  // Helper function to normalize strategies (convert single string to array)
+  const normalizeStrategies = (strategy: string | string[]): string[] => {
+    return Array.isArray(strategy) ? strategy : [strategy];
+  };
+
   // Helper function to merge original item with saved edits
-  const getDisplayData = (item: ContentItem) => {
+  const getDisplayData = (item: QuestionItem) => {
     const savedEdit = getEdit(item.id);
     if (!savedEdit) return item;
 
     return {
       ...item,
-      content: {
-        ...item.content,
-        question: savedEdit.question || item.content?.question,
-        answer: savedEdit.answer || item.content?.answer,
-      },
+      question: savedEdit.question || item.question,
+      answer: savedEdit.answer || item.answer,
       strategy: savedEdit.strategy || item.strategy,
       tags: savedEdit.tags || item.tags,
     };
@@ -116,14 +137,15 @@ export function VaultSearchResults() {
   };
 
   // Use smart search for query matching, then apply filters
-  const smartSearchResults = query ? smartSearch(MOCK_CONTENT_ITEMS, query) : MOCK_CONTENT_ITEMS;
+  const smartSearchResults = query ? smartSearch(allItems, query) : allItems;
   
   // Apply additional filters to smart search results
   const filteredItems = smartSearchResults.filter(item => {
     const displayData = getDisplayData(item);
     
+    const itemStrategies = normalizeStrategies(displayData.strategy);
     const matchesStrategy = selectedStrategies.length === 0 || 
-      selectedStrategies.includes(displayData.strategy);
+      selectedStrategies.some(selectedStrategy => itemStrategies.includes(selectedStrategy));
     const matchesType = selectedTypes.length === 0 || 
       selectedTypes.includes(displayData.type);
     const matchesTags = selectedTags.length === 0 || 
@@ -135,7 +157,7 @@ export function VaultSearchResults() {
   });
 
   // Sort filtered items
-  const sortItems = (items: ContentItem[], sortBy: string) => {
+  const sortItems = (items: QuestionItem[], sortBy: string) => {
     switch (sortBy) {
       case 'lastEdited':
         return [...items].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
@@ -249,15 +271,72 @@ export function VaultSearchResults() {
     setSearchInput(urlQuery);
   }, [urlQuery]);
 
-  const formatRelativeTime = (isoString: string) => {
-    const date = new Date(isoString);
-    const now = new Date();
-    const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (diffInDays === 0) return 'today';
-    if (diffInDays === 1) return '1 day ago';
-    return `${diffInDays} days ago`;
+  /**
+ * Format an ISO date string into a human-friendly relative time.
+ * Rules:
+ * - < 7 days: "today", "1 day ago", "N days ago"
+ * - 7–31 days: "1–4 weeks ago" (rounded)
+ * - 31–364 days: "1–12 months ago" (calendar months)
+ * - 365–379 days: "1y ago"
+ * - ≥ 380 days: "Ny Nmo ago" (calendar years + remaining months)
+ */
+const formatRelativeTime = (isoString: string) => {
+  const date = new Date(isoString);
+  const now = new Date();
+
+  // Guard: invalid or future dates -> "today"
+  if (isNaN(date.getTime()) || date.getTime() > now.getTime()) {
+    return "today";
+  }
+
+  // Diff in whole days using UTC to avoid DST issues
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const toUtcMidnight = (d: Date) =>
+    Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  const diffInDays = Math.floor(
+    (toUtcMidnight(now) - toUtcMidnight(date)) / msPerDay
+  );
+
+  if (diffInDays === 0) return "today";
+  if (diffInDays === 1) return "1 day ago";
+  if (diffInDays < 7) return `${diffInDays} days ago`;
+
+  if (diffInDays <= 31) {
+    const weeks = Math.min(4, Math.max(1, Math.round(diffInDays / 7)));
+    return weeks === 1 ? "1 week ago" : `${weeks} weeks ago`;
+  }
+
+  // Helper: calendar diff in years & months (UTC)
+  const diffYearsMonths = (from: Date, to: Date) => {
+    let years = to.getUTCFullYear() - from.getUTCFullYear();
+    let months = to.getUTCMonth() - from.getUTCMonth();
+    let days = to.getUTCDate() - from.getUTCDate();
+
+    if (days < 0) {
+      months -= 1;
+    }
+    if (months < 0) {
+      years -= 1;
+      months += 12;
+    }
+    return { years, months };
   };
+
+  if (diffInDays < 365) {
+    const { years, months } = diffYearsMonths(date, now);
+    const m = years * 12 + Math.max(1, months); // ensure at least 1
+    return m === 1 ? "1 month ago" : `${m} months ago`;
+  }
+
+  if (diffInDays < 380) return "1y ago";
+
+  const { years, months } = diffYearsMonths(date, now);
+  if (months > 0) {
+    return `${years}y ${months}mo ago`;
+  }
+  return `${years}y ago`;
+}
+
 
   const formatFullDate = (isoString: string) => {
     return new Date(isoString).toLocaleDateString('en-US', {
@@ -277,7 +356,7 @@ export function VaultSearchResults() {
     setExpandedAnswers(newExpanded);
   };
 
-  const handleEdit = (item: ContentItem) => {
+  const handleEdit = (item: QuestionItem) => {
     setEditingItem(item);
   };
 
@@ -288,7 +367,7 @@ export function VaultSearchResults() {
 
   const handleTagAdd = (id: string, tag: string) => {
     const currentEdit = getEdit(id) || {};
-    const originalItem = MOCK_CONTENT_ITEMS.find(item => item.id === id);
+    const originalItem = allItems.find(item => item.id === id);
     const currentTags = currentEdit.tags || originalItem?.tags || [];
     
     if (!currentTags.includes(tag)) {
@@ -298,10 +377,19 @@ export function VaultSearchResults() {
 
   const handleTagRemove = (id: string, tag: string) => {
     const currentEdit = getEdit(id) || {};
-    const originalItem = MOCK_CONTENT_ITEMS.find(item => item.id === id);
+    const originalItem = allItems.find(item => item.id === id);
     const currentTags = currentEdit.tags || originalItem?.tags || [];
     
     saveEdit(id, { ...currentEdit, tags: currentTags.filter(t => t !== tag) });
+  };
+
+  const handleStrategyRemove = (id: string, strategyToRemove: string) => {
+    const currentEdit = getEdit(id) || {};
+    const originalItem = allItems.find(item => item.id === id);
+    const currentStrategies = normalizeStrategies(currentEdit.strategy || originalItem?.strategy || []);
+    
+    const updatedStrategies = currentStrategies.filter(s => s !== strategyToRemove);
+    saveEdit(id, { ...currentEdit, strategy: updatedStrategies });
   };
 
   const handleNewTagSave = (itemId: string) => {
@@ -316,6 +404,17 @@ export function VaultSearchResults() {
     setNewTagValue("");
     setAddingTagToItem(null);
   };
+
+  const handleStrategyAdd = (id: string, strategy: string) => {
+    const currentEdit = getEdit(id) || {};
+    const originalItem = allItems.find(item => item.id === id);
+    const currentStrategies = normalizeStrategies(currentEdit.strategy || originalItem?.strategy || []);
+    
+    if (!currentStrategies.includes(strategy)) {
+      saveEdit(id, { ...currentEdit, strategy: [...currentStrategies, strategy] });
+    }
+  };
+
 
   const handleQuickEdit = (id: string, field: string, value: string) => {
     // Use the useVaultEdits hook instead of direct localStorage manipulation
@@ -336,10 +435,10 @@ export function VaultSearchResults() {
       
       const exportItems = filteredItems.map(item => ({
         id: item.id,
-        title: item.title,
-        answer: item.content?.answer || '',
-        question: item.content?.question || '',
-        fileName: item.title, // Use title as filename for export
+        title: (item as any).documentTitle || 'Unknown Document',
+        answer: item.answer || '',
+        question: item.question || '',
+        fileName: (item as any).documentTitle || 'Unknown Document', // Use document title as filename for export
         lastEdited: formatFullDate(item.updatedAt),
         lastEditor: item.updatedBy,
         tags: getDisplayData(item).tags,
@@ -627,12 +726,12 @@ export function VaultSearchResults() {
             const hasEdits = !!getEdit(item.id);
             const isFirstResult = index === 0;
             const isExpanded = expandedAnswers.has(item.id);
-            const answer = displayData.content?.answer || '';
+            const answer = displayData.answer || '';
             const shouldTruncate = answer.length > 300;
             const displayAnswer = isExpanded ? answer : answer.substring(0, 300);
             
             return (
-          <div key={item.id} className="border rounded-lg bg-card vault-result-card overflow-hidden">
+          <div key={item.id} className="border rounded-lg bg-card vault-result-card">
             {/* Header with file info and badge */}
             <div className="flex items-start justify-between pb-4 border-b border-[#E4E4E7] px-6 py-4">
               <div className="flex items-center min-w-0 gap-3 flex-1">
@@ -649,18 +748,28 @@ export function VaultSearchResults() {
                     lineHeight: '1.4' 
                   }}
                 >
-                  {item.title}
+                  {(item as any).documentTitle || 'Unknown Document'}
                 </div>
                 )}
                 <div className="flex items-center gap-4 text-sm" style={{ fontSize: '14px', lineHeight: '1.4' }}>
                   <div className="flex items-center gap-1 whitespace-nowrap">
                     <Calendar className="h-4 w-4" style={{ color: '#71717A' }} />
-                    <span style={{ color: '#27272A' }}>{formatRelativeTime(item.updatedAt)}</span>
-                    <span style={{ color: '#71717A' }}>({formatFullDate(item.updatedAt)})</span>
+                    <span style={{ color: '#71717A' }}>Last edited</span>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                      <span className="inline-grid border border-t-0 border-x-0 border-b-1 border-dashed border-gray-300 cursor-help" style={{ color: '#27272A' }}>{formatRelativeTime(item.updatedAt)}</span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="z-50 overflow-hidden rounded-md border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2">{formatFullDate(item.updatedAt)}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    
+                    <span style={{ color: '#71717A' }}>by</span>
+                    <span style={{ color: '#27272A' }}>{item.updatedBy}</span>
                   </div>
                   <div className="flex items-center gap-1 whitespace-nowrap">
-                    <UsersRound className="h-4 w-4" style={{ color: '#71717A' }} />
-                    <span>{item.updatedBy}</span>
+
+                    
                   </div>
                   {hasEdits && (
                     <Badge variant="outline" className="text-xs flex-shrink-0">
@@ -680,7 +789,7 @@ export function VaultSearchResults() {
             </div>
 
                  {/* Answer Section */}
-                 {displayData.content?.answer && (
+                 {displayData.answer && (
                    <div className="space-y-2 px-6 py-4">
                      <h4 style={{ fontSize: '12px', fontWeight: 'bold', lineHeight: '1.5', letterSpacing: '-0.2px' }}>Answer</h4>
                       <div className="bg-muted/50 rounded-md p-4">
@@ -705,7 +814,7 @@ export function VaultSearchResults() {
                  )}
 
                  {/* Question Section */}
-                 {displayData.content?.question && (
+                 {displayData.question && (
                    <div className="space-y-2 px-6 pb-4" style={{ paddingInlineStart: '40px' }}>
                      <div className="flex items-start gap-2">
                        <CornerDownRight className="h-4 w-4 mt-1 flex-shrink-0" style={{ color: '#71717A' }} />
@@ -713,13 +822,71 @@ export function VaultSearchResults() {
                          <h4 style={{ fontSize: '12px', fontWeight: 'bold', lineHeight: '1.5', letterSpacing: '-0.2px' }}>Question</h4>
                           <p 
                             style={{ fontSize: '16px', lineHeight: '1.5', fontWeight: '700', letterSpacing: '-0.4px' }}
-                            dangerouslySetInnerHTML={{ __html: highlightSearchTerms(displayData.content.question, query) }}
+                            dangerouslySetInnerHTML={{ __html: highlightSearchTerms(displayData.question, query) }}
                           />
                          
                          {/* Tags in Question Section */}
                          <div className="flex flex-wrap items-center gap-2 mt-3">
-                           <Badge variant="outline" className="vault-tag">Evergreen</Badge>
-                           <Badge variant="outline" className="vault-tag">{displayData.strategy}</Badge>
+                           {normalizeStrategies(displayData.strategy).map((strategy, index) => (
+                             <Badge 
+                               key={`${strategy}-${index}`} 
+                               variant="outline" 
+                               className="vault-tag flex items-center gap-1 cursor-pointer hover:bg-blue-50"
+                               onClick={() => {
+                                 // Add click handler for editing strategies
+                                 console.log('Edit strategy:', strategy);
+                               }}
+                             >
+                               <Lightbulb className="h-3 w-3" />
+                               {strategy}
+                               <X 
+                                 className="h-3 w-3 cursor-pointer hover:text-red-500" 
+                                 onClick={(e) => {
+                                   e.stopPropagation();
+                                   handleStrategyRemove(item.id, strategy);
+                                 }}
+                               />
+                             </Badge>
+                           ))}
+                           {addingStrategyToItem === item.id ? (
+                             <Select 
+                               value={newStrategyValue} 
+                               onValueChange={(value) => {
+                                 handleStrategyAdd(item.id, value);
+                                 setNewStrategyValue("");
+                                 setAddingStrategyToItem(null);
+                               }}
+                               onOpenChange={(open) => {
+                                 if (!open) {
+                                   setAddingStrategyToItem(null);
+                                   setNewStrategyValue("");
+                                 }
+                               }}
+                             >
+                               <SelectTrigger className="h-6 text-xs w-32">
+                                 <SelectValue placeholder="Select strategy" />
+                               </SelectTrigger>
+                               <SelectContent>
+                                 {STRATEGIES.filter(strategy => 
+                                   !normalizeStrategies(displayData.strategy).includes(strategy)
+                                 ).map(strategyOption => (
+                                   <SelectItem key={strategyOption} value={strategyOption}>
+                                     {strategyOption}
+                                   </SelectItem>
+                                 ))}
+                               </SelectContent>
+                             </Select>
+                           ) : (
+                             <Badge 
+                               variant="outline" 
+                               className="text-xs text-muted-foreground vault-tag cursor-pointer hover:bg-muted flex items-center gap-1"
+                               style={{ backgroundColor: '#F4F4F5' }}
+                               onClick={() => setAddingStrategyToItem(item.id)}
+                             >
+                               <Lightbulb className="h-3 w-3" />
+                               + Strategy
+                             </Badge>
+                           )}
                            {displayData.tags.map(tag => (
                              <Badge key={tag} variant="outline" className="text-xs vault-tag flex items-center gap-1" style={{ backgroundColor: '#F4F4F5' }}>
                                {tag}
@@ -773,20 +940,21 @@ export function VaultSearchResults() {
 
                 {/* Action Footer */}
                 <div className="border-t border-[#E4E4E7] px-6 py-3 flex items-center justify-end gap-2 rounded-b-lg" style={{ backgroundColor: '#fafafa' }}>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button className="flex h-8 px-3 justify-center items-center gap-2 rounded-md bg-white text-sm font-medium" style={{ boxShadow: '0 0 0 1px rgba(3, 7, 18, 0.12), 0 1px 3px -1px rgba(3, 7, 18, 0.11), 0 2px 5px 0 rgba(3, 7, 18, 0.06)' }}>
-                        Actions
-                        <ChevronDown className="h-4 w-4" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem>Archive</DropdownMenuItem>
-                      <DropdownMenuItem>Mark as Stale</DropdownMenuItem>
-                      <DropdownMenuItem>Share</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-
+                  <button 
+                    className="flex h-8 px-2 pl-3 justify-center items-center gap-2 rounded-md bg-white text-sm font-medium"
+                    style={{ boxShadow: '0 0 0 1px rgba(3, 7, 18, 0.12), 0 1px 3px -1px rgba(3, 7, 18, 0.11), 0 2px 5px 0 rgba(3, 7, 18, 0.06)' }}
+                    onClick={() => handleEdit(item)}
+                  >
+                    <Edit className="h-4 w-4" />
+                    Edit
+                  </button>
+                  <button 
+                    className="flex h-8 px-2 pl-3 justify-center items-center gap-2 rounded-md bg-white text-sm font-medium"
+                    style={{ boxShadow: '0 0 0 1px rgba(3, 7, 18, 0.12), 0 1px 3px -1px rgba(3, 7, 18, 0.11), 0 2px 5px 0 rgba(3, 7, 18, 0.06)' }}
+                  >
+                    <Archive className="h-4 w-4" />
+                    Archive
+                  </button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button className="flex h-8 px-2 pl-3 justify-center items-center gap-2 rounded-md bg-white text-sm font-medium" style={{ boxShadow: '0 0 0 1px rgba(3, 7, 18, 0.12), 0 1px 3px -1px rgba(3, 7, 18, 0.11), 0 2px 5px 0 rgba(3, 7, 18, 0.06)' }}>
@@ -803,18 +971,9 @@ export function VaultSearchResults() {
                   </DropdownMenu>
 
                   <button 
-                    className="flex h-8 px-2 pl-3 justify-center items-center gap-2 rounded-md bg-white text-sm font-medium"
-                    style={{ boxShadow: '0 0 0 1px rgba(3, 7, 18, 0.12), 0 1px 3px -1px rgba(3, 7, 18, 0.11), 0 2px 5px 0 rgba(3, 7, 18, 0.06)' }}
-                    onClick={() => handleEdit(item)}
-                  >
-                    <Edit className="h-4 w-4" />
-                    Edit
-                  </button>
-
-                  <button 
                     className="flex h-8 px-2 pl-3 justify-center items-center gap-2 rounded-md text-sm font-medium"
                     style={{ backgroundColor: '#18181B', color: '#fafafa', boxShadow: '0 0 0 1px rgba(3, 7, 18, 0.12), 0 1px 3px -1px rgba(3, 7, 18, 0.11), 0 2px 5px 0 rgba(3, 7, 18, 0.06)' }}
-                    onClick={() => handleCopyAnswer(displayData.content?.answer || '')}
+                    onClick={() => handleCopyAnswer(displayData.answer || '')}
                   >
                     <Copy className="h-4 w-4" />
                     Copy

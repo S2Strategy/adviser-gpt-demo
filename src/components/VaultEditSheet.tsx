@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Save } from "lucide-react";
+import { X, Save, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,11 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { ContentItem } from "@/types/vault";
+import { ContentItem, QuestionItem } from "@/types/vault";
 import { STRATEGIES } from "@/types/vault";
 
 interface VaultEditSheetProps {
-  item: ContentItem;
+  item: QuestionItem;
   open: boolean;
   onClose: () => void;
   onSave: (editData: any) => void;
@@ -19,24 +19,30 @@ interface VaultEditSheetProps {
 }
 
 export function VaultEditSheet({ item, open, onClose, onSave, existingEdit }: VaultEditSheetProps) {
-  const [question, setQuestion] = useState(existingEdit?.question || item.content?.question || "");
-  const [answer, setAnswer] = useState(existingEdit?.answer || item.content?.answer || "");
-  const [strategy, setStrategy] = useState(existingEdit?.strategy || item.strategy);
+  // Helper function to normalize strategies (convert single string to array)
+  const normalizeStrategies = (strategy: string | string[]): string[] => {
+    return Array.isArray(strategy) ? strategy : [strategy];
+  };
+
+  const [question, setQuestion] = useState(existingEdit?.question || item.question || "");
+  const [answer, setAnswer] = useState(existingEdit?.answer || item.answer || "");
+  const [strategies, setStrategies] = useState<string[]>(normalizeStrategies(existingEdit?.strategy || item.strategy));
   const [tags, setTags] = useState<string[]>(existingEdit?.tags || item.tags || []);
   const [newTag, setNewTag] = useState("");
+  const [newStrategy, setNewStrategy] = useState("");
   const { toast } = useToast();
 
   // Reset form when item changes
   useEffect(() => {
     if (existingEdit) {
-      setQuestion(existingEdit.question || item.content?.question || "");
-      setAnswer(existingEdit.answer || item.content?.answer || "");
-      setStrategy(existingEdit.strategy || item.strategy);
+      setQuestion(existingEdit.question || item.question || "");
+      setAnswer(existingEdit.answer || item.answer || "");
+      setStrategies(normalizeStrategies(existingEdit.strategy || item.strategy));
       setTags(existingEdit.tags || item.tags || []);
     } else {
-      setQuestion(item.content?.question || "");
-      setAnswer(item.content?.answer || "");
-      setStrategy(item.strategy);
+      setQuestion(item.question || "");
+      setAnswer(item.answer || "");
+      setStrategies(normalizeStrategies(item.strategy));
       setTags(item.tags || []);
     }
   }, [item, existingEdit]);
@@ -58,7 +64,7 @@ export function VaultEditSheet({ item, open, onClose, onSave, existingEdit }: Va
     const editData = {
       question,
       answer,
-      strategy,
+      strategy: strategies,
       tags,
       updatedAt: new Date().toISOString(),
     };
@@ -80,6 +86,17 @@ export function VaultEditSheet({ item, open, onClose, onSave, existingEdit }: Va
 
   const handleRemoveTag = (tagToRemove: string) => {
     setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
+  const handleAddStrategy = () => {
+    if (newStrategy.trim() && !strategies.includes(newStrategy.trim())) {
+      setStrategies([...strategies, newStrategy.trim()]);
+      setNewStrategy("");
+    }
+  };
+
+  const handleRemoveStrategy = (strategyToRemove: string) => {
+    setStrategies(strategies.filter(strategy => strategy !== strategyToRemove));
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -114,7 +131,7 @@ export function VaultEditSheet({ item, open, onClose, onSave, existingEdit }: Va
           <div className="flex items-center justify-between p-6 border-b">
             <div>
               <h2 className="text-lg font-semibold">Editing Question/Answer</h2>
-              <p className="text-sm text-muted-foreground mt-1">{item.title}</p>
+              <p className="text-sm text-muted-foreground mt-1">{(item as any).documentTitle || 'Unknown Document'}</p>
             </div>
             <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="h-4 w-4" />
@@ -137,19 +154,49 @@ export function VaultEditSheet({ item, open, onClose, onSave, existingEdit }: Va
 
             {/* Strategy Field */}
             <div className="space-y-2">
-              <Label htmlFor="strategy">Strategy</Label>
-              <Select value={strategy} onValueChange={setStrategy}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a strategy" />
-                </SelectTrigger>
-                <SelectContent>
-                  {STRATEGIES.map(strategyOption => (
-                    <SelectItem key={strategyOption} value={strategyOption}>
-                      {strategyOption}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="strategy">Strategies</Label>
+              
+              {/* Current Strategies */}
+              <div className="flex flex-wrap gap-2 mb-2">
+                {strategies.map((strategy, index) => (
+                  <Badge 
+                    key={`${strategy}-${index}`} 
+                    variant="outline" 
+                    className="flex items-center gap-1"
+                  >
+                    <Lightbulb className="h-3 w-3" />
+                    {strategy}
+                    <X 
+                      className="h-3 w-3 cursor-pointer hover:text-red-500" 
+                      onClick={() => handleRemoveStrategy(strategy)}
+                    />
+                  </Badge>
+                ))}
+              </div>
+              
+              {/* Add New Strategy */}
+              <div className="flex gap-2">
+                <Select value={newStrategy} onValueChange={setNewStrategy}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select a strategy to add" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STRATEGIES.filter(strategy => !strategies.includes(strategy)).map(strategyOption => (
+                      <SelectItem key={strategyOption} value={strategyOption}>
+                        {strategyOption}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button 
+                  type="button" 
+                  size="sm"
+                  onClick={handleAddStrategy}
+                  disabled={!newStrategy.trim()}
+                >
+                  Add
+                </Button>
+              </div>
             </div>
 
             {/* Tags Field */}

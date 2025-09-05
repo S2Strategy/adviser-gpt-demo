@@ -1,25 +1,30 @@
 // AdvisorGPT Vault Data Types
 
-export interface ContentItem {
+export interface QuestionItem {
   id: string;
-  title: string;
   type: "Commentary" | "Policy" | "Quantitative" | "Questionnaire";
-  strategy: string;
+  strategy: string | string[]; // Support both single and multiple strategies
   tags: string[];
-  snippet?: string;
-  content?: {
-    question?: string;
-    answer?: string;
-    body?: string;
+  question?: string;
+  answer?: string;
+  body?: string;
+  table?: {
+    headers: string[];
+    rows: string[][];
   };
   updatedAt: string; // ISO string
   updatedBy: string;
-  totalItems?: number; // For file view
   isBestAnswer?: boolean; // Mark high-quality answers for badge display
 }
 
+export interface ContentItem {
+  id: string;
+  title: string;
+  items: QuestionItem[];
+}
+
 export interface VaultFilters {
-  strategy?: string;
+  strategy?: string | string[]; // Support both single and multiple strategies
   contentType?: string;
   tags?: string[];
   status?: string;

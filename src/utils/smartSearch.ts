@@ -1,4 +1,4 @@
-import { ContentItem } from '@/types/vault';
+import { ContentItem, QuestionItem } from '@/types/vault';
 
 // Semantic mapping for related terms and concepts
 const SEMANTIC_MAPPINGS: Record<string, string[]> = {
@@ -172,19 +172,19 @@ function levenshteinDistance(str1: string, str2: string): number {
 }
 
 // Function to calculate relevance score for an item
-function calculateRelevanceScore(item: ContentItem, query: string): number {
+function calculateRelevanceScore(item: QuestionItem, query: string): number {
   const keyTerms = extractKeyTerms(query);
   let totalScore = 0;
   let termCount = 0;
   
   // Get all searchable text from the item
   const searchableText = [
-    item.title,
-    item.content?.question || '',
-    item.content?.answer || '',
-    item.content?.body || '',
+    (item as any).documentTitle || '',
+    item.question || '',
+    item.answer || '',
+    item.body || '',
     ...item.tags,
-    item.strategy,
+    Array.isArray(item.strategy) ? item.strategy.join(' ') : item.strategy,
     item.type
   ].join(' ').toLowerCase();
   
@@ -194,19 +194,20 @@ function calculateRelevanceScore(item: ContentItem, query: string): number {
     
     variations.forEach(variation => {
       // Check for exact matches in different fields with different weights
-      if (item.title.toLowerCase().includes(variation)) {
-        termScore = Math.max(termScore, 1.0); // Title matches get highest weight
+      if ((item as any).documentTitle?.toLowerCase().includes(variation)) {
+        termScore = Math.max(termScore, 1.0); // Document title matches get highest weight
       }
-      if (item.content?.question?.toLowerCase().includes(variation)) {
+      if (item.question?.toLowerCase().includes(variation)) {
         termScore = Math.max(termScore, 0.9); // Question matches get high weight
       }
-      if (item.content?.answer?.toLowerCase().includes(variation)) {
+      if (item.answer?.toLowerCase().includes(variation)) {
         termScore = Math.max(termScore, 0.8); // Answer matches get good weight
       }
       if (item.tags.some(tag => tag.toLowerCase().includes(variation))) {
         termScore = Math.max(termScore, 0.7); // Tag matches get decent weight
       }
-      if (item.strategy.toLowerCase().includes(variation)) {
+      const strategyText = Array.isArray(item.strategy) ? item.strategy.join(' ') : item.strategy;
+      if (strategyText.toLowerCase().includes(variation)) {
         termScore = Math.max(termScore, 0.6); // Strategy matches get moderate weight
       }
       if (item.type.toLowerCase().includes(variation)) {
@@ -232,7 +233,7 @@ function calculateRelevanceScore(item: ContentItem, query: string): number {
 }
 
 // Main smart search function
-export function smartSearch(items: ContentItem[], query: string): ContentItem[] {
+export function smartSearch(items: QuestionItem[], query: string): QuestionItem[] {
   if (!query.trim()) {
     return items;
   }

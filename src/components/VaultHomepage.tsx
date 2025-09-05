@@ -22,7 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useVaultState } from "@/hooks/useVaultState";
 import { MOCK_CONTENT_ITEMS } from "@/data/mockVaultData";
-import { STRATEGIES, CONTENT_TYPES, STATUS_OPTIONS, TAGS_INFO } from "@/types/vault";
+import { STRATEGIES, CONTENT_TYPES, STATUS_OPTIONS, TAGS_INFO, QuestionItem } from "@/types/vault";
 import { MultiSelectFilter } from "./MultiSelectFilter";
 
 export function VaultHomepage() {
@@ -35,6 +35,19 @@ export function VaultHomepage() {
   const [selectedStatus, setSelectedStatus] = useState<string[]>([]);
   const [sortColumn, setSortColumn] = useState<"name" | "totalItems">("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+
+  // Flatten the nested data structure for processing
+  const flattenItems = (): QuestionItem[] => {
+    return MOCK_CONTENT_ITEMS.flatMap(doc => 
+      doc.items.map(item => ({
+        ...item,
+        documentTitle: doc.title,
+        documentId: doc.id
+      }))
+    );
+  };
+
+  const allItems = flattenItems();
 
   const handleSearch = () => {
     // Check if there's search text or any filters selected
@@ -71,20 +84,18 @@ export function VaultHomepage() {
   };
 
   // Group items by file for Files view
-  const fileGroups = MOCK_CONTENT_ITEMS.reduce((acc, item) => {
-    if (!acc[item.title]) {
-      acc[item.title] = {
-        name: item.title,
-        totalItems: item.totalItems || 1,
-        type: item.type,
-        updatedAt: item.updatedAt,
-        updatedBy: item.updatedBy
-      };
-    }
-    return acc;
-  }, {} as Record<string, any>);
+  const fileGroups = MOCK_CONTENT_ITEMS.map(doc => ({
+    name: doc.title,
+    totalItems: doc.items.length,
+    type: doc.items[0]?.type || "Questionnaire",
+    strategy: doc.items[0]?.strategy || "Firm-Wide (Not Strategy-Specific)",
+    tags: doc.items.flatMap(item => item.tags),
+    updatedAt: doc.items[0]?.updatedAt || new Date().toISOString(),
+    updatedBy: doc.items[0]?.updatedBy || "Unknown",
+    documentId: doc.id
+  }));
 
-  const sortedFiles = Object.values(fileGroups).sort((a, b) => {
+  const sortedFiles = fileGroups.sort((a, b) => {
     if (sortColumn === "name") {
       return sortDirection === "asc" ? 
         a.name.localeCompare(b.name) : 
@@ -108,13 +119,16 @@ export function VaultHomepage() {
   // Group by type for Type view
   const typeGroups = CONTENT_TYPES.map(type => ({
     name: type,
-    totalItems: MOCK_CONTENT_ITEMS.filter(item => item.type === type).length
+    totalItems: allItems.filter(item => item.type === type).length
   })).filter(group => group.totalItems > 0);
 
   // Group by strategy for Strategy view
   const strategyGroups = STRATEGIES.map(strategy => ({
     name: strategy,
-    totalItems: MOCK_CONTENT_ITEMS.filter(item => item.strategy === strategy).length
+    totalItems: allItems.filter(item => {
+      const itemStrategy = Array.isArray(item.strategy) ? item.strategy : [item.strategy];
+      return itemStrategy.includes(strategy);
+    }).length
   })).filter(group => group.totalItems > 0);
 
   return (
@@ -341,17 +355,17 @@ export function VaultHomepage() {
           {/* Data View */}
           <TabsContent value="data">
             <div className="space-y-4">
-              {MOCK_CONTENT_ITEMS
+              {allItems
                 .filter(item => item.type === "Quantitative")
                 .map((item) => (
                   <div key={item.id} className="border rounded-lg p-4">
-                    <h3 className="font-semibold">{item.title}</h3>
+                    <h3 className="font-semibold">{(item as any).documentTitle || "Unknown Document"}</h3>
                     <p className="text-sm text-muted-foreground mt-1">
                       Updated by {item.updatedBy} • {new Date(item.updatedAt).toLocaleDateString()}
                     </p>
                   </div>
                 ))}
-              {MOCK_CONTENT_ITEMS.filter(item => item.type === "Quantitative").length === 0 && (
+              {allItems.filter(item => item.type === "Quantitative").length === 0 && (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground">No quantitative data items found.</p>
                 </div>
