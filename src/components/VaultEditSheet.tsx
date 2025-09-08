@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Save, Lightbulb } from "lucide-react";
+import { X, Check, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -261,7 +261,7 @@ export function VaultEditSheet({ item, open, onClose, onSave, existingEdit }: Va
               Cancel
             </Button>
             <Button onClick={handleSave}>
-              <Save className="h-4 w-4 mr-2" />
+              <Check className="h-4 w-4 mr-2" />
               Save
             </Button>
           </div>

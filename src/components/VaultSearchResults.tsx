@@ -34,7 +34,7 @@ import { SaveSearchPrompt } from "./SaveSearchPrompt";
 import { useVaultState, useVaultEdits } from "@/hooks/useVaultState";
 import { useToast } from "@/hooks/use-toast";
 import { MOCK_CONTENT_ITEMS } from "@/data/mockVaultData";
-import { STRATEGIES, CONTENT_TYPES, STATUS_OPTIONS, QuestionItem } from "@/types/vault";
+import { STRATEGIES, CONTENT_TYPES, STATUS_OPTIONS, QuestionItem, TAGS_INFO } from "@/types/vault";
 import { ContentItem } from "@/types/vault";
 import { smartSearch, getSemanticVariations, getSearchSuggestions } from "@/utils/smartSearch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@radix-ui/react-tooltip";
@@ -52,8 +52,25 @@ export function VaultSearchResults() {
   const fileName = searchParams.get('fileName');
   const fileCount = parseInt(searchParams.get('count') || '0');
 
+  // Determine if we're in file view mode
+  const isFileMode = location.pathname === '/vault/file' && fileName;
+
   // Flatten the nested data structure for processing
   const flattenItems = (): QuestionItem[] => {
+    if (isFileMode && fileName) {
+      // In file mode, only show items from the specific file
+      const targetDoc = MOCK_CONTENT_ITEMS.find(doc => doc.title === fileName);
+      if (targetDoc) {
+        return targetDoc.items.map(item => ({
+          ...item,
+          documentTitle: targetDoc.title,
+          documentId: targetDoc.id
+        }));
+      }
+      return []; // File not found
+    }
+    
+    // In search mode, show all items
     return MOCK_CONTENT_ITEMS.flatMap(doc => 
       doc.items.map(item => ({
         ...item,
@@ -64,9 +81,6 @@ export function VaultSearchResults() {
   };
 
   const allItems = flattenItems();
-  
-  // Determine if we're in file view mode
-  const isFileMode = location.pathname === '/vault/file' && fileName;
   
   // Initialize state with URL parameters
   const [query, setQueryState] = useState(urlQuery);
@@ -517,70 +531,54 @@ const formatRelativeTime = (isoString: string) => {
       <div className="flex-1 h-full flex flex-col">
         {/* Header with Breadcrumbs */}
       <div className="border-b bg-background">
-        <div className="p-6">
-          {/* Breadcrumbs */}
-          <div className="flex items-center gap-2 text-sm mb-6">
-            <Link to="/" className="text-muted-foreground hover:text-foreground">
-              <Home className="h-4 w-4" />
-            </Link>
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            <Link 
-              to="/vault" 
-              className="text-muted-foreground hover:text-foreground"
-            >
-              Vault
-            </Link>
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            {fileName ? (
-              <span className="text-foreground font-medium">
-                {fileName}
-              </span>
-            ) : (
-              <span className="text-foreground font-medium">
-                {query || "All results"}
-              </span>
-            )}
-          </div>
+        {/* Breadcrumbs */}
+        <div className="flex items-center gap-2 text-sm mb-6 px-6 pt-6">
+          <Link to="/" className="text-muted-foreground hover:text-foreground">
+            <Home className="h-4 w-4" />
+          </Link>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          <Link 
+            to="/vault" 
+            className="text-muted-foreground hover:text-foreground"
+          >
+            Vault
+          </Link>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          {fileName ? (
+            <span className="text-foreground font-medium">
+              {fileName}
+            </span>
+          ) : (
+            <span className="text-foreground font-medium">
+              {query || "All results"}
+            </span>
+          )}
+        </div>
 
-          {/* Main Title and Search */}
-          <div className="mb-6 flex items-end justify-between">
-            <div className="flex flex-wrap items-center gap-2 text-xl">
+        {/* Main Title and Search */}
+        <div className="mb-2 bg-gray-50 flex items-center gap-3 p-6">
+          <div className="flex flex-1 items-center gap-2 text-xl">
+            <div className="inline-flex flex-0 items-center gap-1">
               {fileName ? (
-              <span className="text-muted-foreground">
-                 {query ? `${filteredItems.length}` : `${fileCount}`} Questions 
+              <span className="text-foreground">
+                {query ? `${filteredItems.length}` : `${fileCount}`} {query && filteredItems.length === 1 ? "Question" : "Questions"}
               </span>
               ) : (
-                <span className="text-muted-foreground">
-                  {filteredItems.length} Results {query ? `for` : ""}
+                <span className="text-foreground">
+                  {filteredItems.length} {filteredItems.length === 1 ? "Result" : "Results"} {query ? `for` : ""}
                 </span>
               )}
-              <div className="relative">
-                <Input
-                  type="text"
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  className="bg-transparent outline-none border-t-0 border-x-0 border-b-2 border-dashed border-muted-foreground text-foreground font-medium px-1 min-w-[250px]"
-                  placeholder="filter results"
-                  style={{ width: `${Math.max(searchInput.length * 12 + 20, 250)}px` }}
-                />
-              </div>
             </div>
-            
-            {/* Save Search Prompt */}
-            <div className="flex justify-end">
-              <div>
-                <SaveSearchPrompt
-                  query={query}
-                  filters={{
-                    strategies: selectedStrategies,
-                    types: selectedTypes,
-                    tags: selectedTags,
-                    statuses: selectedStatuses,
-                  }}
-                  sort={currentSort}
-                />
-              </div>
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={handleKeyPress}
+                placeholder="filter results"
+                className="pl-10 h-12"
+              />
             </div>
           </div>
 
@@ -589,6 +587,7 @@ const formatRelativeTime = (isoString: string) => {
             <div className="flex items-center gap-3">
               <MultiSelectFilter
                 title="Strategy"
+                size="xl"
                 options={STRATEGIES}
                 selectedValues={selectedStrategies}
                 onSelectionChange={(values) => {
@@ -599,6 +598,7 @@ const formatRelativeTime = (isoString: string) => {
 
               <MultiSelectFilter
                 title="Types"
+                size="xl"
                 options={CONTENT_TYPES}
                 selectedValues={selectedTypes}
                 onSelectionChange={(values) => {
@@ -609,26 +609,18 @@ const formatRelativeTime = (isoString: string) => {
 
               <MultiSelectFilter
                 title="Tags"
-                options={["AI", "ESG", "RFP", "Policy", "Risk Management", "Investment Strategy", "Portfolio Management", "Asset Management", "Financial Services", "Financial Analysis"]}
+                size="xl"
+                options={TAGS_INFO.map(tag => tag.name)}
                 selectedValues={selectedTags}
                 onSelectionChange={(values) => {
                   setSelectedTags(values);
                   updateFiltersInUrl(query, selectedStrategies, selectedTypes, values, selectedStatuses);
                 }}
+                placeholder="Tags"
               />
-
-              {/* <MultiSelectFilter
-                title="Status"
-                options={STATUS_OPTIONS}
-                selectedValues={selectedStatuses}
-                onSelectionChange={(values) => {
-                  setSelectedStatuses(values);
-                  updateFiltersInUrl(query, selectedStrategies, selectedTypes, selectedTags, values);
-                }}
-              /> */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline">
+                  <Button variant="outline" size="xl">
                     <ArrowUpDown className="mr-2 h-4 w-4" />
                     Sort: {currentSort === 'relevance' ? 'Relevance' : currentSort === 'lastEdited' ? 'Last edited' : 'Last editor'}
                     <ChevronDown className="ml-2 h-4 w-4" />
@@ -654,30 +646,15 @@ const formatRelativeTime = (isoString: string) => {
               </DropdownMenu>
             </div>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  Export View
-                  <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => exportData('pdf')}>
-                  PDF
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => exportData('csv')}>
-                  XLS/CSV
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => exportData('docx')}>
-                  Word (.docx)
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            
           </div>
-
+        </div>
+        
+        <div className="px-6 mb-2 flex items-center justify-between">
+          
           {/* Active Filters */}
           {hasActiveFilters && (
-            <div className="flex items-center gap-2 mt-4 flex-wrap">
+            <div className="flex items-center gap-2 px-6 flex-wrap">
               <span className="text-sm text-muted-foreground">Active filters:</span>
               {selectedStrategies.map(strategy => (
                 <Badge key={strategy} variant="secondary" className="gap-1">
@@ -732,6 +709,44 @@ const formatRelativeTime = (isoString: string) => {
               </Button>
             </div>
           )}
+
+          <div className="flex flex-1 items-center justify-end gap-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  Export View
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => exportData('pdf')}>
+                  PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportData('csv')}>
+                  XLS/CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportData('docx')}>
+                  Word (.docx)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Save Search Prompt */}
+            <div className="flex justify-end">
+              <div>
+                <SaveSearchPrompt
+                  query={query}
+                  filters={{
+                    strategies: selectedStrategies,
+                    types: selectedTypes,
+                    tags: selectedTags,
+                    statuses: selectedStatuses,
+                  }}
+                  sort={currentSort}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

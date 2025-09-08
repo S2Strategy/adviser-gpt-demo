@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FileText, 
   Calendar, 
@@ -10,7 +10,8 @@ import {
   Archive, 
   Mail, 
   ChevronDown, 
-  Copy, 
+  Copy,
+  CopyCheck, 
   Check
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -62,6 +63,17 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const [newStrategyValue, setNewStrategyValue] = useState('');
   const [addingTagToItem, setAddingTagToItem] = useState<string | null>(null);
   const [newTagValue, setNewTagValue] = useState('');
+  const [isCopied, setIsCopied] = useState(false);
+
+  // Reset copy state after 3 seconds
+  useEffect(() => {
+    if (isCopied) {
+      const timer = setTimeout(() => {
+        setIsCopied(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isCopied]);
 
   const normalizeStrategies = (strategy: string | string[]) => {
     return Array.isArray(strategy) ? strategy : [strategy];
@@ -77,6 +89,13 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
   const displayData = getDisplayData(item);
   const answer = displayData.answer || '';
+
+  const handleCopyAnswer = () => {
+    if (onCopyAnswer) {
+      onCopyAnswer(answer);
+      setIsCopied(true);
+    }
+  };
   const shouldTruncate = answer.length > 300;
   const displayAnswer = isExpanded ? answer : answer.substring(0, 300);
 
@@ -350,12 +369,12 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
         {onCopyAnswer && (
           <button 
-            className="flex h-8 px-2 pl-3 justify-center items-center gap-2 rounded-md text-sm font-medium"
+            className="flex h-8 px-2 pl-3 min-w-24 justify-center items-center gap-2 rounded-md text-sm font-medium"
             style={{ backgroundColor: '#18181B', color: '#fafafa', boxShadow: '0 0 0 1px rgba(3, 7, 18, 0.12), 0 1px 3px -1px rgba(3, 7, 18, 0.11), 0 2px 5px 0 rgba(3, 7, 18, 0.06)' }}
-            onClick={() => onCopyAnswer(displayData.answer || '')}
+            onClick={handleCopyAnswer}
           >
-            <Copy className="h-4 w-4" />
-            Copy
+            {isCopied ? <CopyCheck className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            {isCopied ? 'Copied!' : 'Copy'}
           </button>
         )}
       </div>
