@@ -421,7 +421,7 @@ export function VaultHomepage() {
             </div>
             
             <MultiSelectFilter
-              title="Strategy"
+              title="Strategies"
               options={STRATEGIES}
               selectedValues={selectedStrategy}
               onSelectionChange={setSelectedStrategy}

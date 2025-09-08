@@ -590,7 +590,7 @@ const formatRelativeTime = (isoString: string) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <MultiSelectFilter
-                title="Strategy"
+                title="Strategies"
                 size="xl"
                 options={STRATEGIES}
                 selectedValues={selectedStrategies}
