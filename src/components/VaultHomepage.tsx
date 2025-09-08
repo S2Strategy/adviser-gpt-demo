@@ -463,17 +463,6 @@ export function VaultHomepage() {
           {/* Main Tabs - Custom Styling */}
           <div className="flex items-center gap-8 mb-6 border-b">
             <button
-              onClick={() => handleTabChange("recent")}
-              className={`flex items-center gap-2 pb-4 text-lg font-medium transition-colors ${
-                activeTab === "recent"
-                  ? "text-foreground border-b-2 border-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Clock className="h-5 w-5" />
-              Recent Q&A
-            </button>
-            <button
               onClick={() => handleTabChange("documents")}
               className={`flex items-center gap-2 pb-4 text-lg font-medium transition-colors ${
                 activeTab === "documents"
@@ -483,6 +472,17 @@ export function VaultHomepage() {
             >
               <FolderOpen className="h-5 w-5" />
               Documents
+            </button>
+            <button
+              onClick={() => handleTabChange("recent")}
+              className={`flex items-center gap-2 pb-4 text-lg font-medium transition-colors ${
+                activeTab === "recent"
+                  ? "text-foreground border-b-2 border-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Clock className="h-5 w-5" />
+              Recent Q&A
             </button>
           </div>
 

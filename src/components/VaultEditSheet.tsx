@@ -60,6 +60,23 @@ export function VaultEditSheet({ item, open, onClose, onSave, existingEdit }: Va
     };
   }, [open]);
 
+  // ESC key handler to close the edit panel
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && open) {
+        onClose();
+      }
+    };
+
+    if (open) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open, onClose]);
+
   const handleSave = () => {
     const editData = {
       question,
