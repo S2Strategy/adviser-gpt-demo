@@ -265,8 +265,8 @@ export function SmartUploadSheet({ open, onClose }: SmartUploadSheetProps) {
       <div 
         className="fixed inset-0 bg-black/60 z-40 transition-all duration-300"
         style={{
-          backdropFilter: 'blur(4px)',
-          WebkitBackdropFilter: 'blur(4px)'
+          backdropFilter: 'blur(1px)',
+          WebkitBackdropFilter: 'blur(1px)'
         }}
       />
       
