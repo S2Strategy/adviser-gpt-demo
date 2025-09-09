@@ -650,7 +650,7 @@ export function VaultHomepage() {
               <TabsContent value="type" className="mt-6">
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Content Types</h3>
-                  <div className="grid gap-4">
+                  <div className="grid gap-2">
                     {typeGroups.map((type) => (
                       <div
                         key={type.name}
