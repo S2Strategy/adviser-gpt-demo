@@ -292,7 +292,7 @@ export function SmartUploadSheet({ open, onClose }: SmartUploadSheetProps) {
               </div>
               <div>
                 <h2 className="text-xl font-semibold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                  Upload New Documents
+                  Add Content
                 </h2>
                 <p className="text-sm text-muted-foreground mt-1">
                   {currentStep === 'upload' && 'Upload questionnaires, policies, and data with automatic categorization'}
@@ -331,7 +331,7 @@ export function SmartUploadSheet({ open, onClose }: SmartUploadSheetProps) {
                     ref={fileInputRef}
                     type="file"
                     multiple
-                    accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.xls"
+                    accept=".doc,.docx,.xlsx,.xls"
                     onChange={handleFileInput}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   />
@@ -351,21 +351,18 @@ export function SmartUploadSheet({ open, onClose }: SmartUploadSheetProps) {
                         or click to select files
                       </p>
                       <p className="text-sm text-gray-500">
-                        Supports: PDF, DOC, DOCX, TXT, CSV, XLSX, XLS and more
+                        Supports: DOC, DOCX, XLSX, XLS
                       </p>
                     </div>
                     
                     <div className="flex justify-center gap-8 text-sm text-gray-500">
                       <div className="flex items-center gap-2">
-                        <FileText className="h-5 w-5" />
                         Documents
                       </div>
                       <div className="flex items-center gap-2">
-                        <FileSpreadsheet className="h-5 w-5" />
                         Data Files
                       </div>
                       <div className="flex items-center gap-2">
-                        <File className="h-5 w-5" />
                         All Types
                       </div>
                     </div>
