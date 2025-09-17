@@ -7,15 +7,14 @@ import { FirmUpdatesModal } from "./FirmUpdatesModal";
 import { FindDuplicatesModal } from "./FindDuplicatesModal";
 import { SmartUploadSheet } from "./SmartUploadSheet";
 import { SaveSearchPrompt } from "./SaveSearchPrompt";
+import { SortAndArchiveControls, SortColumn, SortDirection } from "./SortAndArchiveControls";
 import { 
   Search, 
-  ChevronDown, 
+  ChevronDown,
   ChevronRight,
   MoreHorizontal, 
   FileText, 
   ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
   ArrowLeft,
   Copy,
   Building2,
@@ -91,8 +90,12 @@ export function VaultHomepage() {
   const [selectedStatus, setSelectedStatus] = useState<string[]>([]);
   
   // Sorting and view state
-  const [sortColumn, setSortColumn] = useState<"name" | "totalItems" | "lastEdited" | "lastEditor">("name");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [sortColumn, setSortColumn] = useState<SortColumn>("name");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  
+  // Recent QA sort state
+  const [qaSortColumn, setQaSortColumn] = useState<SortColumn>("lastModified");
+  const [qaSortDirection, setQaSortDirection] = useState<SortDirection>("desc");
   const currentSort = searchParams.get('sort') || state.sort || 'relevance';
   
   // UI state
@@ -138,27 +141,8 @@ export function VaultHomepage() {
     localStorage.setItem('vault-homepage-documents-tab', tab);
   };
 
-  // Helper function to get the appropriate sort icon
-  const getSortIcon = (column: "name" | "totalItems" | "lastEdited" | "lastEditor") => {
-    if (sortColumn === column) {
-      return sortDirection === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />;
-    }
-    return <ArrowUpDown className="h-4 w-4" />;
-  };
-
-  // Helper function to get the sort label
-  const getSortLabel = (column: "name" | "totalItems" | "lastEdited" | "lastEditor") => {
-    switch (column) {
-      case "name": return "Name";
-      case "totalItems": return "Number of Items";
-      case "lastEdited": return "Date Last Edited";
-      case "lastEditor": return "Last Editor";
-      default: return "Name";
-    }
-  };
-
   // Handle sort change from files dropdown
-  const handleFilesSortChange = (column: "name" | "totalItems" | "lastEdited" | "lastEditor") => {
+  const handleFilesSortChange = (column: SortColumn) => {
     if (sortColumn === column) {
       // Toggle direction if same column
       const newDirection = sortDirection === "asc" ? "desc" : "asc";
@@ -167,6 +151,19 @@ export function VaultHomepage() {
       // Set new column with ascending direction
       setSortColumn(column);
       setSortDirection("asc");
+    }
+  };
+
+  // Handle sort change from QA dropdown
+  const handleQaSortChange = (column: SortColumn) => {
+    if (qaSortColumn === column) {
+      // Toggle direction if same column
+      const newDirection = qaSortDirection === "asc" ? "desc" : "asc";
+      setQaSortDirection(newDirection);
+    } else {
+      // Set new column with ascending direction
+      setQaSortColumn(column);
+      setQaSortDirection("asc");
     }
   };
 
@@ -567,10 +564,38 @@ export function VaultHomepage() {
     }).length
   })).filter(group => group.totalItems > 0);
 
-  // Get the 5 most recently edited questions
-  const recentQuestions = allItems
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-    .slice(0, 5);
+  // Get recent questions with sorting and filtering
+  const recentQuestions = (() => {
+    let filtered = allItems;
+    
+    // Apply archived filter
+    if (!state.showArchived) {
+      filtered = filtered.filter(item => {
+        const displayData = getDisplayData(item);
+        return !displayData.archived;
+      });
+    }
+    
+    // Apply sorting
+    const sorted = filtered.sort((a, b) => {
+      let comparison = 0;
+      
+      switch (qaSortColumn) {
+        case "question":
+          comparison = a.question.localeCompare(b.question);
+          break;
+        case "lastModified":
+          comparison = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+          break;
+        default:
+          comparison = new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+      }
+      
+      return qaSortDirection === "asc" ? comparison : -comparison;
+    });
+    
+    return sorted.slice(0, 5);
+  })();
 
   // Utility functions for QuestionCard
   const formatRelativeTime = (isoString: string) => {
@@ -1161,6 +1186,30 @@ export function VaultHomepage() {
                   <p className="text-muted-foreground">Most recently edited questions and answers</p>
                 </div>
               </div>
+              
+              <SortAndArchiveControls
+                sortColumn={qaSortColumn}
+                sortDirection={qaSortDirection}
+                onSortChange={handleQaSortChange}
+                showArchived={state.showArchived}
+                onShowArchivedChange={(newShowArchived) => {
+                  setShowArchived(newShowArchived);
+                  // Update URL parameters
+                  const newParams = new URLSearchParams(searchParams);
+                  if (newShowArchived) {
+                    newParams.set('showArchived', 'true');
+                  } else {
+                    newParams.delete('showArchived');
+                  }
+                  navigate(`/vault?${newParams.toString()}`, { replace: true });
+                }}
+                sortOptions={[
+                  { value: "name", label: "Name" },
+                  { value: "lastEdited", label: "Date Last Edited" },
+                  { value: "lastEditor", label: "Last Editor" }
+                ]}
+                title="Recent Questions"
+              />
 
               {/* Recent Question Cards */}
               <div className="space-y-4">
@@ -1239,77 +1288,34 @@ export function VaultHomepage() {
                   <Lightbulb className="h-4 w-4" />
                   Strategy
                 </TabsTrigger>
-                {/* <TabsTrigger 
-                  value="data"
-                  className="inline-grid grid-flow-col items-center content-center gap-2 px-2 py-2 h-8 rounded-lg text-[#71717A] bg-transparent hover:bg-[#F4F4F5] hover:text-[#09090B] data-[state=active]:bg-[#F4F4F5] data-[state=active]:text-[#09090B] data-[state=active]:shadow-none transition-colors"
-                >
-                  <Database className="h-4 w-4" />
-                  Data
-                </TabsTrigger> */}
               </TabsList>
 
               <TabsContent value="files" className="mt-6">
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold">Files</h3>
-                  <div className="flex items-center gap-2">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="flex items-center gap-2">
-                          Sort by: {getSortLabel(sortColumn)}
-                          {getSortIcon(sortColumn)}
-                          <ChevronDown className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleFilesSortChange("name")}>
-                          <div className="flex items-center gap-2">
-                            Name
-                            {sortColumn === "name" && getSortIcon("name")}
-                          </div>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleFilesSortChange("totalItems")}>
-                          <div className="flex items-center gap-2">
-                            Number of Items
-                            {sortColumn === "totalItems" && getSortIcon("totalItems")}
-                          </div>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleFilesSortChange("lastEdited")}>
-                          <div className="flex items-center gap-2">
-                            Date Last Edited
-                            {sortColumn === "lastEdited" && getSortIcon("lastEdited")}
-                          </div>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleFilesSortChange("lastEditor")}>
-                          <div className="flex items-center gap-2">
-                            Last Editor
-                            {sortColumn === "lastEditor" && getSortIcon("lastEditor")}
-                          </div>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                      <Button
-                        variant={state.showArchived ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => {
-                          const newShowArchived = !state.showArchived;
-                          setShowArchived(newShowArchived);
-                          // Update URL parameters
-                          const newParams = new URLSearchParams(searchParams);
-                          if (newShowArchived) {
-                            newParams.set('showArchived', 'true');
-                          } else {
-                            newParams.delete('showArchived');
-                          }
-                          navigate(`/vault?${newParams.toString()}`, { replace: true });
-                        }}
-                        className="flex items-center gap-2"
-                      >
-                        <Archive className="h-4 w-4" />
-                        {state.showArchived ? "Hide archived" : "Show archived"}
-                      </Button>
-                    </div>
-                  </div>
+                  <SortAndArchiveControls
+                    sortColumn={sortColumn}
+                    sortDirection={sortDirection}
+                    onSortChange={handleFilesSortChange}
+                    showArchived={state.showArchived}
+                    onShowArchivedChange={(newShowArchived) => {
+                      setShowArchived(newShowArchived);
+                      // Update URL parameters
+                      const newParams = new URLSearchParams(searchParams);
+                      if (newShowArchived) {
+                        newParams.set('showArchived', 'true');
+                      } else {
+                        newParams.delete('showArchived');
+                      }
+                      navigate(`/vault?${newParams.toString()}`, { replace: true });
+                    }}
+                    sortOptions={[
+                      { value: "name", label: "Name" },
+                      { value: "totalItems", label: "Number of Items" },
+                      { value: "lastEdited", label: "Date Last Edited" },
+                      { value: "lastEditor", label: "Last Editor" }
+                    ]}
+                    title="Files"
+                  />
 
                   <div className="grid gap-2">
                     {sortedFiles.map((file, index) => (
@@ -1490,35 +1496,6 @@ export function VaultHomepage() {
                         </div>
                       </div>
                     ))}
-                  </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="data" className="mt-6">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Data Overview</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="p-4 border rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <FileText className="h-5 w-5 text-blue-600" />
-                        <h4 className="font-medium">Total Documents</h4>
-                      </div>
-                      <p className="text-2xl font-bold">{MOCK_CONTENT_ITEMS.length}</p>
-                    </div>
-                    <div className="p-4 border rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Database className="h-5 w-5 text-green-600" />
-                        <h4 className="font-medium">Total Questions</h4>
-                      </div>
-                      <p className="text-2xl font-bold">{allItems.length}</p>
-                    </div>
-                    <div className="p-4 border rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Shapes className="h-5 w-5 text-purple-600" />
-                        <h4 className="font-medium">Content Types</h4>
-                      </div>
-                      <p className="text-2xl font-bold">{typeGroups.length}</p>
-                    </div>
                   </div>
                 </div>
               </TabsContent>
