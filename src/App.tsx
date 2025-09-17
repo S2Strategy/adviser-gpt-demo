@@ -24,8 +24,6 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/vault" element={<Vault />} />
-            <Route path="/vault/search" element={<Vault />} />
-            <Route path="/vault/file" element={<Vault />} />
             <Route path="/vault/saved-searches" element={<SavedSearchesPage />} />
             <Route path="/vault/history" element={<HistoryPage />} />
             <Route path="/vault/suggested-updates" element={<SuggestedUpdates />} />
