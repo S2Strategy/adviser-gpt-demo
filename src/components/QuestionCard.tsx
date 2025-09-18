@@ -10,6 +10,7 @@ import {
   Archive, 
   Mail, 
   ChevronDown, 
+  ChevronRight,
   Copy,
   CopyCheck, 
   Check
@@ -29,6 +30,7 @@ interface QuestionCardProps {
   hasEdits?: boolean;
   isExpanded?: boolean;
   showBestAnswerTag?: boolean;
+  isNested?: boolean; // Whether this is a nested child question
   onToggleExpansion?: (itemId: string) => void;
   onEdit?: (item: QuestionItem) => void;
   onCopyAnswer?: (answer: string) => void;
@@ -49,6 +51,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   hasEdits = false,
   isExpanded = false,
   showBestAnswerTag = true,
+  isNested = false,
   onToggleExpansion,
   onEdit,
   onCopyAnswer,
@@ -123,11 +126,32 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     setAddingTagToItem(null);
   };
 
+  // Determine if this is a parent question with children
+  const hasChildren = item.children && item.children.length > 0;
+  const isParentExpanded = item.isExpanded !== false; // Default to expanded
+
   return (
-    <div className="border rounded-lg bg-card vault-result-card">
+    <div className={`border rounded-lg vault-result-card ${
+      isNested 
+        ? 'bg-gray-50/50 border-gray-200 ml-6' 
+        : 'bg-card'
+    }`}>
       {/* Header with file info and badge */}
       <div className="flex items-start justify-between pb-4 border-b border-[#E4E4E7] px-6 py-4">
         <div className="flex items-center min-w-0 gap-3 flex-1">
+          {/* Expand/Collapse button for parent questions */}
+          {hasChildren && onToggleExpansion && (
+            <button
+              onClick={() => onToggleExpansion(item.id)}
+              className="flex items-center justify-center w-5 h-5 hover:bg-gray-100 rounded transition-colors"
+            >
+              {isParentExpanded ? (
+                <ChevronDown className="h-4 w-4 text-gray-600" />
+              ) : (
+                <ChevronRight className="h-4 w-4 text-gray-600" />
+              )}
+            </button>
+          )}
           {!fileName && (
             <FileText className="h-4 w-4 flex-shrink-0" style={{ color: '#71717A' }} />
           )}
@@ -341,7 +365,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       )}
 
       {/* Action Footer */}
-      <div className="border-t border-[#E4E4E7] px-6 py-3 flex items-center justify-end gap-2 rounded-b-lg" style={{ backgroundColor: '#fafafa' }}>
+      <div className="border-t border-[#E4E4E7] px-6 py-3 flex items-center justify-end gap-2 rounded-b-lg bg-gray-100/50">
         {onEdit && (
           <button 
             className="flex h-8 px-2 pl-3 justify-center items-center gap-2 rounded-md bg-white text-sm font-medium"
@@ -386,6 +410,36 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           </button>
         )}
       </div>
+
+      {/* Render child questions if expanded */}
+      {hasChildren && isParentExpanded && (
+        <div className="border-t py-8 pb-4 mt-[-3.5rem] pr-6 space-y-2 border-l-2 border-gray-400 border-t-0 bg-gray-100/40">
+          <h4 className="text-xs font-bold line-height-1-5 tracking-tight pl-6">Sub Questions</h4>
+          {item.children?.map((child) => (
+            <QuestionCard
+              key={child.id}
+              item={child}
+              query={query}
+              fileName={fileName}
+              hasEdits={hasEdits}
+              isExpanded={isExpanded}
+              showBestAnswerTag={showBestAnswerTag}
+              isNested={true}
+              onToggleExpansion={onToggleExpansion}
+              onEdit={onEdit}
+              onCopyAnswer={onCopyAnswer}
+              onStrategyRemove={onStrategyRemove}
+              onStrategyAdd={onStrategyAdd}
+              onTagRemove={onTagRemove}
+              onTagAdd={onTagAdd}
+              onArchive={onArchive}
+              highlightSearchTerms={highlightSearchTerms}
+              formatRelativeTime={formatRelativeTime}
+              formatFullDate={formatFullDate}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

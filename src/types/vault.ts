@@ -2,7 +2,7 @@
 
 export interface QuestionItem {
   id: string;
-  type: "Commentary" | "Policy" | "Quantitative" | "Questionnaire";
+  type: "Commentary" | "Policy" | "Policies" | "Quantitative" | "Questionnaire" | "Questionnaires" | "Data Files";
   strategy: string | string[]; // Support both single and multiple strategies
   tags: string[];
   question?: string;
@@ -18,6 +18,10 @@ export interface QuestionItem {
   archived?: boolean; // Track if item is archived
   documentTitle?: string; // Title of the document this item belongs to
   documentId?: string; // ID of the document this item belongs to
+  // Nested QA support
+  parentId?: string; // ID of parent question if this is a nested question
+  children?: QuestionItem[]; // Child questions if this is a parent
+  isExpanded?: boolean; // Whether this parent question is expanded (default true)
 }
 
 export interface ContentItem {

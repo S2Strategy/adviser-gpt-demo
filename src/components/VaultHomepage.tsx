@@ -101,6 +101,7 @@ export function VaultHomepage() {
   
   // UI state
   const [expandedAnswers, setExpandedAnswers] = useState<Set<string>>(new Set());
+  const [nestedExpanded, setNestedExpanded] = useState<Set<string>>(new Set());
   const [editingItem, setEditingItem] = useState<QuestionItem | null>(null);
   const [activeTab, setActiveTab] = useState<"recent" | "documents">("recent");
   const [showFirmUpdatesModal, setShowFirmUpdatesModal] = useState(false);
@@ -348,6 +349,9 @@ export function VaultHomepage() {
 
   const hasActiveFilters = selectedStrategy.length > 0 || selectedType.length > 0 || selectedTags.length > 0 || selectedStatus.length > 0;
   const hasActiveSearch = (state.query && state.query.trim()) || hasActiveFilters;
+  
+  // Check if there are any parent questions with children
+  const hasNestedQuestions = allItems.some(item => item.children && item.children.length > 0);
 
   const handleSearch = () => {
     // Check if there's search text or any filters selected
@@ -699,6 +703,31 @@ export function VaultHomepage() {
     setExpandedAnswers(newExpanded);
   };
 
+  const toggleNestedExpansion = (itemId: string) => {
+    const newNestedExpanded = new Set(nestedExpanded);
+    if (newNestedExpanded.has(itemId)) {
+      newNestedExpanded.delete(itemId);
+    } else {
+      newNestedExpanded.add(itemId);
+    }
+    setNestedExpanded(newNestedExpanded);
+  };
+
+  const expandCollapseAllNested = (expand: boolean) => {
+    if (expand) {
+      // Find all parent questions with children and expand them
+      const allParentIds = new Set<string>();
+      allItems.forEach(item => {
+        if (item.children && item.children.length > 0) {
+          allParentIds.add(item.id);
+        }
+      });
+      setNestedExpanded(allParentIds);
+    } else {
+      setNestedExpanded(new Set());
+    }
+  };
+
   const handleEdit = (item: QuestionItem) => {
     setEditingItem(item);
   };
@@ -1000,6 +1029,20 @@ export function VaultHomepage() {
                   {state.showArchived ? "Hide archived" : "Show archived"}
                 </Button>
 
+                {/* Expand/Collapse All Nested Questions */}
+                {hasNestedQuestions && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const allExpanded = nestedExpanded.size > 0;
+                      expandCollapseAllNested(!allExpanded);
+                    }}
+                  >
+                    {nestedExpanded.size > 0 ? "Collapse All" : "Expand All"}
+                  </Button>
+                )}
+
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline">
@@ -1049,13 +1092,17 @@ export function VaultHomepage() {
                 return (
                   <QuestionCard
                     key={item.id}
-                    item={{...item, ...displayData}}
+                    item={{
+                      ...item, 
+                      ...displayData,
+                      isExpanded: nestedExpanded.has(item.id)
+                    }}
                     query={searchInput}
                     fileName={fileName}
                     hasEdits={hasEdits}
                     isExpanded={isExpanded}
                     showBestAnswerTag={true}
-                    onToggleExpansion={toggleAnswerExpansion}
+                    onToggleExpansion={toggleNestedExpansion}
                     onEdit={handleEdit}
                     onCopyAnswer={handleCopyAnswer}
                     onStrategyRemove={handleStrategyRemove}
