@@ -227,7 +227,7 @@ export function VaultSidebar() {
 
   return (
     <div 
-      className="h-full w-64 bg-[#FAFAFA] border-r border-[#E4E4E7] flex flex-col"
+      className="h-full w-72 bg-[#FAFAFA] border-r border-[#E4E4E7] flex flex-col"
     >
 
         {/* Account Wrapper */}

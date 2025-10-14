@@ -738,13 +738,13 @@ Client relationships are built on transparency, communication, and alignment of 
                     <div className="text-center mb-2">
                       <p className="text-sm text-gray-800">Try one of these examples:</p>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid md:grid-cols-2 gap-2">
                       {Object.values(exampleQuestions).map((question, index) => (
                         <Button
                           key={index}
                           variant="outline"
                           size="sm"
-                          className="text-xs flex flex-wrap justify-between h-14 px-4 py-2 items-center text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-gray-200 whitespace-normal text-left"
+                          className="text-xs flex flex-wrap justify-between min-h-14 h-auto px-4 py-2 items-center text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-gray-200 whitespace-normal text-left"
                           onClick={() => handleExampleClick(question)}
                         >
                           <span className="flex flex-1">{question}</span> <PlusCircle className="h-4 w-4 text-gray-500" />
@@ -757,13 +757,13 @@ Client relationships are built on transparency, communication, and alignment of 
                   <div className="w-full max-w-3xl mb-8">
                     <div className="space-y-4">
                       {/* Mode Toggle */}
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                      <div className="flex flex-col gap-2 md:flex-row md:gap-0 justify-between items-center">
+                        <div className="flex flex-1 w-full md:w-auto md:flex-none items-center bg-gray-100 rounded-lg p-1">
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <button
                                 onClick={() => setSelectedMode('answer')}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 ${
+                                className={`flex flex-1 md:flex-none justify-center md:justify-start items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 ${
                                   selectedMode === 'answer'
                                     ? 'bg-white text-gray-900 shadow-sm'
                                     : 'text-gray-600 hover:text-gray-800'
@@ -781,7 +781,7 @@ Client relationships are built on transparency, communication, and alignment of 
                             <TooltipTrigger asChild>
                               <button
                                 onClick={() => setSelectedMode('chat')}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 ${
+                                className={`flex flex-1 md:flex-none justify-center md:justify-start items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 ${
                                   selectedMode === 'chat'
                                     ? 'bg-white text-gray-900 shadow-sm'
                                     : 'text-gray-600 hover:text-gray-800'
@@ -798,9 +798,9 @@ Client relationships are built on transparency, communication, and alignment of 
                         </div>
 
                         {/* Strategy Selector */}
-                        <div className="flex justify-center text-xs">
+                        <div className="flex flex-1 w-full md:w-auto md:flex-none justify-center text-xs">
                           <Select value={selectedStrategy} onValueChange={setSelectedStrategy}>
-                            <SelectTrigger className="w-48 text-xs">
+                            <SelectTrigger className="w-full md:w-48 text-xs">
                               <SelectValue placeholder="Select Strategy" />
                             </SelectTrigger>
                             <SelectContent>

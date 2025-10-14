@@ -224,8 +224,8 @@ export function SourceManagementPanel({
 
             {/* Available Sources */}
             <div>
-              <h3 className="font-medium text-sm mb-3">
-                {query ? `Available Sources (${filteredAvailableSources.length})` : `All Vault Sources (${filteredAvailableSources.length})`}
+              <h3 className="font-medium text-sm pt-4 mb-3">
+                {query ? `Additional Sources (${filteredAvailableSources.length})` : `All Vault Sources (${filteredAvailableSources.length})`}
               </h3>
               
               {filteredAvailableSources.length === 0 ? (
