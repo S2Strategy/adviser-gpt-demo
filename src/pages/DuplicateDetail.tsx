@@ -358,223 +358,358 @@ export function DuplicateDetail() {
   };
 
   return (
-    <div className="h-screen flex ml-64">
-      {/* Sidebar */}
-      <VaultSidebar />
-      
-      {/* Main Content */}
-      <div className="flex-1 h-full flex flex-col">
-        {/* Header with Breadcrumbs */}
-        <div className="border-b bg-background">
-          {/* Breadcrumbs */}
-          <div className="flex items-center gap-2 text-sm mb-6 px-6 pt-6 max-w-[100rem] mx-auto">
-            <Link to="/" className="text-muted-foreground hover:text-foreground">
-              <Home className="h-4 w-4" />
-            </Link>
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            <Link 
-              to="/vault" 
-              className="text-muted-foreground hover:text-foreground"
-            >
-              Vault
-            </Link>
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            <Link 
-              to="/vault/suggested-updates" 
-              className="text-muted-foreground hover:text-foreground"
-            >
-              AI Actions
-            </Link>
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            <span className="text-foreground font-medium">
-              {actionType === "duplicates" 
-                ? `Review Duplicates (${currentGroupIndex + 1} / ${totalGroups})`
-                : `Review Suggestions (${currentGroupIndex + 1} / ${totalGroups})`
-              }
-            </span>
-          </div>
-
-          {/* Main Title */}
-          <div className="flex items-center justify-between px-6 pb-6 max-w-[100rem] mx-auto">
-            <div>
-              <h1 className="text-2xl font-semibold">
+    <div className="h-screen w-full flex flex-col">
+      <div className="bg-sidebar-background flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <VaultSidebar />
+        
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col overflow-hidden bg-background mt-4 ml-4 rounded-tl-2xl vault-scroll">
+          {/* Header with Breadcrumbs */}
+          <div className="border-b border-foreground/10 bg-background">
+            {/* Breadcrumbs */}
+            <div className="flex items-center gap-2 text-sm mb-6 px-6 pt-6 max-w-[100rem] mx-auto">
+              <Link to="/" className="text-foreground/70 hover:text-foreground">
+                <Home className="h-4 w-4" />
+              </Link>
+              <ChevronRight className="h-4 w-4 text-foreground/70" />
+              <Link 
+                to="/vault" 
+                className="text-foreground/70 hover:text-foreground"
+              >
+                Vault
+              </Link>
+              <ChevronRight className="h-4 w-4 text-foreground/70" />
+              <Link 
+                to="/vault/suggested-updates" 
+                className="text-foreground/70 hover:text-foreground"
+              >
+                AI Actions
+              </Link>
+              <ChevronRight className="h-4 w-4 text-foreground/70" />
+              <span className="text-foreground font-medium">
                 {actionType === "duplicates" 
                   ? `Review Duplicates (${currentGroupIndex + 1} / ${totalGroups})`
                   : `Review Suggestions (${currentGroupIndex + 1} / ${totalGroups})`
                 }
-              </h1>
-              <p className="text-muted-foreground">
-                {actionType === "duplicates" 
-                  ? "Review and select questions to keep. Unselected questions will be archived."
-                  : "Review impacted content and make changes as needed."
-                }
-              </p>
+              </span>
+            </div>
+
+            {/* Main Title */}
+            <div className="flex items-center justify-between px-6 pb-6 max-w-[100rem] mx-auto">
+              <div>
+                <h1 className="text-2xl font-semibold">
+                  {actionType === "duplicates" 
+                    ? `Review Duplicates (${currentGroupIndex + 1} / ${totalGroups})`
+                    : `Review Suggestions (${currentGroupIndex + 1} / ${totalGroups})`
+                  }
+                </h1>
+                <p className="text-foreground/70">
+                  {actionType === "duplicates" 
+                    ? "Review and select questions to keep. Unselected questions will be archived."
+                    : "Review impacted content and make changes as needed."
+                  }
+                </p>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Progress Header */}
-        <div className="border-b bg-gray-50/50 py-4">
-          <div className="flex items-center justify-between max-w-[100rem] mx-auto px-6">
-            <div className="flex items-center gap-6">
+          {/* Progress Header */}
+          <div className="border-b border-foreground/10 bg-sidebar-background/50 py-4">
+            <div className="flex items-center justify-between max-w-[100rem] mx-auto px-6">
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">{reviewedGroups.size} Reviewed</span>
+                </div>
+                <div className="flex-1 max-w-md">
+                  <Progress value={progressPercentage} className="h-2" />
+                </div>
+              </div>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">{reviewedGroups.size} Reviewed</span>
+                <Button
+                  variant="outline"
+                  onClick={handlePreviousGroup}
+                  disabled={currentGroupIndex === 0}
+                  className="flex items-center gap-2"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                {actionType === "duplicates" ? (
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={handleSelectAll}
+                      className="text-sm"
+                    >
+                      Select All
+                    </Button>
+                    {isCurrentGroupReviewed ? (
+                      <Button
+                        onClick={handleUndo}
+                        className="min-w-24 bg-sidebar-accent hover:bg-sidebar-accent/80 text-sidebar-accent-foreground"
+                      >
+                        Undo
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={handleKeepSelected}
+                        disabled={selectedQuestions.size === 0}
+                        className="min-w-24 bg-sidebar-primary hover:bg-sidebar-primary/80 text-sidebar-primary-foreground"
+                      >
+                        Keep {selectedQuestions.size}
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={handleArchive}
+                      className="text-sm"
+                    >
+                      Archive
+                    </Button>
+                    {isCurrentGroupReviewed ? (
+                      <Button
+                        onClick={handleUndo}
+                        className="min-w-24 bg-sidebar-accent hover:bg-sidebar-accent/80 text-sidebar-accent-foreground"
+                      >
+                        Undo
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={handleSaveAndNext}
+                        disabled={acceptedSuggestions.size === 0}
+                        className="min-w-24 bg-sidebar-primary hover:bg-sidebar-primary/80 text-sidebar-primary-foreground"
+                      >
+                        Save & Next
+                      </Button>
+                    )}
+                  </>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={handleNextGroup}
+                  disabled={currentGroupIndex === totalGroups - 1}
+                  className="flex items-center gap-2"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
               </div>
-              <div className="flex-1 max-w-md">
-                <Progress value={progressPercentage} className="h-2" />
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={handlePreviousGroup}
-                disabled={currentGroupIndex === 0}
-                className="flex items-center gap-2"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Previous
-              </Button>
-              {actionType === "duplicates" ? (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={handleSelectAll}
-                    className="text-sm"
-                  >
-                    Select All
-                  </Button>
-                  {isCurrentGroupReviewed ? (
-                    <Button
-                      onClick={handleUndo}
-                      className="min-w-24 bg-orange-600 hover:bg-orange-700 text-white"
-                    >
-                      Undo
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={handleKeepSelected}
-                      disabled={selectedQuestions.size === 0}
-                      className="min-w-24 bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                      Keep {selectedQuestions.size}
-                    </Button>
-                  )}
-                </>
-              ) : (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={handleArchive}
-                    className="text-sm"
-                  >
-                    Archive
-                  </Button>
-                  {isCurrentGroupReviewed ? (
-                    <Button
-                      onClick={handleUndo}
-                      className="min-w-24 bg-orange-600 hover:bg-orange-700 text-white"
-                    >
-                      Undo
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={handleSaveAndNext}
-                      disabled={acceptedSuggestions.size === 0}
-                      className="min-w-24 bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                      Save & Next
-                    </Button>
-                  )}
-                </>
-              )}
-              <Button
-                variant="outline"
-                onClick={handleNextGroup}
-                disabled={currentGroupIndex === totalGroups - 1}
-                className="flex items-center gap-2"
-              >
-                Next
-                <ChevronRight className="h-4 w-4" />
-              </Button>
             </div>
           </div>
-        </div>
 
-        {/* Navigation */}
-        <div className="flex items-center gap-4 justify-center px-6 py-2 border-b bg-white">
-          <span className="text-sm">
-            <span className="font-bold">{currentGroupIndex + 1}</span> <span className="text-muted-foreground">of</span> <span className="font-bold">{totalGroups}</span> {actionType === "duplicates" ? "duplicate groups" : "suggestion groups"}
-          </span>
-        </div>
+          {/* Navigation */}
+          <div className="flex items-center gap-4 justify-center px-6 py-2 border-b border-foreground/10 bg-background">
+            <span className="text-sm">
+              <span className="font-bold">{currentGroupIndex + 1}</span> <span className="text-foreground/70">of</span> <span className="font-bold">{totalGroups}</span> {actionType === "duplicates" ? "duplicate groups" : "suggestion groups"}
+            </span>
+          </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-4xl mx-auto space-y-4">
-            {actionType === "duplicates" ? (
-              // Duplicate questions rendering
-              (currentGroup as DuplicateGroup).questions.map((question) => {
-                const isSelected = selectedQuestions.has(question.id);
-                return (
-                  <div 
-                    key={question.id} 
-                    className={`border rounded-lg bg-card vault-result-card cursor-pointer transition-all duration-200 hover:shadow-md ${
-                      isSelected 
-                        ? 'ring-2 ring-blue-500 bg-blue-50/50 border-blue-200' 
-                        : 'hover:border-gray-300'
-                    }`}
-                    onClick={() => handleQuestionSelect(question.id)}
-                  >
-                    {/* Header with file info and selection indicator */}
-                    <div className="flex items-center justify-between pb-4 border-b border-[#E4E4E7] px-6 py-4">
-                      <div className="flex items-center min-w-0 gap-3 flex-1">
-                        <FileText className="h-4 w-4 flex-shrink-0" style={{ color: '#71717A' }} />
-                        <div 
-                          className="font-bold break-words min-w-0 text-sm"
-                          style={{ 
-                            wordBreak: 'break-word',
-                            hyphens: 'auto',
-                            fontSize: '14px', 
-                            lineHeight: '1.4' 
-                          }}
-                        >
-                          {question.documentTitle}
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="max-w-4xl mx-auto space-y-4">
+              {actionType === "duplicates" ? (
+                // Duplicate questions rendering
+                (currentGroup as DuplicateGroup).questions.map((question) => {
+                  const isSelected = selectedQuestions.has(question.id);
+                  return (
+                    <div 
+                      key={question.id} 
+                      className={`border border-foreground/20 rounded-lg bg-card vault-result-card cursor-pointer transition-all duration-200 hover:shadow-md ${
+                        isSelected 
+                          ? 'ring-2 ring-sidebar-primary border-sidebar-primary' 
+                          : 'hover:border-foreground/30'
+                      }`}
+                      onClick={() => handleQuestionSelect(question.id)}
+                    >
+                      {/* Header with file info and selection indicator */}
+                      <div className="flex items-center justify-between pb-4 border-b border-foreground/20 px-6 py-4">
+                        <div className="flex items-center min-w-0 gap-3 flex-1">
+                          <FileText className="h-4 w-4 flex-shrink-0 text-foreground/50" />
+                          <div 
+                            className="font-bold break-words min-w-0 text-sm"
+                            style={{ 
+                              wordBreak: 'break-word',
+                              hyphens: 'auto',
+                              fontSize: '14px', 
+                              lineHeight: '1.4' 
+                            }}
+                          >
+                            {question.documentTitle}
+                          </div>
+                          <div className="flex items-center gap-4 text-sm" style={{ fontSize: '14px', lineHeight: '1.4' }}>
+                            <div className="flex items-center gap-1 whitespace-nowrap">
+                              <Calendar className="h-4 w-4 text-foreground/50" />
+                              <span className="text-foreground/60">Last edited</span>
+                              <span className="text-foreground">{formatFullDate(question.updatedAt)}</span>
+                              <span className="text-foreground/60">by</span>
+                              <span className="text-foreground">{question.updatedBy}</span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-4 text-sm" style={{ fontSize: '14px', lineHeight: '1.4' }}>
-                          <div className="flex items-center gap-1 whitespace-nowrap">
-                            <Calendar className="h-4 w-4" style={{ color: '#71717A' }} />
-                            <span style={{ color: '#71717A' }}>Last edited</span>
-                            <span className="text-foreground">{formatFullDate(question.updatedAt)}</span>
-                            <span style={{ color: '#71717A' }}>by</span>
-                            <span style={{ color: '#27272A' }}>{question.updatedBy}</span>
+                        <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+                          {/* Selection Indicator */}
+                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                            isSelected 
+                              ? 'bg-sidebar-primary border-sidebar-primary' 
+                              : 'border-foreground/20 hover:border-sidebar-primary'
+                          }`}>
+                            {isSelected && <Check className="h-4 w-4 text-white" />}
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 ml-4 flex-shrink-0">
-                        {/* Selection Indicator */}
-                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                          isSelected 
-                            ? 'bg-blue-500 border-blue-500' 
-                            : 'border-gray-300 hover:border-blue-400'
-                        }`}>
-                          {isSelected && <Check className="h-4 w-4 text-white" />}
+
+                      {/* Answer Section */}
+                      {question.answer && (
+                        <div className="space-y-2 px-6 py-4">
+                          <h4 style={{ fontSize: '12px', fontWeight: 'bold', lineHeight: '1.5', letterSpacing: '-0.2px' }}>Answer</h4>
+                          <div className="bg-foreground/5 rounded-md p-4">
+                            <p className="text-sm leading-relaxed">
+                              {question.answer}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Question Section */}
+                      {question.question && (
+                        <div className="space-y-2 px-6 pb-4" style={{ paddingInlineStart: '40px' }}>
+                          <div className="flex items-start gap-2">
+                            <CornerDownRight className="h-4 w-4 mt-1 flex-shrink-0 text-foreground/70" />
+                            <div className="space-y-2">
+                              <h4 className="text-xs font-bold leading-5 tracking-tight">Question</h4>
+                              <p className="text-base font-bold leading-6 tracking-tight">
+                                {question.question}
+                              </p>
+                            
+                              {/* Tags in Question Section */}
+                              <div className="flex flex-wrap items-center gap-2 mt-3">
+                                <Badge 
+                                  variant="outline" 
+                                  className="vault-tag flex items-center gap-1"
+                                >
+                                  <Lightbulb className="h-3 w-3" />
+                                  {question.strategy}
+                                </Badge>
+                                {question.tags.map(tag => (
+                                  <Badge 
+                                    key={tag}
+                                    variant="secondary" 
+                                    className="text-xs bg-foreground/5"
+                                  >
+                                    #{tag}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              ) : (
+                // Firm update suggestions rendering
+                (currentGroup as FirmUpdateGroup).suggestions.map((suggestion) => {
+                  const isAccepted = acceptedSuggestions.has(suggestion.id);
+                  const editedAnswer = editedAnswers.get(suggestion.id);
+                  const currentAnswer = editedAnswer || suggestion.suggestedAnswer;
+                  
+                  return (
+                    <div 
+                      key={suggestion.id} 
+                      className="border rounded-lg bg-card vault-result-card transition-all duration-200 hover:shadow-md"
+                    >
+                      {/* Header with file info */}
+                      <div className="flex items-center justify-between pb-4 border-b border-[#E4E4E7] px-6 py-4">
+                        <div className="flex items-center min-w-0 gap-3 flex-1">
+                          <FileText className="h-4 w-4 flex-shrink-0 text-foreground/50" />
+                          <div 
+                            className="font-bold break-words min-w-0 text-sm"
+                            style={{ 
+                              wordBreak: 'break-word',
+                              hyphens: 'auto',
+                              fontSize: '14px', 
+                              lineHeight: '1.4' 
+                            }}
+                          >
+                            {suggestion.documentTitle}
+                          </div>
+                          <div className="flex items-center gap-4 text-sm" style={{ fontSize: '14px', lineHeight: '1.4' }}>
+                            <div className="flex items-center gap-1 whitespace-nowrap">
+                              <Calendar className="h-4 w-4 text-foreground/50" />
+                              <span className="text-foreground/60">Last edited</span>
+                              <span className="text-foreground">{formatFullDate(suggestion.updatedAt)}</span>
+                              <span className="text-foreground/60">by</span>
+                              <span className="text-foreground">{suggestion.updatedBy}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+                          {isAccepted ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleUndoSuggestion(suggestion.id)}
+                              className="text-xs"
+                            >
+                              Undo
+                            </Button>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleRejectSuggestion(suggestion.id)}
+                                className="text-xs"
+                              >
+                                Reject
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => handleAcceptSuggestion(suggestion.id)}
+                                className="text-xs bg-green-600 hover:bg-green-700 text-white"
+                              >
+                                Accept
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
 
-                    {/* Answer Section */}
-                    {question.answer && (
+                      {/* Answer Section with Diff */}
                       <div className="space-y-2 px-6 py-4">
                         <h4 style={{ fontSize: '12px', fontWeight: 'bold', lineHeight: '1.5', letterSpacing: '-0.2px' }}>Answer</h4>
-                        <div className="bg-muted/50 rounded-md p-4">
-                          <p className="text-sm leading-relaxed">
-                            {question.answer}
-                          </p>
-                        </div>
+                        {isAccepted ? (
+                          <div className="space-y-2">
+                            <Textarea
+                              value={currentAnswer}
+                              onChange={(e) => handleEditAnswer(suggestion.id, e.target.value)}
+                              className="min-h-32 resize-none"
+                            />
+                          </div>
+                        ) : (
+                          <div className="bg-muted/50 rounded-md p-4 space-y-3">
+                            {/* Original answer with strikethrough */}
+                            <div className="text-sm leading-relaxed">
+                              <span className="text-red-600 line-through bg-red-50 px-1 rounded">
+                                {suggestion.originalAnswer}
+                              </span>
+                            </div>
+                            {/* Suggested answer with green highlight */}
+                            <div className="text-sm leading-relaxed">
+                              <span className="text-green-700 bg-green-50 px-1 rounded">
+                                {suggestion.suggestedAnswer}
+                              </span>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    )}
 
-                    {/* Question Section */}
-                    {question.question && (
+                      {/* Question Section */}
                       <div className="space-y-2 px-6 pb-4" style={{ paddingInlineStart: '40px' }}>
                         <div className="flex items-start gap-2">
                           <CornerDownRight className="h-4 w-4 mt-1 flex-shrink-0" style={{ color: '#71717A' }} />
@@ -583,9 +718,9 @@ export function DuplicateDetail() {
                             <p 
                               style={{ fontSize: '16px', lineHeight: '1.5', fontWeight: '700', letterSpacing: '-0.4px' }}
                             >
-                              {question.question}
+                              {suggestion.question}
                             </p>
-                           
+                          
                             {/* Tags in Question Section */}
                             <div className="flex flex-wrap items-center gap-2 mt-3">
                               <Badge 
@@ -593,9 +728,9 @@ export function DuplicateDetail() {
                                 className="vault-tag flex items-center gap-1"
                               >
                                 <Lightbulb className="h-3 w-3" />
-                                {question.strategy}
+                                {suggestion.strategy}
                               </Badge>
-                              {question.tags.map(tag => (
+                              {suggestion.tags.map(tag => (
                                 <Badge 
                                   key={tag}
                                   variant="secondary" 
@@ -608,146 +743,11 @@ export function DuplicateDetail() {
                           </div>
                         </div>
                       </div>
-                    )}
-                  </div>
-                );
-              })
-            ) : (
-              // Firm update suggestions rendering
-              (currentGroup as FirmUpdateGroup).suggestions.map((suggestion) => {
-                const isAccepted = acceptedSuggestions.has(suggestion.id);
-                const editedAnswer = editedAnswers.get(suggestion.id);
-                const currentAnswer = editedAnswer || suggestion.suggestedAnswer;
-                
-                return (
-                  <div 
-                    key={suggestion.id} 
-                    className="border rounded-lg bg-card vault-result-card transition-all duration-200 hover:shadow-md"
-                  >
-                    {/* Header with file info */}
-                    <div className="flex items-center justify-between pb-4 border-b border-[#E4E4E7] px-6 py-4">
-                      <div className="flex items-center min-w-0 gap-3 flex-1">
-                        <FileText className="h-4 w-4 flex-shrink-0" style={{ color: '#71717A' }} />
-                        <div 
-                          className="font-bold break-words min-w-0 text-sm"
-                          style={{ 
-                            wordBreak: 'break-word',
-                            hyphens: 'auto',
-                            fontSize: '14px', 
-                            lineHeight: '1.4' 
-                          }}
-                        >
-                          {suggestion.documentTitle}
-                        </div>
-                        <div className="flex items-center gap-4 text-sm" style={{ fontSize: '14px', lineHeight: '1.4' }}>
-                          <div className="flex items-center gap-1 whitespace-nowrap">
-                            <Calendar className="h-4 w-4" style={{ color: '#71717A' }} />
-                            <span style={{ color: '#71717A' }}>Last edited</span>
-                            <span className="text-foreground">{formatFullDate(suggestion.updatedAt)}</span>
-                            <span style={{ color: '#71717A' }}>by</span>
-                            <span style={{ color: '#27272A' }}>{suggestion.updatedBy}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 ml-4 flex-shrink-0">
-                        {isAccepted ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleUndoSuggestion(suggestion.id)}
-                            className="text-xs"
-                          >
-                            Undo
-                          </Button>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleRejectSuggestion(suggestion.id)}
-                              className="text-xs"
-                            >
-                              Reject
-                            </Button>
-                            <Button
-                              size="sm"
-                              onClick={() => handleAcceptSuggestion(suggestion.id)}
-                              className="text-xs bg-green-600 hover:bg-green-700 text-white"
-                            >
-                              Accept
-                            </Button>
-                          </div>
-                        )}
-                      </div>
                     </div>
-
-                    {/* Answer Section with Diff */}
-                    <div className="space-y-2 px-6 py-4">
-                      <h4 style={{ fontSize: '12px', fontWeight: 'bold', lineHeight: '1.5', letterSpacing: '-0.2px' }}>Answer</h4>
-                      {isAccepted ? (
-                        <div className="space-y-2">
-                          <Textarea
-                            value={currentAnswer}
-                            onChange={(e) => handleEditAnswer(suggestion.id, e.target.value)}
-                            className="min-h-32 resize-none"
-                          />
-                        </div>
-                      ) : (
-                        <div className="bg-muted/50 rounded-md p-4 space-y-3">
-                          {/* Original answer with strikethrough */}
-                          <div className="text-sm leading-relaxed">
-                            <span className="text-red-600 line-through bg-red-50 px-1 rounded">
-                              {suggestion.originalAnswer}
-                            </span>
-                          </div>
-                          {/* Suggested answer with green highlight */}
-                          <div className="text-sm leading-relaxed">
-                            <span className="text-green-700 bg-green-50 px-1 rounded">
-                              {suggestion.suggestedAnswer}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Question Section */}
-                    <div className="space-y-2 px-6 pb-4" style={{ paddingInlineStart: '40px' }}>
-                      <div className="flex items-start gap-2">
-                        <CornerDownRight className="h-4 w-4 mt-1 flex-shrink-0" style={{ color: '#71717A' }} />
-                        <div className="space-y-2">
-                          <h4 style={{ fontSize: '12px', fontWeight: 'bold', lineHeight: '1.5', letterSpacing: '-0.2px' }}>Question</h4>
-                          <p 
-                            style={{ fontSize: '16px', lineHeight: '1.5', fontWeight: '700', letterSpacing: '-0.4px' }}
-                          >
-                            {suggestion.question}
-                          </p>
-                         
-                          {/* Tags in Question Section */}
-                          <div className="flex flex-wrap items-center gap-2 mt-3">
-                            <Badge 
-                              variant="outline" 
-                              className="vault-tag flex items-center gap-1"
-                            >
-                              <Lightbulb className="h-3 w-3" />
-                              {suggestion.strategy}
-                            </Badge>
-                            {suggestion.tags.map(tag => (
-                              <Badge 
-                                key={tag}
-                                variant="secondary" 
-                                className="text-xs"
-                              >
-                                #{tag}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
+                  );
+                })
+              )}
+            </div>
           </div>
         </div>
       </div>

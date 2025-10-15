@@ -105,7 +105,7 @@ export function FirmUpdatesModal({ open, onClose }: FirmUpdatesModalProps) {
       
       {/* Modal */}
       <div 
-        className={`fixed left-1/2 top-1/2 z-50 w-full max-w-2xl bg-background border shadow-2xl rounded-lg transition-all duration-300 transform ${
+        className={`fixed left-1/2 top-1/2 z-50 w-full max-w-2xl bg-background border border-foreground/20 shadow-2xl rounded-lg transition-all duration-300 transform ${
           open ? 'translate-x-[-50%] translate-y-[-50%] opacity-100 scale-100' : 'translate-x-[-50%] translate-y-[-50%] opacity-0 scale-95'
         }`}
         style={{
@@ -116,12 +116,12 @@ export function FirmUpdatesModal({ open, onClose }: FirmUpdatesModalProps) {
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Building2 className="h-5 w-5 text-blue-600" />
+              <div className="p-2 bg-sidebar-primary/10 rounded-lg">
+                <Building2 className="h-5 w-5 text-sidebar-primary" />
               </div>
               <div>
                 <h2 className="text-lg font-semibold">Firm Updates</h2>
-                <p className="text-sm text-muted-foreground mt-1">Request changes to your firm's information</p>
+                <p className="text-sm text-foreground/70 mt-1">Request changes to your firm's information</p>
               </div>
             </div>
             <Button variant="ghost" size="sm" onClick={onClose} disabled={isLoading}>
@@ -132,14 +132,14 @@ export function FirmUpdatesModal({ open, onClose }: FirmUpdatesModalProps) {
           {/* Content */}
           <div className="p-6 space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="description" className="text-sm font-medium">
+              <Label htmlFor="description" className="font-normal text-foreground">
                 Please provide a detailed description of the changes needed. The more specific you are about both the current state and desired changes, the more accurately we can update your firm's information.
               </Label>
               <Textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="min-h-32 resize-none"
+                className="min-h-32 text-foreground placeholder:text-foreground/70 resize-none transition"
                 placeholder="Describe your changes in detail. Please include: 
 - What specific information needs to be updated
 - The current state of the data
@@ -151,14 +151,14 @@ export function FirmUpdatesModal({ open, onClose }: FirmUpdatesModalProps) {
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-3 p-6 border-t bg-gray-50/50">
+          <div className="flex items-center justify-end gap-3 p-6 border-t bg-sidebar-background/50">
             <Button variant="outline" onClick={onClose} disabled={isLoading}>
               Cancel
             </Button>
             <Button 
               onClick={handleRun} 
               disabled={isLoading || !description.trim()}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-sidebar-primary hover:bg-sidebar-primary/80 text-sidebar-primary-foreground"
             >
               {isLoading ? (
                 <>
