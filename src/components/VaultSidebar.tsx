@@ -299,7 +299,7 @@ export function VaultSidebar() {
           {/* Subheader */}
           <div className="px-2">
             <div className="text-sidebar-foreground font-semibold text-sm">
-              <img src="/AdviserGPT-logo.svg" alt="AdviserGPT" className="max-h-2.5" loading="eager" decoding="async" fetchPriority="high" />
+              <img src="/AdviserGPT-logo.svg" alt="AdviserGPT" width="69" height="10" className="max-h-2.5" loading="eager" decoding="async" fetchPriority="high" />
             </div>
           </div>
 
