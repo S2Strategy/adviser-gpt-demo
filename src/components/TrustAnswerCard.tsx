@@ -198,17 +198,16 @@ export function TrustAnswerCard({
 
   return (
     <div className="max-w-3xl mx-auto">
-      <div className="bg-white rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+      <div className="bg-background rounded-lg overflow-hidden border border-foreground/20 shadow-sm">
         {/* Header */}
-        <div className="pt-2 px-4 bg-gray-50 border-b">
+        <div className="pt-2 px-4 bg-sidebar-background border-b border-foreground/10">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <Badge className="bg-blue-600 text-white flex items-center gap-1">AdviserGPT • <span className="font-semibold">{mode === 'answer' ? 'Vault Only' : 'Vault + Web'}</span></Badge>
+              <Badge className="bg-accent text-white flex items-center gap-1">AdviserGPT • <span className="font-semibold">{mode === 'answer' ? 'Vault Only' : 'Vault + Web'}</span></Badge>
               {/* Trusted Language Badge - Only show for Answer Mode */}
               {mode === 'answer' && (
-                <Badge variant="outline" className="bg-green-50 text-green-800 border-green-300">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                <Badge variant="outline" className="bg-sidebar-primary text-sidebar-primary-foreground border-sidebar-primary">
+                  <div className="flex items-center">
                     <span className="font-semibold">99%</span>
                   </div>
                   <span className="text-xs ml-1">Trusted Language</span>
@@ -259,16 +258,16 @@ export function TrustAnswerCard({
           
           {/* Trust Metrics */}
           <div className="space-y-1 pb-2">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className="flex items-center justify-between text-xs text-foreground/70">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-700 flex items-center gap-2">
+                <span className="text-foreground/70 flex items-center gap-2">
                   {mode === 'answer' ? (
                     <>
                       <span className="flex items-center gap-1">
                         <div className={`w-[3px] h-3 rounded-full ${HIGHLIGHT_COLORS.vault.indicator}`}></div>
                         Vault: <span className="font-medium">{answer.vaultRatio}% firm-approved language</span>
                       </span>
-                      <span className="text-gray-400">|</span>
+                      <span className="text-foreground/50">|</span>
                       <span className="flex items-center gap-1">
                         <div className={`w-[3px] h-3 rounded-full ${HIGHLIGHT_COLORS.ai.indicator}`}></div>
                         AI: <span className="font-medium">{answer.aiRatio}% formatting</span>
@@ -277,10 +276,10 @@ export function TrustAnswerCard({
                   ) : (
                     <>
                       <span className="flex items-center gap-1">
-                        <div className="w-3 h-3 rounded-full bg-gray-400"></div>
+                        <div className="w-3 h-3 rounded-full bg-foreground/20"></div>
                         Web: <span className="font-medium">{100 - answer.vaultRatio}% research</span>
                       </span>
-                      <span className="text-gray-400">|</span>
+                      <span className="text-foreground/50">|</span>
                       <span className="flex items-center gap-1">
                         <div className={`w-3 h-3 rounded-full ${HIGHLIGHT_COLORS.vault.indicator}`}></div>
                         Vault: <span className="font-medium">{answer.vaultRatio}% firm data</span>
@@ -304,7 +303,7 @@ export function TrustAnswerCard({
             <div className="flex items-center gap-2">
               <h5 className="text-md">AI Summary</h5>
             </div>
-            <div className="text-xs text-muted-foreground">
+            <div className="text-xs text-foreground/70">
               Version {answer.version}
             </div>
           </div>
@@ -319,12 +318,12 @@ export function TrustAnswerCard({
                 onInput={handleContentChange}
                 onKeyDown={handleKeyDown}
                 onBlur={handleBlur}
-                className="text-gray-800 text-sm p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[100px]"
+                className="text-foreground text-sm p-3 border border-foreground/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[100px]"
                 dangerouslySetInnerHTML={{ __html: editedContent }}
               />
             ) : (
               <p 
-                className="text-gray-800 text-sm cursor-pointer hover:bg-gray-50/50 p-2 rounded transition-colors"
+                className="text-foreground text-sm cursor-pointer hover:bg-sidebar-background/30 p-2 rounded transition-colors"
                 onClick={handleStartEdit}
                 title="Click to edit"
               >
@@ -381,7 +380,7 @@ export function TrustAnswerCard({
         </div>
 
         {/* Footer Controls */}
-        <div className="p-4 bg-gray-50 border-t">
+        <div className="p-4 bg-sidebar-background/50 border-t border-foreground/10">
 
           {/* Source Management */}
           <div className="flex items-center justify-between">
@@ -393,7 +392,7 @@ export function TrustAnswerCard({
                 className="flex items-center gap-1.5"
               >
                 <span>View Sources</span>
-                <span className="flex items-center justify-center h-5 w-5 bg-gray-900 text-white text-xs font-medium rounded-full">
+                <span className="flex items-center justify-center h-5 w-5 bg-accent text-white text-xs font-medium rounded-full">
                   {answer.sources.length}
                 </span>
                 {showSources ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
@@ -447,16 +446,16 @@ export function TrustAnswerCard({
           {/* Sources Collapsible */}
           <Collapsible open={showSources} onOpenChange={setShowSources}>
             <CollapsibleContent className="pt-2 space-y-2">
-              <div className="border rounded-lg p-3 bg-white">
+              <div className="border rounded-lg p-3 bg-background border-foreground/10">
                 <h4 className="font-medium text-sm mb-2">Sources used for this answer</h4>
                 <div className="space-y-2">
                   {answer.sources.map((source) => (
-                    <div key={source.id} className="flex items-center justify-between p-2 border rounded">
+                    <div key={source.id} className="flex items-center justify-between p-2 border border-foreground/10 rounded">
                       <div className="flex items-center gap-2">
                         {source.type === 'web' ? (
                           <Globe className="h-4 w-4 text-blue-500" />
                         ) : (
-                          <FileText className="h-4 w-4 text-gray-500" />
+                          <FileText className="h-4 w-4 text-foreground/50" />
                         )}
                         <span className="text-sm font-medium">{formatSourceName(source)}</span>
                         {source.type !== 'web' && (
@@ -470,7 +469,7 @@ export function TrustAnswerCard({
                         </Badge>
                         )}
                         {source.strategy && mode !== 'chat' && (
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge variant="outline" className="text-xs bg-sidebar-background/60 border-foreground/10">
                             {source.strategy}
                           </Badge>
                         )}
@@ -485,7 +484,7 @@ export function TrustAnswerCard({
                           variant="ghost" 
                           size="sm" 
                           onClick={() => onSourceRemove?.(source.id)}
-                          className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
+                          className="h-6 w-6 p-0 text-foreground/70 hover:text-red-500"
                         >
                           <X className="h-3 w-3" />
                         </Button>

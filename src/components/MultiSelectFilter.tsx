@@ -56,7 +56,7 @@ export function MultiSelectFilter({
         >
           <div className="flex items-center gap-2">
             <span className="truncate">{displayText}</span>
-            <span className={`inline-flex items-center justify-center w-5 h-5 text-xs font-medium text-white bg-primary rounded-full transition-all ease-bounce ${
+            <span className={`inline-flex items-center justify-center w-5 h-5 text-xs font-medium text-white bg-background rounded-full transition-all ease-bounce ${
               selectedValues.length > 0 ? 'opacity-100 duration-180 scale-100' : 'opacity-0 duration-0 scale-50'
             }`}>
               {selectedValues.length}
@@ -70,7 +70,7 @@ export function MultiSelectFilter({
           {/* Search bar */}
           <div className="p-3 border-b">
             <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-foreground/70" />
               <Input
                 placeholder={`Search ${title.toLowerCase()}...`}
                 value={searchQuery}
@@ -83,14 +83,14 @@ export function MultiSelectFilter({
           {/* Options list */}
           <div className="max-h-60 overflow-y-auto p-1">
             {filteredOptions.length === 0 ? (
-              <div className="py-6 text-center text-sm text-muted-foreground">
+              <div className="py-6 text-center text-sm text-foreground/70">
                 No options found.
               </div>
             ) : (
               filteredOptions.map((option) => (
                 <div
                   key={option}
-                  className="flex items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent cursor-pointer"
+                  className="flex items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-foreground/10 cursor-pointer"
                   onClick={() => handleToggleOption(option)}
                 >
                   <Checkbox

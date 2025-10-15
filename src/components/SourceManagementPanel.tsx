@@ -82,9 +82,12 @@ export function SourceManagementPanel({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-black/50 transition duration-200" onClick={onClose}>
       <div 
-        className="fixed right-0 top-0 h-full w-120 bg-white shadow-xl"
+        className={`fixed right-4 top-4 h-[calc(100%-32px)] flex flex-col w-120 bg-background rounded-2xl shadow-xl transition-all duration-300 transform
+          ${
+            isOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
+          }`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -92,9 +95,9 @@ export function SourceManagementPanel({
           <div>
             <h2 className="text-lg font-semibold">Vault Sources</h2>
             {query ? (
-              <p className="text-sm text-muted-foreground">for: "{query}"</p>
+              <p className="text-sm text-foreground/70">for: "{query}"</p>
             ) : (
-              <p className="text-sm text-muted-foreground">Browse and manage your vault sources</p>
+              <p className="text-sm text-foreground/70">Browse and manage your vault sources</p>
             )}
           </div>
           <Button variant="ghost" size="sm" onClick={onClose}>
@@ -105,12 +108,12 @@ export function SourceManagementPanel({
         {/* Filters */}
         <div className="p-4 border-b space-y-3">
           <div className="flex items-center gap-2">
-            <Search className="h-4 w-4 text-muted-foreground" />
+            <Search className="h-4 w-4 text-foreground/70" />
             <Input
               placeholder="Search sources..."
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
-              className="flex-1"
+              className="flex-1 border-foreground/20"
             />
           </div>
           
@@ -141,7 +144,7 @@ export function SourceManagementPanel({
           </div>
         </div>
 
-        <ScrollArea className="flex-1 h-[calc(100vh-200px)]">
+        <ScrollArea className="flex-1">
           <div className="p-4 space-y-4">
             {/* Used Sources */}
             <div>
@@ -163,13 +166,13 @@ export function SourceManagementPanel({
               </div>
               
               {usedSources.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-8 text-foreground/80">
                   <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   <p className="text-sm">
                     {query ? 'No sources selected' : 'Ask a question to see relevant sources'}
                   </p>
                   {!query && (
-                    <p className="text-xs mt-1 text-gray-400">
+                    <p className="text-xs mt-1 text-foreground/60">
                       Sources will appear here when you ask a question
                     </p>
                   )}
@@ -229,13 +232,13 @@ export function SourceManagementPanel({
               </h3>
               
               {filteredAvailableSources.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-8 text-foreground/70">
                   <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   <p className="text-sm">
                     {query ? 'No sources found' : 'No sources available'}
                   </p>
                   {!query && (
-                    <p className="text-xs mt-1 text-gray-400">
+                    <p className="text-xs mt-1 text-foreground/70">
                       Browse and search through your vault sources
                     </p>
                   )}
@@ -243,11 +246,11 @@ export function SourceManagementPanel({
               ) : (
                 <div className="space-y-2">
                   {filteredAvailableSources.map((source) => (
-                    <div key={source.id} className="border rounded-lg p-3 bg-gray-50">
+                    <div key={source.id} className="border border-sidebar-foreground/10 rounded-lg p-3 bg-sidebar-background">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-gray-500" />
-                          <span className="font-medium text-sm">{source.name}</span>
+                          <FileText className="h-4 w-4 text-foreground/70" />
+                          <span className="font-medium text-sm text-foreground">{source.name}</span>
                           {query && (
                             <Badge 
                               variant="outline" 
@@ -258,14 +261,14 @@ export function SourceManagementPanel({
                             </Badge>
                           )}
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-0">
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => onSourceAdd(source.id)}
-                                className={`h-6 w-6 p-0 text-gray-600 hover:${HIGHLIGHT_COLORS.vault.accent}`}
+                                className={`text-foreground/70 hover:${HIGHLIGHT_COLORS.vault.accent}`}
                               >
                                 <Plus className="h-3 w-3" />
                               </Button>
@@ -277,7 +280,7 @@ export function SourceManagementPanel({
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-6 w-6 p-0 text-gray-600 hover:text-gray-800"
+                                className="text-foreground/70 hover:text-gray-800"
                               >
                                 <ExternalLink className="h-3 w-3" />
                               </Button>
@@ -286,16 +289,16 @@ export function SourceManagementPanel({
                           </Tooltip>
                         </div>
                       </div>
-                      <p className="text-xs text-gray-600 leading-relaxed">
+                      <p className="text-xs text-foreground/70 leading-relaxed">
                         {source.snippet}
                       </p>
                       <div className="flex items-center justify-between mt-2">
                         {source.strategy && (
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge variant="outline" className="text-xs bg-background border-foreground/20">
                             {source.strategy}
                           </Badge>
                         )}
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-foreground/70">
                           {source.lastModified.toLocaleDateString()}
                         </span>
                       </div>
@@ -308,9 +311,9 @@ export function SourceManagementPanel({
         </ScrollArea>
 
         {/* Footer */}
-        <div className="p-4 border-t bg-gray-50">
+        <div className="p-4 border-t border-foreground/10">
           <div className="flex items-center justify-between">
-            <div className="text-xs text-muted-foreground">
+            <div className="text-xs text-foreground/70">
               {query ? (
                 `${usedSources.length} of ${usedSources.length + availableSources.length} sources used`
               ) : (

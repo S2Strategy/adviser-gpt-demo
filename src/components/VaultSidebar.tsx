@@ -1,14 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Building, 
   ChevronsUpDown, 
   Home, 
   CloudUpload,
   ShieldCheck, 
+  MessageSquareLock,
   Rocket, 
   FileText, 
   UserRound, 
   ChevronUp,
+  ChevronDown,
+  SquarePen,
   Users,
   LogOut,
 } from "lucide-react";
@@ -38,6 +41,17 @@ export function VaultSidebar() {
   const [isSavedSearchesOpen, setIsSavedSearchesOpen] = useState(true);
   const [isHistoryOpen, setIsHistoryOpen] = useState(true);
   const [isConversationsOpen, setIsConversationsOpen] = useState(true);
+  const [isChatsExpanded, setIsChatsExpanded] = useState(() => {
+    const saved = localStorage.getItem('vault-sidebar-chats-expanded');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  const [isChatsIconHovered, setIsChatsIconHovered] = useState(false);
+  
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('vault-sidebar-chats-expanded', JSON.stringify(isChatsExpanded));
+  }, [isChatsExpanded]);
+  
   const { savedSearches } = useSavedSearches();
   const { recentSearches: searchHistory } = useSearchHistory();
   const { recentSearchesForSidebar, removeRecentSearch } = useRecentSearches();
@@ -45,8 +59,8 @@ export function VaultSidebar() {
   
   const recentSavedSearches = savedSearches.slice(0, 5);
   
-  // Convert recent searches to conversation format for display
-  const recentConversations: Conversation[] = recentSearchesForSidebar.map(search => ({
+  // Convert recent searches to conversation format for display, limit to 7
+  const recentConversations: Conversation[] = recentSearchesForSidebar.slice(0, 7).map(search => ({
     id: search.id,
     title: search.displayTitle,
     timestamp: new Date(search.timestamp),
@@ -227,26 +241,26 @@ export function VaultSidebar() {
 
   return (
     <div 
-      className="h-full w-72 bg-[#FAFAFA] border-r border-[#E4E4E7] flex flex-col"
+      className="h-full w-[300px] flex flex-col py-4"
     >
 
         {/* Account Wrapper */}
         <div className="p-2">
           <Popover open={isAccountOpen} onOpenChange={setIsAccountOpen}>
             <PopoverTrigger asChild>
-              <div className="p-2 gap-2 rounded-lg flex items-center cursor-pointer hover:bg-gray-100 transition-colors">
+              <div className="p-2 gap-2 rounded-lg flex items-center cursor-pointer bg-background/50 hover:bg-background/90 transition-colors">
                 {/* Account Icon */}
                 <div 
-                  className="bg-[#18181B] rounded-lg inline-grid place-items-center"
+                  className="bg-sidebar-foreground rounded-lg inline-grid place-items-center"
                   style={{ width: "32px", height: "32px" }}
                 >
-                  <Building className="w-4 h-4 text-white" />
+                  <Building className="w-4 h-4 text-sidebar-background" />
                 </div>
                 
                 {/* Account Info */}
                 <div className="flex-1 grid gap-[-2px]">
                   <div 
-                    className="font-semibold text-[#27272A]"
+                    className="font-semibold text-sidebar-foreground"
                     style={{ 
                       fontSize: "14px", 
                       lineHeight: "1.4" 
@@ -255,7 +269,7 @@ export function VaultSidebar() {
                     [DEMO] S2 Strategy
                   </div>
                   <div 
-                    className="font-medium text-[#71717A]"
+                    className="font-medium text-sidebar-foreground/70"
                     style={{ 
                       fontSize: "12px", 
                       fontWeight: "500",
@@ -272,7 +286,7 @@ export function VaultSidebar() {
               </div>
             </PopoverTrigger>
             <PopoverContent className="w-48 p-1" align="start">
-              <div className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded cursor-pointer">
+              <div className="flex items-center gap-2 p-2 hover:bg-sidebar-primary/10 rounded cursor-pointer">
                 <Users className="w-4 h-4" />
                 <span className="text-sm">Account</span>
               </div>
@@ -281,10 +295,10 @@ export function VaultSidebar() {
         </div>
 
         {/* Navigation Section */}
-        <div className="flex-1 p-2 gap-3 grid min-w-0 grid-cols-1" style={{ alignContent: "start" }}>
+        <div className="flex-1 p-2 gap-2 min-w-0 flex flex-col" style={{ alignContent: "start" }}>
           {/* Subheader */}
           <div 
-            className="px-2 text-[#71717A]"
+            className="px-2 text-sidebar-foreground"
             style={{
               fontSize: "13px",
               fontWeight: "500",
@@ -295,73 +309,35 @@ export function VaultSidebar() {
             AdviserGPT
           </div>
 
-          {/* Navigation Links */}
-          <ul className="space-y-1">
+          {/* Top Navigation Links */}
+          <ul className="space-y-1 flex-1">
             <li>
-              <div className="ml-2">
-                <button
-                  onClick={handleNewConversation}
-                  className={`h-8 px-2 rounded-md flex items-center gap-2 w-full transition-colors ${
-                    isActiveRoute("/") 
-                      ? "bg-[#4D5562] text-white" 
-                      : "text-[#3F3F46] hover:bg-gray-100"
-                  }`}
+              <button
+                onClick={handleNewConversation}
+                className="h-10 px-2 rounded-md flex items-center gap-2 w-full transition-colors text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent"
+              >
+                <SquarePen className="w-4 h-4" />
+                <span 
+                  className="text-md font-medium" 
+                  style={{
+                    lineHeight: "1.5",
+                    letterSpacing: "-0.3px"
+                  }}
                 >
-                  <Home className="w-4 h-4" />
-                  <span 
-                    style={{
-                      fontSize: "14px",
-                      fontWeight: "500",
-                      lineHeight: "1.5",
-                      letterSpacing: "-0.3px"
-                    }}
-                  >
-                    Home
-                  </span>
-                </button>
-                
-                {/* Recent Conversations Sub-menu */}
-                {recentConversations.length > 0 && (
-                  <div className="ml-2 mt-1 min-w-0">
-                    <ChatSidebar
-                      items={recentConversations.map(conv => ({
-                        id: conv.id,
-                        title: conv.title,
-                        preview: conv.lastMessage,
-                        updatedAt: conv.timestamp.toISOString(),
-                        unread: conv.unread,
-                        pinned: conv.pinned,
-                        archived: conv.archived
-                      }))}
-                      activeId={getActiveChatId()}
-                      onOpenChat={handleOpenConversation}
-                      onShare={handleShareConversation}
-                      onRename={handleRenameConversation}
-                      onArchive={handleArchiveConversation}
-                      onDelete={handleDeleteConversation}
-                      onNewChat={handleNewConversation}
-                      title="Recent Chats"
-                      className=""
-                    />
-                  </div>
-                )}
-              </div>
+                  New chat
+                </span>
+              </button>
             </li>
             
             <li>
               <Link
                 to="/vault"
-                className={`h-8 px-2 rounded-md flex items-center gap-2 transition-colors ${
-                  isActiveRoute("/vault") 
-                    ? "bg-[#4D5562] text-white" 
-                    : "text-[#3F3F46] hover:bg-gray-100"
-                }`}
+                className="h-10 px-2 rounded-md flex items-center gap-2 transition-colors text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent"
               >
                 <ShieldCheck className="w-4 h-4" />
                 <span 
+                  className="text-md font-medium" 
                   style={{
-                    fontSize: "14px",
-                    fontWeight: "500",
                     lineHeight: "1.5",
                     letterSpacing: "-0.3px"
                   }}
@@ -370,127 +346,127 @@ export function VaultSidebar() {
                 </span>
               </Link>
             </li>
-            
-            {/* Saved Searches Sub-menu
-            {recentSavedSearches.length > 0 && (
-              <li>
-                <div className="ml-2">
-                  <button
-                    onClick={() => setIsSavedSearchesOpen(!isSavedSearchesOpen)}
-                    className="h-6 px-2 rounded-md flex items-center gap-1 text-[#71717A] hover:bg-gray-100 transition-colors w-full"
-                  >
-                    {isSavedSearchesOpen ? (
-                      <ChevronDown className="w-3 h-3" />
-                    ) : (
-                      <ChevronRight className="w-3 h-3" />
-                    )}
-                    <span 
-                      style={{
-                        fontSize: "12px",
-                        fontWeight: "500",
-                        lineHeight: "1.4",
-                        letterSpacing: "-0.2px"
-                      }}
-                    >
-                      Saved Searches
-                    </span>
-                  </button>
-                  
-                  {isSavedSearchesOpen && (
-                    <ul className="ml-4 mt-1 space-y-1">
-                      {recentSavedSearches.map((search) => (
-                        <li key={search.id}>
-                          <button
-                            onClick={() => {
-                              const url = generateSearchUrl(search);
-                              const storedResult = getChatResultByQuery(search.query, search.mode);
-                              if (storedResult) {
-                                navigate(url, { state: { storedChatResult: storedResult, skipLoading: true } });
-                              } else {
-                                navigate(url);
-                              }
-                            }}
-                            className="h-6 px-2 rounded-md flex items-center gap-2 text-[#71717A] hover:bg-gray-100 transition-colors w-full text-left"
-                          >
-                            <Bookmark className="w-3 h-3" />
-                            <span 
-                              style={{
-                                fontSize: "11px",
-                                fontWeight: "400",
-                                lineHeight: "1.4",
-                                letterSpacing: "-0.1px"
-                              }}
-                              className="truncate"
-                            >
-                              {search.name}
-                            </span>
-                          </button>
-                        </li>
-                      ))}
-                      
-                      {recentSavedSearches.length >= 5 && (
-                        <li>
-                          <Link
-                            to="/vault/saved-searches"
-                            className="h-6 px-2 rounded-md flex items-center gap-2 text-[#71717A] hover:bg-gray-100 transition-colors"
-                          >
-                            <Search className="w-3 h-3" />
-                            <span 
-                              style={{
-                                fontSize: "11px",
-                                fontWeight: "400",
-                                lineHeight: "1.4",
-                                letterSpacing: "-0.1px"
-                              }}
-                            >
-                              View all
-                            </span>
-                          </Link>
-                        </li>
-                      )}
-                    </ul>
-                  )}
-                </div>
-              </li>
-            )} */}
 
-            {/* History Sub-menu */}
-            {searchHistory.length > 0 && (
-              <li>
-                <div className="ml-2 min-w-0">
-                  <ChatSidebar
-                    items={searchHistory.map(historyItem => ({
-                      id: historyItem.id,
-                      title: historyItem.displayName ?? fallbackLabel(historyItem),
-                      preview: historyItem.query || 'Search query',
-                      updatedAt: new Date(historyItem.timestamp).toISOString(),
-                      unread: false,
-                      pinned: false,
-                      archived: false
-                    }))}
-                    activeId={getActiveChatId()}
-                    onOpenChat={handleOpenHistory}
-                    onShare={handleShareHistory}
-                    onRename={handleRenameHistory}
-                    onArchive={handleArchiveHistory}
-                    onDelete={handleDeleteHistory}
-                    title="Recent Searches"
-                    className=""
+            <li>
+              <Link
+                to="#"
+                className="h-10 px-2 rounded-md flex items-center gap-2 transition-colors text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent"
+              >
+                <CloudUpload className="w-4 h-4" />
+                <span 
+                  className="text-md font-medium"
+                  style={{
+                    lineHeight: "1.5",
+                    letterSpacing: "-0.3px"
+                  }}
+                >
+                  File Upload
+                </span>
+              </Link>
+            </li>
+            
+            <li>
+              <Link
+                to="#"
+                className="h-10 px-2 rounded-md flex items-center gap-2 transition-colors text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent"
+              >
+                <FileText className="w-4 h-4" />
+                <span 
+                  className="text-md font-medium"
+                  style={{
+                    lineHeight: "1.5",
+                    letterSpacing: "-0.3px"
+                  }}
+                >
+                  Resources
+                </span>
+              </Link>
+            </li>
+          </ul>
+
+          {/* Chats Section */}
+          {recentConversations.length > 0 && (
+            <div className="mt-4">
+              <div 
+                className="h-10 px-2 rounded-md flex items-center gap-2 w-full transition-colors text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent cursor-pointer"
+                onClick={() => setIsChatsExpanded(!isChatsExpanded)}
+                onMouseEnter={() => setIsChatsIconHovered(true)}
+                onMouseLeave={() => setIsChatsIconHovered(false)}
+              >
+                <div className="flex items-center justify-center w-4 h-4 relative">
+                  <ChevronDown 
+                    className={`w-4 h-4 absolute transition-all duration-300 ${
+                      !isChatsExpanded 
+                        ? 'opacity-100 scale-100' 
+                        : 'opacity-0 scale-75'
+                    }`} 
+                  />
+                  <ChevronUp 
+                    className={`w-4 h-4 absolute transition-all duration-300 ${
+                      isChatsExpanded 
+                        ? 'opacity-100 scale-100' 
+                        : 'opacity-0 scale-75'
+                    }`} 
                   />
                 </div>
-              </li>
-            )}
-
-          </ul>
+                <span 
+                  className="text-md font-medium" 
+                  style={{
+                    lineHeight: "1.5",
+                    letterSpacing: "-0.3px"
+                  }}
+                >
+                  Chats
+                </span>
+              </div>
+              
+              {/* Recent Conversations */}
+              {isChatsExpanded && (
+                <div className="mt-1 min-w-0">
+                  <ChatSidebar
+                    items={recentConversations.map(conv => ({
+                      id: conv.id,
+                      title: conv.title,
+                      preview: conv.lastMessage,
+                      updatedAt: conv.timestamp.toISOString(),
+                      unread: conv.unread,
+                      pinned: conv.pinned,
+                      archived: conv.archived
+                    }))}
+                    activeId={getActiveChatId()}
+                    onOpenChat={handleOpenConversation}
+                    onShare={handleShareConversation}
+                    onRename={handleRenameConversation}
+                    onArchive={handleArchiveConversation}
+                    onDelete={handleDeleteConversation}
+                    title="Recent Chats"
+                    className=""
+                  />
+                  
+                  {/* See More Link */}
+                  {recentSearchesForSidebar.length > 7 && (
+                    <div className="px-2 py-1">
+                      <button
+                        onClick={() => navigate('/history')}
+                        className="text-xs text-sidebar-foreground/70 hover:text-sidebar-foreground transition-colors"
+                      >
+                        See more ({recentSearchesForSidebar.length - 7} more)
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* List Wrapper */}
         <div className="p-2">
-          <div className="border-t border-[#E4E4E7] pt-3 space-y-1">
-            <div className="h-8 px-2 rounded-md bg-[#4D5562] flex items-center gap-2">
-              <Rocket className="w-4 h-4 text-white" />
+          <div className="border-t border-sidebar-foreground/10 pt-6 space-y-1">
+            <div className="h-8 px-2 rounded-md bg-sidebar-foreground/70 flex items-center gap-2">
+              <Rocket className="w-4 h-4 text-sidebar-background" />
               <span 
-                className="text-white"
+                className="text-sidebar-background"
                 style={{
                   fontSize: "14px",
                   fontWeight: "500",
@@ -502,42 +478,14 @@ export function VaultSidebar() {
               </span>
             </div>
             
-            <div className="h-8 px-2 rounded-md bg-[#F4F4F5] flex items-center gap-2 hover:bg-gray-200 transition-colors cursor-pointer">
-              <CloudUpload className="w-4 h-4 text-[#3F3F46]" />
-              <span 
-                className="text-[#3F3F46]"
-                style={{
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  lineHeight: "1.5",
-                  letterSpacing: "-0.3px"
-                }}
-              >
-                File Upload
-              </span>
-            </div>
             
-            <div className="h-8 px-2 rounded-md bg-[#F4F4F5] flex items-center gap-2 hover:bg-gray-200 transition-colors cursor-pointer">
-              <FileText className="w-4 h-4 text-[#3F3F46]" />
-              <span 
-                className="text-[#3F3F46]"
-                style={{
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  lineHeight: "1.5",
-                  letterSpacing: "-0.3px"
-                }}
-              >
-                Resources
-              </span>
-            </div>
             
             <Popover open={isUserMenuOpen} onOpenChange={setIsUserMenuOpen}>
               <PopoverTrigger asChild>
-                <div className="h-8 px-2 rounded-md bg-[#F4F4F5] flex items-center gap-2 hover:bg-gray-200 transition-colors cursor-pointer">
-                  <UserRound className="w-4 h-4 text-[#3F3F46]" />
+                <div className="h-8 px-2 rounded-md flex items-center gap-2 text-sidebar-foreground hover:bg-sidebar-primary/5 transition-colors cursor-pointer">
+                  <UserRound className="w-4 h-4" />
                   <span 
-                    className="flex-1 text-[#3F3F46]"
+                    className="flex-1 "
                     style={{
                       fontSize: "14px",
                       fontWeight: "500",
@@ -547,11 +495,11 @@ export function VaultSidebar() {
                   >
                     Alex Wright
                   </span>
-                  <ChevronUp className="w-4 h-4 text-[#3F3F46]" />
+                  <ChevronUp className="w-4 h-4" />
                 </div>
               </PopoverTrigger>
               <PopoverContent className="w-48 p-1" align="end" side="top">
-                <div className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded cursor-pointer">
+                <div className="flex items-center gap-2 p-2 hover:bg-sidebar-primary/10 rounded cursor-pointer">
                   <LogOut className="w-4 h-4" />
                   <span className="text-sm">Sign Out</span>
                 </div>

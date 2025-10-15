@@ -131,29 +131,29 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const isParentExpanded = item.isExpanded !== false; // Default to expanded
 
   return (
-    <div className={`border rounded-lg vault-result-card ${
+    <div className={`border border-foreground/20 rounded-lg vault-result-card ${
       isNested 
-        ? 'bg-gray-50/50 border-gray-200 ml-6' 
-        : 'bg-card'
+        ? 'bg-background border-foreground/10 ml-6' 
+        : 'bg-background'
     }`}>
       {/* Header with file info and badge */}
-      <div className="flex items-start justify-between pb-4 border-b border-[#E4E4E7] px-6 py-4">
+      <div className="flex items-start justify-between pb-4 border-b border-foreground/20 px-6 py-4">
         <div className="flex items-center min-w-0 gap-3 flex-1">
           {/* Expand/Collapse button for parent questions */}
           {hasChildren && onToggleExpansion && (
             <button
               onClick={() => onToggleExpansion(item.id)}
-              className="flex items-center justify-center w-5 h-5 hover:bg-gray-100 rounded transition-colors"
+              className="flex items-center justify-center w-7 h-7 hover:bg-sidebar-background rounded transition-colors"
             >
               {isParentExpanded ? (
-                <ChevronDown className="h-4 w-4 text-gray-600" />
+                <ChevronDown className="h-4 w-4 text-foreground/70" />
               ) : (
-                <ChevronRight className="h-4 w-4 text-gray-600" />
+                <ChevronRight className="h-4 w-4 text-foreground/70" />
               )}
             </button>
           )}
           {!fileName && (
-            <FileText className="h-4 w-4 flex-shrink-0" style={{ color: '#71717A' }} />
+            <FileText className="h-4 w-4 flex-shrink-0 text-foreground/60" />
           )}
           {!fileName && (
             <div 
@@ -161,20 +161,19 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               style={{ 
                 wordBreak: 'break-word',
                 hyphens: 'auto',
-                fontSize: '14px', 
                 lineHeight: '1.4' 
               }}
             >
               {item.documentTitle || 'Unknown Document'}
             </div>
           )}
-          <div className="flex items-center gap-4 text-sm" style={{ fontSize: '14px', lineHeight: '1.4' }}>
+          <div className="flex items-center gap-4 text-sm" style={{ lineHeight: '1.4' }}>
             <div className="flex items-center gap-1 whitespace-nowrap">
-              <Calendar className="h-4 w-4" style={{ color: '#71717A' }} />
-              <span style={{ color: '#71717A' }}>Last edited</span>
+              <Calendar className="h-4 w-4 text-foreground/60" />
+              <span className="text-foreground/60">Last edited</span>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="inline-grid border border-t-0 border-x-0 border-b-1 border-dashed border-gray-300 cursor-help" style={{ color: '#27272A' }}>
+                  <span className="inline-grid border border-t-0 border-x-0 border-b-1 border-dashed border-foreground/30 cursor-help text-foreground">
                     {formatRelativeTime(item.updatedAt)}
                   </span>
                 </TooltipTrigger>
@@ -183,8 +182,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 </TooltipContent>
               </Tooltip>
               
-              <span style={{ color: '#71717A' }}>by</span>
-              <span style={{ color: '#27272A' }}>{item.updatedBy}</span>
+              <span className="text-foreground/60">by</span>
+              <span className="text-foreground">{item.updatedBy}</span>
             </div>
             <div className="flex items-center gap-1 whitespace-nowrap">
               {/* Additional info can go here */}
@@ -198,13 +197,13 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         </div>
         <div className="flex items-center gap-2 ml-4 flex-shrink-0">
           {displayData.isBestAnswer && showBestAnswerTag && (
-            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full" style={{ backgroundColor: '#CCECB6', color: '#09090B' }}>
+            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full accent text-accent-foreground">
               <Star className="h-3 w-3" />
               <span className="text-xs font-semibold">Best Answer</span>
             </div>
           )}
           {displayData.archived && (
-            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full" style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}>
+            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-background text-foreground">
               <Archive className="h-3 w-3" />
               <span className="text-xs font-semibold">Archived</span>
             </div>
@@ -215,8 +214,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       {/* Answer Section */}
       {displayData.answer && (
         <div className="space-y-2 px-6 py-4">
-          <h4 style={{ fontSize: '12px', fontWeight: 'bold', lineHeight: '1.5', letterSpacing: '-0.2px' }}>Answer</h4>
-          <div className="bg-muted/50 rounded-md p-4">
+          <h4 className="text-xs font-bold leading-5 tracking-tight">Answer</h4>
+          <div className="bg-foreground/5 rounded-md p-4">
             <p 
               className="text-sm leading-relaxed"
               dangerouslySetInnerHTML={{ 
@@ -241,11 +240,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       {displayData.question && (
         <div className="space-y-2 px-6 pb-4" style={{ paddingInlineStart: '40px' }}>
           <div className="flex items-start gap-2">
-            <CornerDownRight className="h-4 w-4 mt-1 flex-shrink-0" style={{ color: '#71717A' }} />
+            <CornerDownRight className="h-4 w-4 mt-1 flex-shrink-0 text-foreground/60" />
             <div className="space-y-2">
-              <h4 style={{ fontSize: '12px', fontWeight: 'bold', lineHeight: '1.5', letterSpacing: '-0.2px' }}>Question</h4>
-              <p 
-                style={{ fontSize: '16px', lineHeight: '1.5', fontWeight: '700', letterSpacing: '-0.4px' }}
+              <h4 className="text-xs font-bold leading-5 tracking-tight">Question</h4>
+              <p
+                className="text-base font-bold leading-6 tracking-tight"
                 dangerouslySetInnerHTML={{ __html: highlightSearchTerms(displayData.question, query) }}
               />
              
@@ -255,7 +254,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                   <Badge 
                     key={`${strategy}-${index}`} 
                     variant="outline" 
-                    className="vault-tag flex items-center gap-1 cursor-pointer hover:bg-blue-50"
+                    className="vault-tag flex items-center gap-1 cursor-pointer hover:bg-sidebar-background"
                     onClick={() => {
                       // Add click handler for editing strategies
                       console.log('Edit strategy:', strategy);
@@ -265,7 +264,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                     {strategy}
                     {onStrategyRemove && (
                       <X 
-                        className="h-3 w-3 cursor-pointer hover:text-red-500" 
+                        className="h-3 w-3 cursor-pointer hover:sidebar-accent" 
                         onClick={(e) => {
                           e.stopPropagation();
                           onStrategyRemove(item.id, strategy);
@@ -303,8 +302,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 ) : onStrategyAdd ? (
                   <Badge 
                     variant="outline" 
-                    className="text-xs text-muted-foreground vault-tag cursor-pointer hover:bg-muted flex items-center gap-1"
-                    style={{ backgroundColor: '#F4F4F5' }}
+                    className="text-xs text-foreground vault-tag cursor-pointer hover:bg-sidebar-background flex items-center gap-1"
                     onClick={() => setAddingStrategyToItem(item.id)}
                   >
                     <Lightbulb className="h-3 w-3" />
@@ -312,11 +310,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                   </Badge>
                 ) : null}
                 {displayData.tags.map(tag => (
-                  <Badge key={tag} variant="outline" className="text-xs vault-tag flex items-center gap-1" style={{ backgroundColor: '#F4F4F5' }}>
+                  <Badge key={tag} variant="outline" className="text-xs vault-tag flex items-center gap-1">
                     {tag}
                     {onTagRemove && (
                       <X 
-                        className="h-3 w-3 cursor-pointer hover:text-red-500" 
+                        className="h-3 w-3 cursor-pointer hover:text-sidebar-accent" 
                         onClick={() => onTagRemove(item.id, tag)}
                       />
                     )}
@@ -327,7 +325,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                     <Input
                       value={newTagValue}
                       onChange={(e) => setNewTagValue(e.target.value)}
-                      className="h-6 text-xs w-20"
+                      className="h-6 text-xs w-24 text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 border-foreground/20"
                       placeholder="Tag name"
                       autoFocus
                       onKeyDown={(e) => {
@@ -336,13 +334,13 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                       }}
                     />
                     <button 
-                      className="h-6 w-6 flex items-center justify-center border border-green-200 bg-white hover:bg-green-50 rounded text-green-600 hover:text-green-700 hover:border-green-300 transition-colors" 
+                      className="h-6 w-6 flex items-center justify-center border border-sidebar-primary bg-background hover:bg-sidebar-background rounded text-sidebar-primary hover:text-sidebar-primary/70 hover:border-sidebar-primary/70 transition-colors" 
                       onClick={() => handleNewTagSave(item.id)}
                     >
                       <Check className="h-3 w-3" />
                     </button>
                     <button 
-                      className="h-6 w-6 flex items-center justify-center border border-red-200 bg-white hover:bg-red-50 rounded text-red-500 hover:text-red-600 hover:border-red-300 transition-colors" 
+                      className="h-6 w-6 flex items-center justify-center border border-sidebar-accent bg-background hover:bg-sidebar-background rounded text-sidebar-accent hover:text-sidebar-accent/70 hover:border-sidebar-accent/70 transition-colors" 
                       onClick={handleNewTagCancel}
                     >
                       <X className="h-3 w-3" />
@@ -351,8 +349,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 ) : onTagAdd ? (
                   <Badge 
                     variant="outline" 
-                    className="text-xs text-muted-foreground vault-tag cursor-pointer hover:bg-muted"
-                    style={{ backgroundColor: '#F4F4F5' }}
+                    className="text-xs text-foreground vault-tag cursor-pointer hover:bg-sidebar-background"
                     onClick={() => setAddingTagToItem(item.id)}
                   >
                     + New
@@ -365,10 +362,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       )}
 
       {/* Action Footer */}
-      <div className="border-t border-[#E4E4E7] px-6 py-3 flex items-center justify-end gap-2 rounded-b-lg bg-gray-100/50">
+      <div className="border-t border-foreground/20 px-6 py-3 flex items-center justify-end gap-2 rounded-b-lg bg-sidebar-background">
         {onEdit && (
           <button 
-            className="flex h-8 px-2 pl-3 justify-center items-center gap-2 rounded-md bg-white text-sm font-medium"
+            className="flex h-8 px-2 pl-3 justify-center items-center gap-2 rounded-md bg-background text-sm font-medium"
             style={{ boxShadow: '0 0 0 1px rgba(3, 7, 18, 0.12), 0 1px 3px -1px rgba(3, 7, 18, 0.11), 0 2px 5px 0 rgba(3, 7, 18, 0.06)' }}
             onClick={() => onEdit(item)}
           >
@@ -377,7 +374,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           </button>
         )}
         <button
-          className="flex h-8 px-2 pl-3 justify-center items-center gap-2 rounded-md bg-white text-sm font-medium"
+          className="flex h-8 px-2 pl-3 justify-center items-center gap-2 rounded-md bg-background text-sm font-medium"
           style={{ boxShadow: '0 0 0 1px rgba(3, 7, 18, 0.12), 0 1px 3px -1px rgba(3, 7, 18, 0.11), 0 2px 5px 0 rgba(3, 7, 18, 0.06)' }}
           onClick={() => onArchive && onArchive(item.id)}
         >
@@ -386,7 +383,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         </button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex h-8 px-2 pl-3 justify-center items-center gap-2 rounded-md bg-white text-sm font-medium" style={{ boxShadow: '0 0 0 1px rgba(3, 7, 18, 0.12), 0 1px 3px -1px rgba(3, 7, 18, 0.11), 0 2px 5px 0 rgba(3, 7, 18, 0.06)' }}>
+            <button className="flex h-8 px-2 pl-3 justify-center items-center gap-2 rounded-md bg-background text-sm font-medium" style={{ boxShadow: '0 0 0 1px rgba(3, 7, 18, 0.12), 0 1px 3px -1px rgba(3, 7, 18, 0.11), 0 2px 5px 0 rgba(3, 7, 18, 0.06)' }}>
               <Mail className="h-4 w-4" />
               Email
               <ChevronDown className="h-4 w-4" />
@@ -401,8 +398,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
         {onCopyAnswer && (
           <button 
-            className="flex h-8 px-2 pl-3 min-w-24 justify-center items-center gap-2 rounded-md text-sm font-medium"
-            style={{ backgroundColor: '#18181B', color: '#fafafa', boxShadow: '0 0 0 1px rgba(3, 7, 18, 0.12), 0 1px 3px -1px rgba(3, 7, 18, 0.11), 0 2px 5px 0 rgba(3, 7, 18, 0.06)' }}
+            className="flex h-8 px-2 pl-3 min-w-24 justify-center items-center gap-2 rounded-md text-sm font-medium bg-foreground hover:bg-foreground/80 border-foreground text-background"
+            style={{ boxShadow: '0 0 0 1px rgba(3, 7, 18, 0.12), 0 1px 3px -1px rgba(3, 7, 18, 0.11), 0 2px 5px 0 rgba(3, 7, 18, 0.06)' }}
             onClick={handleCopyAnswer}
           >
             {isCopied ? <CopyCheck className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -413,7 +410,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
       {/* Render child questions if expanded */}
       {hasChildren && isParentExpanded && (
-        <div className="border-t py-8 pb-4 mt-[-3.5rem] pr-6 space-y-2 border-l-2 border-gray-400 border-t-0 bg-gray-100/40">
+        <div className="border-t py-8 pb-4 mt-[-3.5rem] pr-6 space-y-2 border-l-2 border-foreground/40 border-t-0 bg-sidebar-background">
           <h4 className="text-xs font-bold line-height-1-5 tracking-tight pl-6">Sub Questions</h4>
           {item.children?.map((child) => (
             <QuestionCard

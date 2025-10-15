@@ -36,9 +36,9 @@ export function AnswerLoadingState({
 
   return (
     <div className="max-w-3xl mx-auto">
-      <div className="bg-white rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+      <div className="bg-background rounded-lg overflow-hidden border border-foreground/20 shadow-sm">
         {/* Header */}
-        <div className="pt-4 px-4 bg-gray-50 border-b">
+        <div className="pt-4 px-4 bg-sidebar-background border-b border-foreground/10">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Badge className="bg-blue-600 text-white">AdviserGPT</Badge>
@@ -53,15 +53,15 @@ export function AnswerLoadingState({
           </div>
           
           <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className="flex items-center justify-between text-xs text-foreground/70">
               <span>Assembling your firm's approved content...</span>
               <span>{sourcesFound > 0 ? `Gathering ${sourcesFound} relevant sources...` : 'Searching Vault...'}</span>
             </div>
             
             {/* Progress Bar */}
             <div className="space-y-1">
-              <Progress value={progress} className="h-2" />
-              <div className="text-xs text-muted-foreground text-center">
+              <Progress value={progress} className="h-2 bg-foreground/10" />
+              <div className="text-xs text-foreground/70 text-center">
                 {Math.round(progress)}% complete
               </div>
             </div>
@@ -74,40 +74,40 @@ export function AnswerLoadingState({
 
           {/* Steps */}
           <div className="space-y-4">
-            <h3 className="text-sm font-medium text-gray-700">
+            <h3 className="text-sm font-medium text-foreground/70">
               Building from: {mode === 'answer' ? 'Vault' : 'Web'}
             </h3>
             
             {/* Source Skeleton */}
             <div className="space-y-2">
-              <div className="flex items-center gap-2 p-2 bg-gray-50 rounded border animate-pulse">
-                <div className="w-4 h-4 bg-gray-300 rounded" />
+              <div className="flex items-center gap-2 p-2 bg-sidebar-background border-foreground/10 rounded border animate-pulse">
+                <div className="w-4 h-4 bg-foreground/10 rounded" />
                 <div className="flex-1">
-                  <div className="h-3 bg-gray-300 rounded w-48 mb-1" />
-                  <div className="h-2 bg-gray-200 rounded w-32" />
+                  <div className="h-3 bg-foreground/10 rounded w-48 mb-1" />
+                  <div className="h-2 bg-foreground/10 rounded w-32" />
                 </div>
-                <Badge variant="outline" className="bg-gray-100">
-                  <div className="w-8 h-2 bg-gray-300 rounded" />
+                <Badge variant="outline" className="bg-foreground/10">
+                  <div className="w-8 h-2 bg-foreground/10 rounded" />
                 </Badge>
               </div>
-              <div className="flex items-center gap-2 p-2 bg-gray-50 rounded border animate-pulse">
-                <div className="w-4 h-4 bg-gray-300 rounded" />
+              <div className="flex items-center gap-2 p-2 bg-sidebar-background border-foreground/10 rounded border animate-pulse">
+                <div className="w-4 h-4 bg-foreground/10 rounded" />
                 <div className="flex-1">
-                  <div className="h-3 bg-gray-300 rounded w-40 mb-1" />
-                  <div className="h-2 bg-gray-200 rounded w-28" />
+                  <div className="h-3 bg-foreground/10 rounded w-40 mb-1" />
+                  <div className="h-2 bg-foreground/10 rounded w-28" />
                 </div>
-                <Badge variant="outline" className="bg-gray-100">
-                  <div className="w-8 h-2 bg-gray-300 rounded" />
+                <Badge variant="outline" className="bg-foreground/10">
+                  <div className="w-8 h-2 bg-foreground/10 rounded" />
                 </Badge>
               </div>
-              <div className="flex items-center gap-2 p-2 bg-gray-50 rounded border animate-pulse">
-                <div className="w-4 h-4 bg-gray-300 rounded" />
+              <div className="flex items-center gap-2 p-2 bg-sidebar-background border-foreground/10 rounded border animate-pulse">
+                <div className="w-4 h-4 bg-foreground/10 rounded" />
                 <div className="flex-1">
-                  <div className="h-3 bg-gray-300 rounded w-36 mb-1" />
-                  <div className="h-2 bg-gray-200 rounded w-24" />
+                  <div className="h-3 bg-foreground/10 rounded w-36 mb-1" />
+                  <div className="h-2 bg-foreground/10 rounded w-24" />
                 </div>
-                <Badge variant="outline" className="bg-gray-100">
-                  <div className="w-8 h-2 bg-gray-300 rounded" />
+                <Badge variant="outline" className="bg-foreground/10">
+                  <div className="w-8 h-2 bg-foreground/10 rounded" />
                 </Badge>
               </div>
             </div>
@@ -125,13 +125,13 @@ export function AnswerLoadingState({
                     className={`flex items-center gap-3 p-2 rounded ${
                       isCurrent ? 'bg-blue-50 border border-blue-200' : 
                       isCompleted ? 'bg-green-50 border border-green-200' : 
-                      'bg-gray-50 border border-gray-200'
+                      'bg-foreground/5 border border-foreground/10'
                     }`}
                   >
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
                       isCompleted ? 'bg-green-500 text-white' :
                       isCurrent ? 'bg-blue-500 text-white animate-pulse' :
-                      'bg-gray-300 text-gray-600'
+                      'bg-foreground/10 text-foreground/70'
                     }`}>
                       {isCompleted ? (
                         <CheckCircle className="w-4 h-4" />
@@ -142,7 +142,7 @@ export function AnswerLoadingState({
                     <span className={`text-sm ${
                       isCurrent ? 'text-blue-800 font-medium' :
                       isCompleted ? 'text-green-800' :
-                      'text-gray-600'
+                      'text-foreground/70'
                     }`}>
                       {step.label}
                     </span>

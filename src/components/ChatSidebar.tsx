@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Forward, Pencil, Archive, Trash, ChevronDown, ChevronRight } from "lucide-react";
-import { Button } from '@/components/ui/button';
+import { Forward, Pencil, Archive, Trash } from "lucide-react";
 
 type ChatItem = {
   id: string;
@@ -20,7 +19,6 @@ type ChatSidebarProps = {
   onRename: (id: string, newTitle: string) => void;
   onArchive: (id: string) => void;
   onDelete: (id: string) => void;
-  onNewChat?: () => void;
   title?: string;
   className?: string;
 };
@@ -33,7 +31,6 @@ export default function ChatSidebar({
   onRename,
   onArchive,
   onDelete,
-  onNewChat,
   title = "Chats",
   className = ""
 }: ChatSidebarProps) {
@@ -41,7 +38,6 @@ export default function ChatSidebar({
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState<string>("");
-  const [isExpanded, setIsExpanded] = useState<boolean>(true);
 
   // Sort pinned to top; archived excluded
   const visible = useMemo(
@@ -119,86 +115,50 @@ export default function ChatSidebar({
   };
 
   return (
-    <div className={`flex flex-col min-w-0 w-full overflow-x-hidden ${className}`}>
-      <div className="flex items-center justify-between px-2 py-1 min-w-0">
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center gap-1 text-xs font-medium text-[#71717A] uppercase tracking-wide hover:text-[#3F3F46] transition-colors"
-        >
-          {isExpanded ? (
-            <ChevronDown className="w-3 h-3" />
-          ) : (
-            <ChevronRight className="w-3 h-3" />
-          )}
-          <span className="flex h-6 items-center">{title}</span>
-        </button>
-        {onNewChat && isExpanded && (
-          <Button
-            variant="outline"
-            size="xs"
-            className="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium"
-            onClick={onNewChat}
-          >
-            + New
-          </Button>
+    <div className={`flex flex-col min-w-0 w-full ${className}`}>
+      <div
+        ref={listRef}
+        role="listbox"
+        aria-label={`${title} conversations`}
+        tabIndex={-1}
+        onKeyDown={handleKeyList}
+        className="flex-1 min-w-0"
+      >
+        {visible.length === 0 ? (
+          <EmptyState />
+        ) : (
+          visible.map((item) => (
+            <ChatRow
+              key={item.id}
+              item={item}
+              active={item.id === activeId}
+              openMenu={menuFor === item.id}
+              isRenaming={renamingId === item.id}
+              renameValue={renameValue}
+              onOpen={() => onOpenChat(item.id)}
+              onShowMenu={() => setMenuFor(item.id)}
+              onHideMenu={() => setMenuFor(null)}
+              onShare={() => onShare(item.id)}
+              onStartRename={() => handleStartRename(item.id, item.title)}
+              onRenameSubmit={handleRenameSubmit}
+              onRenameCancel={handleRenameCancel}
+              onRenameKeyDown={handleRenameKeyDown}
+              onRenameValueChange={setRenameValue}
+              onArchive={() => onArchive(item.id)}
+              onDelete={() => onDelete(item.id)}
+              onContextMenu={(e) => handleContextMenu(e, item.id)}
+            />
+          ))
         )}
       </div>
-
-      {isExpanded && (
-        <div
-          ref={listRef}
-          role="listbox"
-          aria-label={`${title} conversations`}
-          tabIndex={-1}
-          onKeyDown={handleKeyList}
-          className="flex-1 overflow-y-auto overflow-x-hidden min-w-0"
-        >
-          {visible.length === 0 ? (
-            <EmptyState onNewChat={onNewChat} />
-          ) : (
-            visible.map((item) => (
-              <ChatRow
-                key={item.id}
-                item={item}
-                active={item.id === activeId}
-                openMenu={menuFor === item.id}
-                isRenaming={renamingId === item.id}
-                renameValue={renameValue}
-                onOpen={() => onOpenChat(item.id)}
-                onShowMenu={() => setMenuFor(item.id)}
-                onHideMenu={() => setMenuFor(null)}
-                onShare={() => onShare(item.id)}
-                onStartRename={() => handleStartRename(item.id, item.title)}
-                onRenameSubmit={handleRenameSubmit}
-                onRenameCancel={handleRenameCancel}
-                onRenameKeyDown={handleRenameKeyDown}
-                onRenameValueChange={setRenameValue}
-                onArchive={() => onArchive(item.id)}
-                onDelete={() => onDelete(item.id)}
-                onContextMenu={(e) => handleContextMenu(e, item.id)}
-              />
-            ))
-          )}
-        </div>
-      )}
     </div>
   );
 }
 
-function EmptyState({ onNewChat }: { onNewChat?: () => void }) {
+function EmptyState() {
   return (
-    <div className="p-4 text-center text-sm text-[#71717A]">
+    <div className="p-4 text-center text-sm text-sidebar-foreground">
       No conversations yet.
-      {onNewChat && (
-        <div className="mt-2">
-          <button
-            className="rounded-md px-2 py-1 text-xs hover:bg-gray-50 text-[#3F3F46]"
-            onClick={onNewChat}
-          >
-            Start a new chat
-          </button>
-        </div>
-      )}
     </div>
   );
 }
@@ -247,17 +207,19 @@ function ChatRow({
       role="option"
       aria-selected={active}
       data-id={item.id}
-      className="
-        group relative flex cursor-pointer select-none gap-2 px-3 py-2
-        hover:bg-gray-50 focus-within:bg-gray-50 outline-none w-full hover:border-gray-200
-      "
+      className={`
+        group relative flex items-center cursor-pointer select-none gap-2 px-2 py-1 h-9
+        hover:bg-sidebar-primary/5 transition-colors outline-none w-full hover:border-gray-200 rounded-md ${
+        active 
+          ? "bg-sidebar-primary/10"
+          : ""
+      }`}
       onDoubleClick={onOpen}
       onClick={onOpen}
       onContextMenu={onContextMenu}
       tabIndex={0}
     >
-      {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 h-1.5 w-1.5 rounded-full bg-gray-600" aria-hidden="true" />}
-      <div className="min-w-0 flex-1 overflow-hidden">
+      <div className="min-w-0 flex-1 flex items-center overflow-hidden transition">
         {isRenaming ? (
           <input
             type="text"
@@ -265,29 +227,29 @@ function ChatRow({
             onChange={(e) => onRenameValueChange(e.target.value)}
             onKeyDown={onRenameKeyDown}
             onBlur={onRenameSubmit}
-            className="w-full text-[11px] font-medium text-[#3F3F46] bg-transparent border-none outline-none focus:outline-none"
+            className="w-full text-sm tracking-[-0.2px] h-7 text-sidebar-foreground rounded-sm px-1 bg-sidebar-primary/10 border-none outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
             autoFocus
             onClick={(e) => e.stopPropagation()}
           />
         ) : (
-          <div className={`truncate text-[11px] ${item.unread ? "font-semibold" : "font-medium"} text-[#3F3F46] w-full`}>
+          <div className={`truncate text-sm ${item.unread ? "font-semibold" : ""} text-sidebar-foreground/80 hover:text-sidebar-foreground tracking-[-0.2px] transition-colors w-full`}>
             {item.title || "Untitled chat"}
           </div>
         )}
       </div>
 
       <div className="flex shrink-0 items-start gap-1">
-        <time className="mt-0.5 text-[10px] text-[#A1A1AA] whitespace-nowrap" dateTime={item.updatedAt}>
+        <time className="mt-0.5 text-xs text-sidebar-foreground/60 whitespace-nowrap" dateTime={item.updatedAt}>
           {formatRelative(item.updatedAt)}
         </time>
         <button
           ref={buttonRef}
           className="
-            -m-1 ml-1 inline-flex h-6 w-6 items-center justify-center rounded
-            text-[#71717A] opacity-0 transition-all duration-150
+            -m-1 ml-1 inline-flex h-7 w-7 items-center justify-center rounded
+            text-sidebar-foreground/60 opacity-0 transition-all duration-150
             group-hover:opacity-100 group-focus-within:opacity-100
-            hover:bg-gray-200 focus:bg-gray-200 focus:outline-none
-            hover:text-[#3F3F46] focus:text-[#3F3F46]
+            hover:bg-sidebar-primary/10 focus:bg-sidebar-primary/20 focus:outline-none
+            hover:text-sidebar-foreground focus:text-sidebar-foreground
           "
           aria-haspopup="menu"
           aria-expanded={openMenu}
@@ -298,7 +260,7 @@ function ChatRow({
           }}
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M5 8a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm5 0a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm5 0a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"/>
+            <path d="M4 8a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm5 0a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm5 0a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"/>
           </svg>
         </button>
       </div>
@@ -364,7 +326,7 @@ function Menu({
       role="menu"
       aria-label="Chat options"
       className="
-        fixed z-[9999] w-36 rounded-md border border-[#E4E4E7] bg-white p-1 shadow-lg
+        fixed z-[9999] w-36 rounded-md border border-[#E4E4E7] bg-background p-1 shadow-lg
       "
       style={{
         top: `${position.top}px`,
@@ -372,19 +334,19 @@ function Menu({
       }}
       onClick={(e) => e.stopPropagation()}
     >
-      <button role="menuitem" className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs text-[#3F3F46] hover:bg-gray-50 focus:bg-gray-50">
-        <Forward className="w-3 h-3 text-[#71717A]" />
+      <button role="menuitem" className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-sidebar-foreground hover:bg-sidebar-primary/10 focus:bg-sidebar-primary/10">
+        <Forward className="w-3 h-3 text-sidebar-foreground" />
         <span onClick={onShare}>Share</span>
       </button>
-      <button role="menuitem" className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs text-[#3F3F46] hover:bg-gray-50 focus:bg-gray-50">
-        <Pencil className="w-3 h-3 text-[#71717A]" />
+      <button role="menuitem" className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-sidebar-foreground hover:bg-sidebar-primary/10 focus:bg-sidebar-primary/10">
+        <Pencil className="w-3 h-3 text-sidebar-foreground" />
         <span onClick={onRename}>Rename</span>
       </button>
-      <button role="menuitem" className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs text-[#3F3F46] hover:bg-gray-50 focus:bg-gray-50">
-        <Archive className="w-3 h-3 text-[#71717A]" />
+      <button role="menuitem" className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-sidebar-foreground hover:bg-sidebar-primary/10 focus:bg-sidebar-primary/10">
+        <Archive className="w-3 h-3 text-sidebar-foreground" />
         <span onClick={onArchive}>Archive</span>
       </button>
-      <button role="menuitem" className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs text-red-600 hover:bg-red-50 focus:bg-red-50">
+      <button role="menuitem" className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-red-600 hover:bg-red-50 focus:bg-red-50">
         <Trash className="w-3 h-3 text-red-600" />
         <span onClick={onDelete}>Delete</span>
       </button>

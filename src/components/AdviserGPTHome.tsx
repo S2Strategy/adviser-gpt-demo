@@ -678,20 +678,20 @@ Client relationships are built on transparency, communication, and alignment of 
   };
 
   return (
-    <div className="h-screen bg-background flex">
+    <div className="h-screen bg-sidebar-background flex">
       {/* Vault Sidebar */}
       <VaultSidebar />
       
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden bg-background mt-4 ml-4 rounded-tl-2xl vault-scroll">
         {/* Top Navigation */}
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
-          <Button variant="ghost" size="sm" className="h-5 w-5 -ml-1">
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b border-foreground/10 bg-background px-4">
+          <Button variant="ghost" size="sm" className="-ml-2">
             <PanelLeft className="h-4 w-4" />
             <span className="sr-only">Toggle Sidebar</span>
           </Button>
           
-          <div className="shrink-0 bg-border w-[1px] mr-2 h-4" />
+          <div className="shrink-0 bg-border border-foreground/10 w-[1px] mr-2 h-4" />
           
           <nav aria-label="breadcrumb" className="flex items-center gap-4">
             <div className="flex items-center gap-2">
@@ -723,34 +723,14 @@ Client relationships are built on transparency, communication, and alignment of 
                 /* Initial State */
                 <div className="flex flex-col items-center justify-center space-y-12 h-full">
                   <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold mb-2">AdviserGPT</h2>
-                    <p className="text-lg text-gray-700">
+                    <h2 className="text-4xl font-bold mb-2">AdviserGPT</h2>
+                    <p className="text-xl text-gray-700">
                       Search or ask: we'll build answers from your firm's approved documents.
                     </p>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-md text-gray-600 mt-1">
                       Every response is sourced from your Vault and matched to your firm's tone.
                     </p>
                     
-                  </div>
-
-                  {/* Examples */}
-                  <div className="w-full max-w-3xl mb-6">
-                    <div className="text-center mb-2">
-                      <p className="text-sm text-gray-800">Try one of these examples:</p>
-                    </div>
-                    <div className="grid md:grid-cols-2 gap-2">
-                      {Object.values(exampleQuestions).map((question, index) => (
-                        <Button
-                          key={index}
-                          variant="outline"
-                          size="sm"
-                          className="text-xs flex flex-wrap justify-between min-h-14 h-auto px-4 py-2 items-center text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-gray-200 whitespace-normal text-left"
-                          onClick={() => handleExampleClick(question)}
-                        >
-                          <span className="flex flex-1">{question}</span> <PlusCircle className="h-4 w-4 text-gray-500" />
-                        </Button>
-                      ))}
-                    </div>
                   </div>
 
                   {/* Input Bar */}
@@ -758,15 +738,15 @@ Client relationships are built on transparency, communication, and alignment of 
                     <div className="space-y-4">
                       {/* Mode Toggle */}
                       <div className="flex flex-col gap-2 md:flex-row md:gap-0 justify-between items-center">
-                        <div className="flex flex-1 w-full md:w-auto md:flex-none items-center bg-gray-100 rounded-lg p-1">
+                        <div className="flex flex-1 w-full md:w-auto md:flex-none items-center bg-foreground/10 rounded-lg p-1">
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <button
                                 onClick={() => setSelectedMode('answer')}
                                 className={`flex flex-1 md:flex-none justify-center md:justify-start items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 ${
                                   selectedMode === 'answer'
-                                    ? 'bg-white text-gray-900 shadow-sm'
-                                    : 'text-gray-600 hover:text-gray-800'
+                                    ? 'bg-background text-foreground shadow-sm'
+                                    : 'text-foreground/60 hover:text-foreground'
                                 }`}
                               >
                                 <BookOpenText className="h-4 w-4" />
@@ -783,8 +763,8 @@ Client relationships are built on transparency, communication, and alignment of 
                                 onClick={() => setSelectedMode('chat')}
                                 className={`flex flex-1 md:flex-none justify-center md:justify-start items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 ${
                                   selectedMode === 'chat'
-                                    ? 'bg-white text-gray-900 shadow-sm'
-                                    : 'text-gray-600 hover:text-gray-800'
+                                    ? 'bg-background text-foreground shadow-sm'
+                                    : 'text-foreground/60 hover:text-foreground'
                                 }`}
                               >
                                 <MessageSquare className="h-4 w-4" />
@@ -800,7 +780,7 @@ Client relationships are built on transparency, communication, and alignment of 
                         {/* Strategy Selector */}
                         <div className="flex flex-1 w-full md:w-auto md:flex-none justify-center text-xs">
                           <Select value={selectedStrategy} onValueChange={setSelectedStrategy}>
-                            <SelectTrigger className="w-full md:w-48 text-xs">
+                            <SelectTrigger className="w-full md:w-48 border-foreground/20 transition text-xs">
                               <SelectValue placeholder="Select Strategy" />
                             </SelectTrigger>
                             <SelectContent>
@@ -813,13 +793,13 @@ Client relationships are built on transparency, communication, and alignment of 
                       </div>
 
                       {/* Main Input */}
-                      <div className="relative flex flex-col bg-white border border-gray-400 focus-within:border-blue-600 focus-within:shadow-[0_5px_15px_hsla(217.22deg,91%,39%,0.25)] rounded-lg shadow-[0_3px_9px_hsla(0deg,0%,0%,0.09)]">
+                      <div className="relative flex flex-col bg-white/80 border border-foreground/30 transition focus:border-sidebar-accent focus-within:border-sidebar-accent focus-within:shadow-[0_5px_15px_hsla(18deg,89%,29%,0.30)] rounded-lg shadow-[0_3px_9px_hsla(0deg,0%,0%,0.09)]">
                         <div className="flex items-stretch">
                           <Textarea
                             placeholder="e.g. What is our investment research process?"
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
-                            className="flex-grow bg-transparent flex items-center resize-none border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-0 focus:outline-none p-4 min-h-[60px] placeholder:text-gray-500"
+                            className="flex-grow bg-transparent flex items-center resize-none border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-0 focus:outline-none p-4 min-h-[60px] placeholder:text-foreground/60 text-foreground"
                             rows={1}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' && !e.shiftKey) {
@@ -828,10 +808,10 @@ Client relationships are built on transparency, communication, and alignment of 
                               }
                             }}
                           />
-                          <div className="flex-shrink-0 flex items-center p-2 px-3 border-l border-gray-400 gap-2">
+                          <div className="flex-shrink-0 flex items-center p-2 px-3 border-l border-foreground/20 gap-2">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-9 w-11 gap-0 text-gray-500 hover:text-gray-700">
+                                <Button variant="ghost" size="sm" className="h-9 w-11 gap-0 text-foreground/50 hover:text-foreground">
                                   <Type className="h-5 w-5" />
                                   <ChevronDown className="h-4 w-4 ml-1" />
                                 </Button>
@@ -844,9 +824,9 @@ Client relationships are built on transparency, communication, and alignment of 
                             <Button 
                               onClick={handleSubmit}
                               disabled={!inputValue.trim() || isGenerating}
-                              className="h-9 w-9 text-gray-500 hover:text-gray-700"
+                              className="h-9 w-9 bg-sidebar-accent hover:text-foreground"
                             >
-                              <Send className="h-5 w-5 text-white" />
+                              <Send className="h-5 w-5 text-background" />
                             </Button>
                           </div>
                         </div>
@@ -854,58 +834,80 @@ Client relationships are built on transparency, communication, and alignment of 
                     </div>
                   </div>
 
+                  {/* Examples */}
+                  <div className="w-full max-w-3xl mb-8">
+                    <div className="text-center mb-2">
+                      <p className="text-sm text-foreground/80">Try one of these examples:</p>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-2">
+                      {Object.values(exampleQuestions).map((question, index) => (
+                        <Button
+                          key={index}
+                          variant="outline"
+                          size="sm"
+                          className="text-sm font-normal bg-sidebar-primary/5 flex flex-wrap justify-between min-h-14 h-auto px-4 py-2 items-center text-sidebar-foreground hover:bg-sidebar-primary/10 border-foreground/10 hover:border-sidebar whitespace-normal text-left"
+                          onClick={() => handleExampleClick(question)}
+                        >
+                          <span className="flex flex-1">{question}</span> <PlusCircle className="h-4 w-4 text-sidebar-foreground/70" />
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
                 </div>
               ) : (
                 /* Chat State (Loading or Answer) */
-                <div className="space-y-6 h-full">
+                <div className="space-y-6 h-full flex flex-col ">
                   {/* User Question */}
                   <div className="flex justify-end">
                     <div className="max-w-[90%]">
-                      <div className="p-2.5 rounded-lg bg-gray-100 border border-gray-200 text-gray-600 text-[15px] leading-6">
+                      <div className="p-2.5 rounded-lg bg-foreground/5 border border-gray-200 text-foreground text-[15px] leading-6">
                         {isGenerating ? inputValue : currentAnswer.question}
                       </div>
                     </div>
                   </div>
 
                   {/* Loading State or Answer Card */}
-                  {isGenerating ? (
-                    <AnswerLoadingState
-                      progress={loadingProgress}
-                      currentStep={loadingStep}
-                      sourcesFound={sourcesFound}
+                  <div className="flex-1 h-full">
+                    {isGenerating ? (
+                      <AnswerLoadingState
+                        progress={loadingProgress}
+                        currentStep={loadingStep}
+                        sourcesFound={sourcesFound}
+                        mode={selectedMode}
+                      />
+                    ) : (
+                      <TrustAnswerCard
+                      answer={currentAnswer}
                       mode={selectedMode}
+                      onCopy={handleCopy}
+                      onSave={handleSave}
+                      onEmail={handleEmail}
+                      onEdit={(type, value) => {
+                        // Handle edit actions
+                        console.log('Edit:', type, value);
+                      }}
+                      onSourceRemove={(sourceId) => {
+                        // Handle source removal
+                        console.log('Remove source:', sourceId);
+                      }}
+                      onSourceAdd={() => setShowSourcePanel(true)}
+                      onRebuild={handleRebuild}
+                      onComplianceFix={(checkId) => {
+                        // Handle compliance fix
+                        console.log('Fix compliance:', checkId);
+                      }}
+                      onComplianceFixAll={() => {
+                        // Handle fix all compliance issues
+                        console.log('Fix all compliance issues');
+                      }}
                     />
-                  ) : (
-                    <TrustAnswerCard
-                    answer={currentAnswer}
-                    mode={selectedMode}
-                    onCopy={handleCopy}
-                    onSave={handleSave}
-                    onEmail={handleEmail}
-                    onEdit={(type, value) => {
-                      // Handle edit actions
-                      console.log('Edit:', type, value);
-                    }}
-                    onSourceRemove={(sourceId) => {
-                      // Handle source removal
-                      console.log('Remove source:', sourceId);
-                    }}
-                    onSourceAdd={() => setShowSourcePanel(true)}
-                    onRebuild={handleRebuild}
-                    onComplianceFix={(checkId) => {
-                      // Handle compliance fix
-                      console.log('Fix compliance:', checkId);
-                    }}
-                    onComplianceFixAll={() => {
-                      // Handle fix all compliance issues
-                      console.log('Fix all compliance issues');
-                    }}
-                  />
-                  )}
+                    )}
+                  </div>
 
                   {/* Follow-up Input */}
-                  <div className="max-w-3xl mx-auto self-end">
-                    <div className="relative flex flex-col bg-white border border-gray-400 focus-within:border-blue-600 focus-within:shadow-[0_5px_15px_hsla(217.22deg,91%,39%,0.25)] rounded-lg shadow-[0_3px_9px_hsla(0deg,0%,0%,0.09)]">
+                  <div id="follow-up-input" className="max-w-3xl mx-auto sticky bottom-0 self-end w-full pt-8">
+                    <div className="relative flex flex-col bg-white/80 backdrop-blur-md border border-foreground/30 transition focus:border-sidebar-accent focus-within:border-sidebar-accent focus-within:shadow-[0_5px_15px_hsla(18deg,89%,29%,0.30)] rounded-lg shadow-[0_3px_9px_hsla(0deg,0%,0%,0.09)]">
                       <div className="flex items-stretch">
                         <Textarea
                           placeholder="Add follow-up instructions or click 'New Conversation' to start fresh..."
@@ -917,9 +919,9 @@ Client relationships are built on transparency, communication, and alignment of 
                             <Type className="h-5 w-5" />
                             <ChevronDown className="h-4 w-4 ml-1" />
                           </Button>
-                          <Button className="h-9 w-9 text-gray-500 hover:text-gray-700">
-                            <Send className="h-5 w-5 text-white" />
-                          </Button>
+                          <Button className="h-9 w-9 bg-sidebar-accent hover:bg-sidebar-accent/80">
+                              <Send className="h-5 w-5 text-background" />
+                            </Button>
                         </div>
                       </div>
                     </div>

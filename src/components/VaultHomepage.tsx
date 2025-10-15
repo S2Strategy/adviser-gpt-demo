@@ -776,17 +776,17 @@ export function VaultHomepage() {
 
   return (
     <div className="h-screen w-full flex flex-col">
-      <div className="flex flex-1 overflow-hidden">
+      <div className="bg-sidebar-background flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <VaultSidebar />
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden bg-background mt-4 ml-4 rounded-tl-2xl vault-scroll">
           <div className="flex-1 overflow-y-auto">
               {/* Main Content */}
               <div className="">
                 {/* Header */}
-                <div className="border-b bg-background">
+                <div className="border-b border-foreground/10 bg-background">
                   <div className="flex items-center justify-between px-6 py-6 max-w-[100rem] mx-auto">
                     <h1 className="text-2xl font-semibold">Vault</h1>
                     
@@ -800,33 +800,33 @@ export function VaultHomepage() {
                     </Button>
                     <Button 
                       onClick={() => setShowFindDuplicatesModal(true)}
-                      className="flex h-10 px-4 py-2 pl-3 justify-center items-center rounded-md border border-[#E4E4E7] bg-white text-[#18181B] text-sm font-medium leading-tight tracking-tight hover:border-[#D4D4D8] hover:bg-[#FAFAFA] transition-colors capitalize"
+                      className="flex h-10 px-4 py-2 pl-3 justify-center items-center rounded-md border border-foreground/20 bg-background text-foreground text-sm font-medium leading-tight tracking-tight hover:border-foreground/20 hover:bg-sidebar-background transition-colors capitalize"
                     >
-                      <Copy className="h-4 w-4 mr-2" />
+                      <Copy className="h-4 w-4 mr-2 text-foreground/70" />
                       Find duplicates
                     </Button>
                     <Button 
                       onClick={() => setShowFirmUpdatesModal(true)}
-                      className="flex h-10 px-4 py-2 pl-3 justify-center items-center rounded-md border border-[#E4E4E7] bg-white text-[#18181B] text-sm font-medium leading-tight tracking-tight hover:border-[#D4D4D8] hover:bg-[#FAFAFA] transition-colors capitalize"
+                      className="flex h-10 px-4 py-2 pl-3 justify-center items-center rounded-md border border-foreground/20 bg-background text-foreground text-sm font-medium leading-tight tracking-tight hover:border-foreground/20 hover:bg-sidebar-background transition-colors capitalize"
                     >
-                      <Building2 className="h-4 w-4 mr-2" />
+                      <Building2 className="h-4 w-4 mr-2 text-foreground/70" />
                       Firm updates
                     </Button>
                     <Button 
                       onClick={() => setShowSmartUploadSheet(true)}
-                      className="flex h-10 px-4 py-2 pl-3 justify-center items-center rounded-md bg-[#F4F4F5] shadow-[0_0_0_1px_rgba(3,7,18,0.12),0_1px_3px_-1px_rgba(3,7,18,0.11),0_2px_5px_0_rgba(3,7,18,0.06)] text-[#18181B] text-sm font-medium leading-tight tracking-tight hover:bg-[#F1F1F1] hover:shadow-[0_0_0_1px_rgba(3,7,18,0.15),0_1px_4px_-1px_rgba(3,7,18,0.13),0_3px_6px_0_rgba(3,7,18,0.08)] transition-all capitalize"
+                      className="flex h-10 px-4 py-2 pl-3 justify-center items-center rounded-md border border-foreground/20 bg-background text-foreground text-sm font-medium leading-tight tracking-tight hover:border-foreground/20 hover:bg-sidebar-background transition-colors capitalize"
                     >
-                      <MessagesSquare className="h-4 w-4 mr-2" />
+                      <MessagesSquare className="h-4 w-4 mr-2 text-foreground/70" />
                       Add QA Pair
                     </Button>
                   </div>
                 </div>
 
                 {/* Search Section */}
-                <div id="search-section" className="bg-gray-50">
+                <div id="search-section" className="bg-sidebar-background/50">
                   <div className="p-6 flex items-center gap-3 max-w-[100rem] mx-auto">
                     <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-foreground/70" />
                       <Input
                         value={searchInput}
                         onChange={(e) => setSearchInput(e.target.value)}
@@ -841,7 +841,7 @@ export function VaultHomepage() {
                             setQuery('');
                             navigate('/vault');
                           }}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground hover:text-foreground transition-colors"
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-foreground/70 hover:text-foreground transition-colors"
                         >
                           <X className="h-4 w-4" />
                         </button>
@@ -877,7 +877,7 @@ export function VaultHomepage() {
 
                     <Button 
                       onClick={handleSearch}
-                      className="bg-black text-white hover:bg-black/90 px-6 h-12 min-w-32"
+                      className="bg-foreground text-background hover:bg-foreground/80 px-6 h-12 min-w-32"
                     >
                       Find
                     </Button>
@@ -889,7 +889,7 @@ export function VaultHomepage() {
                       {/* Active Filters */}
                       {hasActiveFilters && (
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm text-muted-foreground">Active filters:</span>
+                          <span className="text-sm text-foreground/70">Active filters:</span>
                           {selectedStrategy.map(strategy => (
                             <Badge key={strategy} variant="secondary" className="gap-1">
                               Strategy: {strategy}
@@ -962,7 +962,7 @@ export function VaultHomepage() {
                           // Clear the file mode and navigate back to documents tab
                           navigate('/vault');
                         }}
-                        className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+                        className="flex items-center gap-2 text-foreground/70 hover:text-foreground"
                       >
                         <ArrowLeft className="h-4 w-4" />
                         Back to Documents
@@ -978,7 +978,7 @@ export function VaultHomepage() {
                           {state.query && !isFileMode && ` for "${state.query}"`}
                         </h2>
                         {hasActiveFilters && (
-                          <p className="text-muted-foreground mt-1">
+                          <p className="text-foreground/70 mt-1">
                             Filtered by {selectedStrategy.length + selectedType.length + selectedTags.length + selectedStatus.length} criteria
                           </p>
                         )}
@@ -1071,7 +1071,7 @@ export function VaultHomepage() {
 
                     {sortedAndFilteredItems.length === 0 ? (
                       <div className="text-center py-12">
-                        <p className="text-lg text-muted-foreground mb-4">
+                        <p className="text-lg text-foreground/70 mb-4">
                           No results match your search and filters.
                         </p>
                         <div className="flex gap-2 justify-center">
@@ -1126,13 +1126,13 @@ export function VaultHomepage() {
                   /* Main Tabs */
                   <div id="documents-recent-tabs" className="h-full p-6 max-w-[100rem] mx-auto">
                   {/* Main Tabs - Custom Styling */}
-                  <div className="flex items-center gap-8 mb-6 border-b">
+                  <div className="flex items-center gap-8 mb-6 border-b border-foreground/10">
                     <button
                       onClick={() => handleTabChange("documents")}
                       className={`flex items-center gap-2 pb-4 text-lg font-medium transition-colors ${
                         activeTab === "documents"
                           ? "text-foreground border-b-2 border-foreground"
-                          : "text-muted-foreground hover:text-foreground"
+                          : "text-foreground/70 hover:text-foreground"
                       }`}
                     >
                       <FolderOpen className="h-5 w-5" />
@@ -1143,7 +1143,7 @@ export function VaultHomepage() {
                       className={`flex items-center gap-2 pb-4 text-lg font-medium transition-colors ${
                         activeTab === "recent"
                           ? "text-foreground border-b-2 border-foreground"
-                          : "text-muted-foreground hover:text-foreground"
+                          : "text-foreground/70 hover:text-foreground"
                       }`}
                     >
                       <Clock className="h-5 w-5" />
@@ -1157,7 +1157,7 @@ export function VaultHomepage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <h2 className="text-2xl font-bold">Recent Questions</h2>
-                          <p className="text-muted-foreground">Most recently edited questions and answers</p>
+                          <p className="text-foreground/70">Most recently edited questions and answers</p>
                         </div>
                       </div>
                       
@@ -1215,7 +1215,7 @@ export function VaultHomepage() {
                         })}
                         {recentQuestions.length === 0 && (
                           <div className="text-center py-12">
-                            <p className="text-lg text-muted-foreground mb-4">
+                            <p className="text-lg text-foreground/70 mb-4">
                               No recent questions found.
                             </p>
                             <Button variant="outline" onClick={() => {
@@ -1243,21 +1243,21 @@ export function VaultHomepage() {
                       <TabsList className="inline-flex w-fit bg-transparent p-0 h-auto gap-2">
                         <TabsTrigger 
                           value="files"
-                          className="inline-grid grid-flow-col items-center content-center gap-2 px-2 py-2 h-8 rounded-lg text-[#71717A] bg-transparent hover:bg-[#F4F4F5] hover:text-[#09090B] data-[state=active]:bg-[#F4F4F5] data-[state=active]:text-[#09090B] data-[state=active]:shadow-none transition-colors"
+                          className="inline-grid grid-flow-col items-center content-center gap-2 px-2 py-2 h-8 rounded-lg text-foreground/70 bg-transparent hover:bg-foreground/5 hover:text-[#09090B] data-[state=active]:bg-foreground/10 data-[state=active]:text-foreground data-[state=active]:shadow-none transition-colors"
                         >
                           <FileText className="h-4 w-4" />
                           Files
                         </TabsTrigger>
                         <TabsTrigger 
                           value="type"
-                          className="inline-grid grid-flow-col items-center content-center gap-2 px-2 py-2 h-8 rounded-lg text-[#71717A] bg-transparent hover:bg-[#F4F4F5] hover:text-[#09090B] data-[state=active]:bg-[#F4F4F5] data-[state=active]:text-[#09090B] data-[state=active]:shadow-none transition-colors"
+                          className="inline-grid grid-flow-col items-center content-center gap-2 px-2 py-2 h-8 rounded-lg text-foreground/70 bg-transparent hover:bg-foreground/5 hover:text-[#09090B] data-[state=active]:bg-foreground/10 data-[state=active]:text-foreground data-[state=active]:shadow-none transition-colors"
                         >
                           <Shapes className="h-4 w-4" />
                           Type
                         </TabsTrigger>
                         <TabsTrigger 
                           value="strategy"
-                          className="inline-grid grid-flow-col items-center content-center gap-2 px-2 py-2 h-8 rounded-lg text-[#71717A] bg-transparent hover:bg-[#F4F4F5] hover:text-[#09090B] data-[state=active]:bg-[#F4F4F5] data-[state=active]:text-[#09090B] data-[state=active]:shadow-none transition-colors"
+                          className="inline-grid grid-flow-col items-center content-center gap-2 px-2 py-2 h-8 rounded-lg text-foreground/70 bg-transparent hover:bg-foreground/5 hover:text-[#09090B] data-[state=active]:bg-foreground/10 data-[state=active]:text-foreground data-[state=active]:shadow-none transition-colors"
                         >
                           <Lightbulb className="h-4 w-4" />
                           Strategy
@@ -1295,8 +1295,8 @@ export function VaultHomepage() {
                             {sortedFiles.map((file, index) => (
                               <div
                                 key={file.documentId}
-                                className={`group flex items-center justify-between px-4 py-3 border rounded-lg hover:bg-gray-100/50 cursor-pointer ${
-                                  index % 2 === 0 ? 'bg-white' : 'bg-gray-50/80'
+                                className={`group flex items-center justify-between px-4 py-3 border border-foreground/10 rounded-lg hover:bg-sidebar-background transition cursor-pointer ${
+                                  index % 2 === 0 ? 'bg-sidebar-background/10' : 'bg-sidebar-background/70'
                                 }`}
                                 
                                 onClick={() => {
@@ -1316,25 +1316,25 @@ export function VaultHomepage() {
                                 }}
                               >
                                 <div className="flex items-center gap-3">
-                                  <FileText className="h-5 w-5 text-muted-foreground" />
+                                  <FileText className="h-5 w-5 text-foreground/70" />
                                   <div>
                                     <div className="flex items-center gap-2">
                                       <h4 className="font-medium">{file.name}</h4>
                                       {isFileArchived(file.name) && (
-                                        <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full" style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}>
+                                        <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-background text-foreground">
                                           <Archive className="h-3 w-3" />
                                           <span className="text-xs font-semibold">Archived</span>
                                         </div>
                                       )}
                                     </div>
                                     <div className="flex items-center gap-2 mt-2">
-                                      <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-foreground">
+                                      <div className="inline-flex items-center rounded-full border border-foreground/10 px-2.5 py-0.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-foreground">
                                         {file.totalItems} {file.totalItems === 1 ? "item" : "items"}
                                       </div>
-                                      <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-foreground">
+                                      <div className="inline-flex items-center rounded-full border border-foreground/10 px-2.5 py-0.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-foreground">
                                         {file.type}
                                       </div>
-                                      <div className="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-foreground">
+                                      <div className="inline-flex items-center gap-1 rounded-full border border-foreground/10 px-2.5 py-0.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-foreground">
                                         <span style={{ color: '#71717A' }}>Last edited</span> {formatRelativeTime(file.updatedAt)} <span style={{ color: '#71717A' }}>by</span> {file.updatedBy}
                                       </div>
                                     </div>
@@ -1346,13 +1346,13 @@ export function VaultHomepage() {
                                       e.stopPropagation();
                                       toggleFileArchive(file.name);
                                     }}
-                                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-200 text-muted-foreground hover:text-foreground text-sm"
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1 px-2 py-1 rounded hover:bg-background transition text-foreground/70 hover:text-foreground text-sm"
                                     title={isFileArchived(file.name) ? "Restore all items in this file" : "Archive all items in this file"}
                                   >
                                     <Archive className="h-4 w-4" />
                                     {isFileArchived(file.name) ? "Restore" : "Archive All"}
                                   </button>
-                                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                  <ChevronRight className="h-4 w-4 text-foreground/70" />
                                 </div>
                               </div>
                             ))}
@@ -1381,7 +1381,7 @@ export function VaultHomepage() {
                                 }}
                               >
                                 <div className="flex items-center gap-3">
-                                  <Shapes className="h-5 w-5 text-muted-foreground" />
+                                  <Shapes className="h-5 w-5 text-foreground/70" />
                                   <div>
                                     <div className="flex items-center gap-2">
                                       <h4 className="font-medium">{type.name}</h4>
@@ -1403,13 +1403,13 @@ export function VaultHomepage() {
                                       e.stopPropagation();
                                       toggleTypeArchive(type.name);
                                     }}
-                                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-200 text-muted-foreground hover:text-foreground text-sm"
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-200 text-foreground/70 hover:text-foreground text-sm"
                                     title={isTypeArchived(type.name) ? "Restore all items of this type" : "Archive all items of this type"}
                                   >
                                     <Archive className="h-4 w-4" />
                                     {isTypeArchived(type.name) ? "Restore" : "Archive All"}
                                   </button>
-                                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                  <ChevronRight className="h-4 w-4 text-foreground/70" />
                                 </div>
                               </div>
                             ))}
@@ -1438,7 +1438,7 @@ export function VaultHomepage() {
                                 }}
                               >
                                 <div className="flex items-center gap-3">
-                                  <Lightbulb className="h-5 w-5 text-muted-foreground" />
+                                  <Lightbulb className="h-5 w-5 text-foreground/70" />
                                   <div>
                                     <div className="flex items-center gap-2">
                                       <h4 className="font-medium">{group.name}</h4>
@@ -1460,13 +1460,13 @@ export function VaultHomepage() {
                                       e.stopPropagation();
                                       toggleStrategyArchive(group.name);
                                     }}
-                                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-200 text-muted-foreground hover:text-foreground text-sm"
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-200 text-foreground/70 hover:text-foreground text-sm"
                                     title={isStrategyArchived(group.name) ? "Restore all items of this strategy" : "Archive all items of this strategy"}
                                   >
                                     <Archive className="h-4 w-4" />
                                     {isStrategyArchived(group.name) ? "Restore" : "Archive All"}
                                   </button>
-                                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                  <ChevronRight className="h-4 w-4 text-foreground/70" />
                                 </div>
                               </div>
                             ))}
