@@ -695,7 +695,7 @@ Client relationships are built on transparency, communication, and alignment of 
           
           <nav aria-label="breadcrumb" className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-semibold"><img src="/AdviserGPT-logo.svg" alt="AdviserGPT" className="max-h-4" /></h1>
+              <h1 className="text-lg font-semibold"><img src="/AdviserGPT-logo.svg" alt="AdviserGPT" className="max-h-4" loading="eager" decoding="async" fetchPriority="high" /></h1>
             </div>
           </nav>
 
@@ -723,7 +723,7 @@ Client relationships are built on transparency, communication, and alignment of 
                 /* Initial State */
                 <div className="flex flex-col items-center justify-center space-y-12 h-full">
                   <div className="text-center mb-8">
-                    <h2 className="text-4xl font-bold mb-2"><img src="/AdviserGPT-logo.svg" alt="AdviserGPT" className="max-h-8 mx-auto" /></h2>
+                    <h2 className="text-4xl font-bold mb-2"><img src="/AdviserGPT-logo.svg" alt="AdviserGPT" className="max-h-8 mx-auto" loading="eager" decoding="async" fetchPriority="high" /></h2>
                     <p className="text-xl text-gray-700">
                       Search or ask: we'll build answers from your firm's approved documents.
                     </p>
