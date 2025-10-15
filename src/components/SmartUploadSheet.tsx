@@ -194,7 +194,7 @@ export function SmartUploadSheet({ open, onClose }: SmartUploadSheetProps) {
           <div className="flex items-center justify-between p-6 border-b">
             <div>
               <h2 className="text-lg font-semibold">Add QA Pair</h2>
-              <p className="text-sm text-muted-foreground mt-1">Create a new question and answer pair</p>
+              <p className="text-sm text-foreground/70 mt-1">Create a new question and answer pair</p>
             </div>
             <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="h-4 w-4" />
@@ -226,7 +226,7 @@ export function SmartUploadSheet({ open, onClose }: SmartUploadSheetProps) {
               </div>
               
               {attachToParent && (
-                <div className="space-y-3 pl-6 border-l-2 border-gray-400 bg-gray-200/30 p-4 rounded-r-md">
+                <div className="space-y-3 pl-6 border-l-2 border-foreground/10 bg-sidebar-background/30 p-4 rounded-r-md">
                   <Label className="text-sm font-medium">Select parent question</Label>
 
                   <Command>
@@ -257,7 +257,7 @@ export function SmartUploadSheet({ open, onClose }: SmartUploadSheetProps) {
                             <div className="flex flex-col gap-1 w-full">
                               <div className="flex items-center gap-2">
                                 <Check
-                                  className={`h-4 w-4 ${
+                                  className={`h-8 w-8 ${
                                     selectedParent?.id === item.id ? "opacity-100" : "opacity-0"
                                   }`}
                                 />
@@ -265,7 +265,7 @@ export function SmartUploadSheet({ open, onClose }: SmartUploadSheetProps) {
                                   {item.question}
                                 </span>
                               </div>
-                              <div className="text-xs text-muted-foreground ml-6">
+                              <div className="text-xs text-foreground/70 ml-8">
                                 {item.documentTitle} • {item.strategy}
                               </div>
                             </div>
@@ -276,16 +276,16 @@ export function SmartUploadSheet({ open, onClose }: SmartUploadSheetProps) {
                   </Command>
                   
                   {selectedParent && (
-                    <div className="bg-white border rounded-md p-3 space-y-2">
-                      <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <div className="bg-background border border-foreground/20 rounded-md p-3 space-y-2">
+                      <div className="flex items-center gap-2 text-sm font-medium text-foreground/80">
                         <Link className="h-4 w-4" />
                         Parent Question Preview
                       </div>
-                      <div className="text-sm text-gray-700 line-clamp-2 grid gap-2">
+                      <div className="text-sm text-foreground/80 line-clamp-2 grid gap-2">
                         <strong>{selectedParent.question}</strong>
                         <p>{selectedParent.answer}</p>
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <div className="flex items-center gap-2 text-xs text-foreground/70">
                         <Badge variant="outline" className="text-xs">
                           {selectedParent.strategy}
                         </Badge>
@@ -325,7 +325,7 @@ export function SmartUploadSheet({ open, onClose }: SmartUploadSheetProps) {
                       <Lightbulb className="h-3 w-3" />
                       {strategy}
                       <X 
-                        className="h-3 w-3 cursor-pointer hover:text-red-500" 
+                        className="h-3 w-3 cursor-pointer hover:text-sidebar-accent" 
                         onClick={() => handleRemoveStrategy(strategy)}
                       />
                     </Badge>
@@ -335,7 +335,7 @@ export function SmartUploadSheet({ open, onClose }: SmartUploadSheetProps) {
                 {/* Add New Strategy */}
                 <div className="flex gap-2">
                   <Select value={newStrategy} onValueChange={setNewStrategy}>
-                    <SelectTrigger className="flex-1 min-w-40">
+                    <SelectTrigger className="flex-1 min-w-40 h-9">
                       <SelectValue placeholder="Select strategy" />
                     </SelectTrigger>
                     <SelectContent>
@@ -369,7 +369,7 @@ export function SmartUploadSheet({ open, onClose }: SmartUploadSheetProps) {
                     <Badge 
                       key={tag} 
                       variant="secondary" 
-                      className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                      className="cursor-pointer hover:bg-sidebar-accent/5 hover:text-sidebar-accent transition-colors"
                       onClick={() => handleRemoveTag(tag)}
                     >
                       #{tag} 
@@ -385,7 +385,7 @@ export function SmartUploadSheet({ open, onClose }: SmartUploadSheetProps) {
                     onChange={(e) => setNewTag(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Add new tag"
-                    className="flex-1"
+                    className="flex-1 h-9"
                   />
                   <Button 
                     onClick={handleAddTag} 
@@ -412,7 +412,7 @@ export function SmartUploadSheet({ open, onClose }: SmartUploadSheetProps) {
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between gap-3 p-6 border-t">
+          <div className="flex items-center justify-between gap-3 p-6 border-t border-foreground/20">
             {/* Add Another Checkbox */}
             <div className="flex items-center space-x-2">
               <Checkbox 
