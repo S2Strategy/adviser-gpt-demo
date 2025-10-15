@@ -113,7 +113,7 @@ export function SourceManagementPanel({
               placeholder="Search sources..."
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
-              className="flex-1 border-foreground/20"
+              className="flex-1 placeholder:text-foreground/70 border-foreground/20"
             />
           </div>
           
@@ -246,7 +246,7 @@ export function SourceManagementPanel({
               ) : (
                 <div className="space-y-2">
                   {filteredAvailableSources.map((source) => (
-                    <div key={source.id} className="border border-sidebar-foreground/10 rounded-lg p-3 bg-sidebar-background">
+                    <div key={source.id} className="border border-sidebar-foreground/10 rounded-lg p-3 bg-sidebar-background/60">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <FileText className="h-4 w-4 text-foreground/70" />
