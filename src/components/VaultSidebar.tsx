@@ -298,7 +298,9 @@ export function VaultSidebar() {
         <div className="flex-1 p-2 gap-2 min-w-0 flex flex-col" style={{ alignContent: "start" }}>
           {/* Subheader */}
           <div className="px-2">
-            <img src="/AdviserGPT-logo.svg" alt="AdviserGPT" className="max-h-3 text-foreground/10 fill-foreground/10" />
+            <div className="text-sidebar-foreground font-semibold text-sm">
+              <img src="/AdviserGPT-logo.svg" alt="AdviserGPT" className="max-h-2.5" />
+            </div>
           </div>
 
           {/* Top Navigation Links */}
