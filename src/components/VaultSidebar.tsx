@@ -306,7 +306,9 @@ export function VaultSidebar() {
             <li>
               <button
                 onClick={handleNewConversation}
-                className="h-10 px-2 rounded-md flex items-center gap-2 w-full transition-colors text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent"
+                className={`h-10 px-2 rounded-md flex items-center gap-2 w-full transition-colors text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent
+                  ${isActiveRoute('/') ? 'bg-sidebar-primary/10' : ''}
+                `}
               >
                 <SquarePen className="w-4 h-4" />
                 <span 
@@ -324,7 +326,9 @@ export function VaultSidebar() {
             <li>
               <Link
                 to="/vault"
-                className="h-10 px-2 rounded-md flex items-center gap-2 transition-colors text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent"
+                className={`h-10 px-2 rounded-md flex items-center gap-2 transition-colors text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent
+                  ${isActiveRoute('/vault') ? 'bg-sidebar-primary/10' : ''}
+                `}
               >
                 <ShieldCheck className="w-4 h-4" />
                 <span 
@@ -342,7 +346,9 @@ export function VaultSidebar() {
             <li>
               <Link
                 to="#"
-                className="h-10 px-2 rounded-md flex items-center gap-2 transition-colors text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent"
+                className={`h-10 px-2 rounded-md flex items-center gap-2 transition-colors text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent
+                  ${isActiveRoute('/upload') ? 'bg-sidebar-primary/10' : ''}
+                `}
               >
                 <CloudUpload className="w-4 h-4" />
                 <span 
@@ -360,7 +366,9 @@ export function VaultSidebar() {
             <li>
               <Link
                 to="#"
-                className="h-10 px-2 rounded-md flex items-center gap-2 transition-colors text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent"
+                className={`h-10 px-2 rounded-md flex items-center gap-2 transition-colors text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent
+                  ${isActiveRoute('/resources') ? 'bg-sidebar-primary/10' : ''}
+                `}
               >
                 <FileText className="w-4 h-4" />
                 <span 
