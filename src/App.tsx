@@ -11,6 +11,7 @@ import { HistoryPage } from "./components/HistoryPage";
 import { SavedSearchesProvider } from "./contexts/SavedSearchesContext";
 import { SuggestedUpdates } from "./pages/SuggestedUpdates";
 import { DuplicateDetail } from "./pages/DuplicateDetail";
+import { ProfilePage } from "./components/ProfilePage";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/vault/history" element={<HistoryPage />} />
             <Route path="/vault/suggested-updates" element={<SuggestedUpdates />} />
             <Route path="/vault/duplicates/:actionId" element={<DuplicateDetail />} />
+            <Route path="/profile" element={<ProfilePage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

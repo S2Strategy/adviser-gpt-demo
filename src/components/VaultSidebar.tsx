@@ -3,21 +3,21 @@ import Logo from '@/assets/AdviserGPT-logo.svg?react';
 import { 
   Building, 
   ChevronsUpDown, 
-  Home, 
   CloudUpload,
   ShieldCheck, 
-  MessageSquareLock,
+  PanelLeft,
   Rocket, 
-  FileText, 
-  UserRound, 
+  FileText,  
   ChevronUp,
   ChevronDown,
   SquarePen,
-  Users,
+  User,
+  Settings,
   LogOut,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 import { useSavedSearches } from "@/contexts/SavedSearchesContext";
 import { useSearchHistory } from "@/hooks/useSearchHistory";
 import { useRecentSearches } from "@/hooks/useRecentSearches";
@@ -38,7 +38,6 @@ export function VaultSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isAccountOpen, setIsAccountOpen] = useState(false);
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isSavedSearchesOpen, setIsSavedSearchesOpen] = useState(true);
   const [isHistoryOpen, setIsHistoryOpen] = useState(true);
   const [isConversationsOpen, setIsConversationsOpen] = useState(true);
@@ -57,6 +56,30 @@ export function VaultSidebar() {
   const { recentSearches: searchHistory } = useSearchHistory();
   const { recentSearchesForSidebar, removeRecentSearch } = useRecentSearches();
   const { getChatResultByQuery } = useChatResults();
+  const [avatar, setAvatar] = useState<string | null>(null);
+
+  // Load avatar from localStorage on component mount
+  useEffect(() => {
+      const savedAvatar = localStorage.getItem('user-avatar');
+      setAvatar(savedAvatar);
+  }, []);
+
+  const handleLogout = () => {
+      // Add logout logic here
+      console.log('Logging out...');
+      setIsAccountOpen(false);
+  };
+
+  const handleProfileClick = () => {
+      navigate('/profile');
+      setIsAccountOpen(false);
+  };
+
+  const handleFirmSettingsClick = () => {
+      // Add firm settings navigation here
+      console.log('Opening firm settings...');
+      setIsAccountOpen(false);
+  };
   
   const recentSavedSearches = savedSearches.slice(0, 5);
   
@@ -245,71 +268,27 @@ export function VaultSidebar() {
       className="h-full w-[300px] flex flex-col py-4"
     >
 
-        {/* Account Wrapper */}
-        <div className="p-2">
-          <Popover open={isAccountOpen} onOpenChange={setIsAccountOpen}>
-            <PopoverTrigger asChild>
-              <div className="p-2 gap-2 rounded-lg flex items-center cursor-pointer bg-background/50 hover:bg-background/90 transition-colors">
-                {/* Account Icon */}
-                <div 
-                  className="bg-sidebar-foreground rounded-lg inline-grid place-items-center"
-                  style={{ width: "32px", height: "32px" }}
-                >
-                  <Building className="w-4 h-4 text-sidebar-background" />
-                </div>
-                
-                {/* Account Info */}
-                <div className="flex-1 grid gap-[-2px]">
-                  <div 
-                    className="font-semibold text-sidebar-foreground"
-                    style={{ 
-                      fontSize: "14px", 
-                      lineHeight: "1.4" 
-                    }}
-                  >
-                    [DEMO] S2 Strategy
-                  </div>
-                  <div 
-                    className="font-medium text-sidebar-foreground/70"
-                    style={{ 
-                      fontSize: "12px", 
-                      fontWeight: "500",
-                      lineHeight: "1.5", 
-                      letterSpacing: "-0.2px" 
-                    }}
-                  >
-                    Preview
-                  </div>
-                </div>
-                
-                {/* Dropdown Icon */}
-                <ChevronsUpDown className="w-4 h-4 text-[#3F3F46]" />
-              </div>
-            </PopoverTrigger>
-            <PopoverContent className="w-48 p-1" align="start">
-              <div className="flex items-center gap-2 p-2 hover:bg-sidebar-primary/10 rounded cursor-pointer">
-                <Users className="w-4 h-4" />
-                <span className="text-sm">Account</span>
-              </div>
-            </PopoverContent>
-          </Popover>
+        {/* Logo */}
+        <div className="pl-4 py-2 flex items-center justify-between">
+          <div className="text-sidebar-foreground font-semibold text-sm">
+            <Logo aria-label="AdviserGPT" className="h-3.5 w-auto" />
+          </div>
+          <Button variant="ghost" size="sm">
+            <PanelLeft className="h-4 w-4" />
+            <span className="sr-only">Toggle Sidebar</span>
+          </Button>
         </div>
+        
 
         {/* Navigation Section */}
         <div className="flex-1 p-2 gap-2 min-w-0 flex flex-col" style={{ alignContent: "start" }}>
-          {/* Subheader */}
-          <div className="px-2">
-          <div className="text-sidebar-foreground font-semibold text-sm">
-            <Logo aria-label="AdviserGPT" className="h-2.5 w-auto" />
-          </div>
-          </div>
 
           {/* Top Navigation Links */}
           <ul className="space-y-1 flex-1">
             <li>
               <button
                 onClick={handleNewConversation}
-                className={`h-10 px-2 rounded-md flex items-center gap-2 w-full transition-colors text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent
+                className={`h-10 px-2 rounded-md flex items-center gap-2 w-full transition active:scale-[0.98] text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent
                   ${isActiveRoute('/') ? 'bg-sidebar-primary/10' : ''}
                 `}
               >
@@ -329,7 +308,7 @@ export function VaultSidebar() {
             <li>
               <Link
                 to="/vault"
-                className={`h-10 px-2 rounded-md flex items-center gap-2 transition-colors text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent
+                className={`h-10 px-2 rounded-md flex items-center gap-2 transition active:scale-[0.98] text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent
                   ${isActiveRoute('/vault') ? 'bg-sidebar-primary/10' : ''}
                 `}
               >
@@ -349,7 +328,7 @@ export function VaultSidebar() {
             <li>
               <Link
                 to="#"
-                className={`h-10 px-2 rounded-md flex items-center gap-2 transition-colors text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent
+                className={`h-10 px-2 rounded-md flex items-center gap-2 transition active:scale-[0.98] text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent
                   ${isActiveRoute('/upload') ? 'bg-sidebar-primary/10' : ''}
                 `}
               >
@@ -369,7 +348,7 @@ export function VaultSidebar() {
             <li>
               <Link
                 to="#"
-                className={`h-10 px-2 rounded-md flex items-center gap-2 transition-colors text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent
+                className={`h-10 px-2 rounded-md flex items-center gap-2 transition active:scale-[0.98] text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent
                   ${isActiveRoute('/resources') ? 'bg-sidebar-primary/10' : ''}
                 `}
               >
@@ -391,7 +370,7 @@ export function VaultSidebar() {
           {recentConversations.length > 0 && (
             <div className="mt-4">
               <div 
-                className="h-10 px-2 rounded-md flex items-center gap-2 w-full transition-colors text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent cursor-pointer"
+                className="h-10 px-2 rounded-md flex items-center gap-2 w-full transition active:scale-[0.98] text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent cursor-pointer"
                 onClick={() => setIsChatsExpanded(!isChatsExpanded)}
                 onMouseEnter={() => setIsChatsIconHovered(true)}
                 onMouseLeave={() => setIsChatsIconHovered(false)}
@@ -465,14 +444,12 @@ export function VaultSidebar() {
 
         {/* List Wrapper */}
         <div className="p-2">
-          <div className="border-t border-sidebar-foreground/10 pt-6 space-y-1">
-            <div className="h-8 px-2 rounded-md bg-sidebar-foreground/70 flex items-center gap-2">
-              <Rocket className="w-4 h-4 text-sidebar-background" />
+          <div className="border-t border-sidebar-foreground/10 pt-4 space-y-2">
+            <div className="h-10 px-2 group rounded-md hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center gap-2 cursor-pointer transition active:scale-[0.98]">
+              <Rocket className="w-4 h-4 text-foreground group-hover:text-current transition-color" />
               <span 
-                className="text-sidebar-background"
+                className="text-foreground text-md font-medium group-hover:text-current transition-color"
                 style={{
-                  fontSize: "14px",
-                  fontWeight: "500",
                   lineHeight: "1.5",
                   letterSpacing: "-0.3px"
                 }}
@@ -481,33 +458,82 @@ export function VaultSidebar() {
               </span>
             </div>
             
-            
-            
-            <Popover open={isUserMenuOpen} onOpenChange={setIsUserMenuOpen}>
+            {/* Account Wrapper */}
+            <Popover open={isAccountOpen} onOpenChange={setIsAccountOpen}>
               <PopoverTrigger asChild>
-                <div className="h-8 px-2 rounded-md flex items-center gap-2 text-sidebar-foreground hover:bg-sidebar-primary/5 transition-colors cursor-pointer">
-                  <UserRound className="w-4 h-4" />
-                  <span 
-                    className="flex-1 "
-                    style={{
-                      fontSize: "14px",
-                      fontWeight: "500",
-                      lineHeight: "1.5",
-                      letterSpacing: "-0.3px"
-                    }}
+                <div className="p-2 gap-2 rounded-lg flex items-center cursor-pointer hover:bg-background/90 transition active:scale-[0.98]">
+                  {/* Account Icon */}
+                  <div 
+                    className="bg-sidebar-foreground rounded-lg inline-grid place-items-center"
+                    style={{ width: "32px", height: "32px" }}
                   >
-                    Alex Wright
-                  </span>
-                  <ChevronUp className="w-4 h-4" />
+                    <Building className="w-4 h-4 text-sidebar-background" />
+                  </div>
+                  
+                  {/* Account Info */}
+                  <div className="flex-1 grid gap-[-2px]">
+                    <div 
+                      className="font-semibold text-sidebar-foreground"
+                      style={{ 
+                        fontSize: "14px", 
+                        lineHeight: "1.4" 
+                      }}
+                    >
+                      [DEMO] S2 Strategy
+                    </div>
+                    <div 
+                      className="font-medium text-sidebar-foreground/70"
+                      style={{ 
+                        fontSize: "12px", 
+                        fontWeight: "500",
+                        lineHeight: "1.5", 
+                        letterSpacing: "-0.2px" 
+                      }}
+                    >
+                      Preview
+                    </div>
+                  </div>
+                  {avatar ? (
+                    <img
+                      src={avatar}
+                      alt="Profile picture"
+                      className="w-8 h-8 rounded-full object-cover border-2 border-foreground/10"
+                    />
+                  ) : (
+                    <User className="w-8 h-8 text-foreground/70" />
+                  )}
+                  {/* Dropdown Icon */}
+                  <ChevronsUpDown className="w-4 h-4 text-foreground/70" />
                 </div>
               </PopoverTrigger>
-              <PopoverContent className="w-48 p-1" align="end" side="top">
-                <div className="flex items-center gap-2 p-2 hover:bg-sidebar-primary/10 rounded cursor-pointer">
-                  <LogOut className="w-4 h-4" />
-                  <span className="text-sm">Sign Out</span>
-                </div>
+              <PopoverContent className="w-56 p-1" align="end">
+              <div className="space-y-1">
+                  <div 
+                      className="flex items-center gap-2 p-2 hover:bg-sidebar-primary/10 rounded cursor-pointer"
+                      onClick={handleProfileClick}
+                  >
+                      <User className="w-4 h-4 text-foreground/70" />
+                      <span className="text-sm">Profile</span>
+                  </div>
+                  <div 
+                      className="flex items-center gap-2 p-2 hover:bg-sidebar-primary/10 rounded cursor-pointer"
+                      onClick={handleFirmSettingsClick}
+                  >
+                      <Settings className="w-4 h-4 text-foreground/70" />
+                      <span className="text-sm">Firm Settings</span>
+                  </div>
+                  <div className="border-t border-foreground/10 my-1"></div>
+                  <div 
+                      className="flex items-center gap-2 p-2 hover:bg-sidebar-primary/10 rounded cursor-pointer text-sidebar-accent"
+                      onClick={handleLogout}
+                  >
+                      <LogOut className="w-4 h-4 text-sidebar-accent/70" />
+                      <span className="text-sm">Logout</span>
+                  </div>
+              </div>
               </PopoverContent>
             </Popover>
+            
           </div>
         </div>
     </div>

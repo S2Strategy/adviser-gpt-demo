@@ -6,8 +6,6 @@ import {
   PlusCircle, 
   HelpCircle, 
   User, 
-  PanelLeft, 
-  PanelRightOpen,
   BookOpenText,
   MessageSquare,
   ChevronDown,
@@ -17,7 +15,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -679,26 +676,15 @@ Client relationships are built on transparency, communication, and alignment of 
   };
 
   return (
-    <div className="h-screen bg-sidebar-background flex">
+    <div className="h-screen w-full bg-sidebar-background flex gap-4">
       {/* Vault Sidebar */}
       <VaultSidebar />
+
       
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden bg-background mt-4 ml-4 rounded-tl-2xl vault-scroll">
+      <main className="flex-1 flex flex-col overflow-hidden bg-background mt-4 rounded-tl-2xl vault-scroll">
         {/* Top Navigation */}
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b border-foreground/10 bg-background px-4">
-          <Button variant="ghost" size="sm" className="-ml-2">
-            <PanelLeft className="h-4 w-4" />
-            <span className="sr-only">Toggle Sidebar</span>
-          </Button>
-          
-          <div className="shrink-0 bg-border border-foreground/10 w-[1px] mr-2 h-4" />
-          
-          <nav aria-label="breadcrumb" className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-semibold"><Logo aria-label="AdviserGPT" className="h-4 w-auto" /></h1>
-            </div>
-          </nav>
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b border-foreground/10 px-4">
 
           <div className="ml-auto flex items-center gap-2">
             <Button variant="ghost" size="sm">
@@ -713,225 +699,222 @@ Client relationships are built on transparency, communication, and alignment of 
               <Search className="h-4 w-4" />
               <span>Search Vault</span>
             </Button>
-            <Button variant="ghost" size="sm">
-              <User className="h-4 w-4" />
-            </Button>
           </div>
         </header>
-          <div className="flex-1 overflow-y-auto p-8">
-            <div className="max-w-4xl mx-auto h-full">
-              {!currentAnswer && !isGenerating ? (
-                /* Initial State */
-                <div className="flex flex-col items-center justify-center space-y-12 h-full">
-                  <div className="text-center mb-8">
-                    <h2 className="text-4xl font-bold mb-2"><Logo aria-label="AdviserGPT" className="h-8 w-auto mx-auto" /></h2>
-                    <p className="text-xl text-gray-700">
-                      Search or ask: we'll build answers from your firm's approved documents.
-                    </p>
-                    <p className="text-md text-gray-600 mt-1">
-                      Every response is sourced from your Vault and matched to your firm's tone.
-                    </p>
-                    
-                  </div>
-
-                  {/* Input Bar */}
-                  <div className="w-full max-w-3xl mb-8">
-                    <div className="space-y-4">
-                      {/* Mode Toggle */}
-                      <div className="flex flex-col gap-2 md:flex-row md:gap-0 justify-between items-center">
-                        <div className="flex flex-1 w-full md:w-auto md:flex-none items-center bg-foreground/10 rounded-lg p-1">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <button
-                                onClick={() => setSelectedMode('answer')}
-                                className={`flex flex-1 md:flex-none justify-center md:justify-start items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 ${
-                                  selectedMode === 'answer'
-                                    ? 'bg-background text-foreground shadow-sm'
-                                    : 'text-foreground/60 hover:text-foreground'
-                                }`}
-                              >
-                                <BookOpenText className="h-4 w-4" />
-                                Vault Only
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>For client questions - uses firm-approved Vault content</p>
-                            </TooltipContent>
-                          </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <button
-                                onClick={() => setSelectedMode('chat')}
-                                className={`flex flex-1 md:flex-none justify-center md:justify-start items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 ${
-                                  selectedMode === 'chat'
-                                    ? 'bg-background text-foreground shadow-sm'
-                                    : 'text-foreground/60 hover:text-foreground'
-                                }`}
-                              >
-                                <MessageSquare className="h-4 w-4" />
-                                Vault + Web
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>For internal questions - searches web + Vault sources</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-
-                        {/* Strategy Selector */}
-                        <div className="flex flex-1 w-full md:w-auto md:flex-none justify-center text-xs">
-                          <Select value={selectedStrategy} onValueChange={setSelectedStrategy}>
-                            <SelectTrigger className="w-full md:w-48 border-foreground/20 transition text-xs">
-                              <SelectValue placeholder="Select Strategy" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="growth">Growth Strategy</SelectItem>
-                              <SelectItem value="value">Value Strategy</SelectItem>
-                              <SelectItem value="balanced">Balanced Strategy</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      {/* Main Input */}
-                      <div className="relative flex flex-col bg-white/80 border border-foreground/30 backdrop-blur-sm transition focus:border-sidebar-primary focus-within:border-sidebar-primary focus-within:shadow-[0_5px_15px_hsla(60deg,21%,29%,0.30)] rounded-lg shadow-[0_3px_9px_hsla(0deg,0%,0%,0.09)]">
-                        <div className="flex items-stretch">
-                          <Textarea
-                            placeholder="e.g. What is our investment research process?"
-                            value={inputValue}
-                            onChange={(e) => setInputValue(e.target.value)}
-                            className="flex-grow bg-transparent flex items-center resize-none border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-0 focus:outline-none p-4 min-h-[60px] placeholder:text-foreground/60 text-foreground"
-                            rows={1}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleSubmit();
-                              }
-                            }}
-                          />
-                          <div className="flex-shrink-0 flex items-center p-2 px-3 border-l border-foreground/20 gap-2">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-9 w-11 gap-0 text-foreground/50 hover:text-foreground">
-                                  <Type className="h-5 w-5" />
-                                  <ChevronDown className="h-4 w-4 ml-1" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent>
-                                <DropdownMenuItem>Text</DropdownMenuItem>
-                                <DropdownMenuItem>Table</DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                            <Button 
-                              onClick={handleSubmit}
-                              disabled={!inputValue.trim() || isGenerating}
-                              className="h-9 w-9 bg-sidebar-primary hover:text-foreground"
-                            >
-                              <Send className="h-5 w-5 text-sidebar-primary-foreground" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Examples */}
-                  <div className="w-full max-w-3xl mb-8">
-                    <div className="text-center mb-2">
-                      <p className="text-sm text-foreground/80">Try one of these examples:</p>
-                    </div>
-                    <div className="grid md:grid-cols-2 gap-2">
-                      {Object.values(exampleQuestions).map((question, index) => (
-                        <Button
-                          key={index}
-                          variant="outline"
-                          size="sm"
-                          className="text-sm font-normal bg-sidebar-primary/5 flex flex-wrap justify-between min-h-14 h-auto px-4 py-2 items-center text-sidebar-foreground hover:bg-sidebar-primary/10 border-foreground/10 hover:border-sidebar whitespace-normal text-left"
-                          onClick={() => handleExampleClick(question)}
-                        >
-                          <span className="flex flex-1">{question}</span> <PlusCircle className="h-4 w-4 text-sidebar-foreground/70" />
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-
+        <div className="flex-1 overflow-y-auto p-8">
+          <div className="max-w-4xl mx-auto h-full">
+            {!currentAnswer && !isGenerating ? (
+              /* Initial State */
+              <div className="flex flex-col items-center justify-center space-y-12 h-full">
+                <div className="text-center mb-8">
+                  <h2 className="text-4xl font-bold mb-2"><Logo aria-label="AdviserGPT" className="h-8 w-auto mx-auto" /></h2>
+                  <p className="text-xl text-gray-700">
+                    Search or ask: we'll build answers from your firm's approved documents.
+                  </p>
+                  <p className="text-md text-gray-600 mt-1">
+                    Every response is sourced from your Vault and matched to your firm's tone.
+                  </p>
+                  
                 </div>
-              ) : (
-                /* Chat State (Loading or Answer) */
-                <div className="space-y-6 h-full flex flex-col ">
-                  {/* User Question */}
-                  <div className="flex justify-end">
-                    <div className="max-w-[90%]">
-                      <div className="p-2.5 rounded-lg bg-foreground/5 border border-gray-200 text-foreground text-[15px] leading-6">
-                        {isGenerating ? inputValue : currentAnswer.question}
+
+                {/* Input Bar */}
+                <div className="w-full max-w-3xl mb-8">
+                  <div className="space-y-4">
+                    {/* Mode Toggle */}
+                    <div className="flex flex-col gap-2 md:flex-row md:gap-0 justify-between items-center">
+                      <div className="flex flex-1 w-full md:w-auto md:flex-none items-center bg-foreground/10 rounded-lg p-1">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => setSelectedMode('answer')}
+                              className={`flex flex-1 md:flex-none justify-center md:justify-start items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 ${
+                                selectedMode === 'answer'
+                                  ? 'bg-background text-foreground shadow-sm'
+                                  : 'text-foreground/60 hover:text-foreground'
+                              }`}
+                            >
+                              <BookOpenText className="h-4 w-4" />
+                              Vault Only
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>For client questions - uses firm-approved Vault content</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => setSelectedMode('chat')}
+                              className={`flex flex-1 md:flex-none justify-center md:justify-start items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 ${
+                                selectedMode === 'chat'
+                                  ? 'bg-background text-foreground shadow-sm'
+                                  : 'text-foreground/60 hover:text-foreground'
+                              }`}
+                            >
+                              <MessageSquare className="h-4 w-4" />
+                              Vault + Web
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>For internal questions - searches web + Vault sources</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+
+                      {/* Strategy Selector */}
+                      <div className="flex flex-1 w-full md:w-auto md:flex-none justify-center text-xs">
+                        <Select value={selectedStrategy} onValueChange={setSelectedStrategy}>
+                          <SelectTrigger className="w-full md:w-48 border-foreground/20 transition text-xs">
+                            <SelectValue placeholder="Select Strategy" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="growth">Growth Strategy</SelectItem>
+                            <SelectItem value="value">Value Strategy</SelectItem>
+                            <SelectItem value="balanced">Balanced Strategy</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Loading State or Answer Card */}
-                  <div className="flex-1 h-full">
-                    {isGenerating ? (
-                      <AnswerLoadingState
-                        progress={loadingProgress}
-                        currentStep={loadingStep}
-                        sourcesFound={sourcesFound}
-                        mode={selectedMode}
-                      />
-                    ) : (
-                      <TrustAnswerCard
-                      answer={currentAnswer}
-                      mode={selectedMode}
-                      onCopy={handleCopy}
-                      onSave={handleSave}
-                      onEmail={handleEmail}
-                      onEdit={(type, value) => {
-                        // Handle edit actions
-                        console.log('Edit:', type, value);
-                      }}
-                      onSourceRemove={(sourceId) => {
-                        // Handle source removal
-                        console.log('Remove source:', sourceId);
-                      }}
-                      onSourceAdd={() => setShowSourcePanel(true)}
-                      onRebuild={handleRebuild}
-                      onComplianceFix={(checkId) => {
-                        // Handle compliance fix
-                        console.log('Fix compliance:', checkId);
-                      }}
-                      onComplianceFixAll={() => {
-                        // Handle fix all compliance issues
-                        console.log('Fix all compliance issues');
-                      }}
-                    />
-                    )}
-                  </div>
-
-                  {/* Follow-up Input */}
-                  <div id="follow-up-input" className="max-w-3xl mx-auto sticky bottom-0 self-end w-full pt-8">
+                    {/* Main Input */}
                     <div className="relative flex flex-col bg-white/80 border border-foreground/30 backdrop-blur-sm transition focus:border-sidebar-primary focus-within:border-sidebar-primary focus-within:shadow-[0_5px_15px_hsla(60deg,21%,29%,0.30)] rounded-lg shadow-[0_3px_9px_hsla(0deg,0%,0%,0.09)]">
                       <div className="flex items-stretch">
                         <Textarea
-                          placeholder="Add follow-up instructions or click 'New Conversation' to start fresh..."
-                          className="flex-grow bg-transparent resize-none border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-0 focus:outline-none p-4 min-h-[60px] placeholder:text-gray-500"
+                          placeholder="e.g. What is our investment research process?"
+                          value={inputValue}
+                          onChange={(e) => setInputValue(e.target.value)}
+                          className="flex-grow bg-transparent flex items-center resize-none border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-0 focus:outline-none p-4 min-h-[60px] placeholder:text-foreground/60 text-foreground"
                           rows={1}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleSubmit();
+                            }
+                          }}
                         />
-                        <div className="flex-shrink-0 flex items-center p-2 px-3 border-l border-gray-400 gap-2">
-                          <Button variant="ghost" size="sm" className="h-9 w-11 gap-0 text-gray-500 hover:text-gray-700">
-                            <Type className="h-5 w-5" />
-                            <ChevronDown className="h-4 w-4 ml-1" />
+                        <div className="flex-shrink-0 flex items-center p-2 px-3 border-l border-foreground/20 gap-2">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-9 w-11 gap-0 text-foreground/50 hover:text-foreground">
+                                <Type className="h-5 w-5" />
+                                <ChevronDown className="h-4 w-4 ml-1" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              <DropdownMenuItem>Text</DropdownMenuItem>
+                              <DropdownMenuItem>Table</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                          <Button 
+                            onClick={handleSubmit}
+                            disabled={!inputValue.trim() || isGenerating}
+                            className="h-9 w-9 bg-sidebar-primary hover:text-foreground"
+                          >
+                            <Send className="h-5 w-5 text-sidebar-primary-foreground" />
                           </Button>
-                          <Button className="h-9 w-9 bg-sidebar-primary hover:text-foreground">
-                              <Send className="h-5 w-5 text-sidebar-primary-foreground" />
-                            </Button>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
+
+                {/* Examples */}
+                <div className="w-full max-w-3xl mb-8">
+                  <div className="text-center mb-2">
+                    <p className="text-sm text-foreground/80">Try one of these examples:</p>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-2">
+                    {Object.values(exampleQuestions).map((question, index) => (
+                      <Button
+                        key={index}
+                        variant="outline"
+                        size="sm"
+                        className="text-sm font-normal bg-sidebar-primary/5 flex flex-wrap justify-between min-h-14 h-auto px-4 py-2 items-center text-sidebar-foreground hover:bg-sidebar-primary/10 border-foreground/10 hover:border-sidebar whitespace-normal text-left"
+                        onClick={() => handleExampleClick(question)}
+                      >
+                        <span className="flex flex-1">{question}</span> <PlusCircle className="h-4 w-4 text-sidebar-foreground/70" />
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+            ) : (
+              /* Chat State (Loading or Answer) */
+              <div className="space-y-6 h-full flex flex-col ">
+                {/* User Question */}
+                <div className="flex justify-end">
+                  <div className="max-w-[90%]">
+                    <div className="p-2.5 rounded-lg bg-foreground/5 border border-gray-200 text-foreground text-[15px] leading-6">
+                      {isGenerating ? inputValue : currentAnswer.question}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Loading State or Answer Card */}
+                <div className="flex-1 h-full">
+                  {isGenerating ? (
+                    <AnswerLoadingState
+                      progress={loadingProgress}
+                      currentStep={loadingStep}
+                      sourcesFound={sourcesFound}
+                      mode={selectedMode}
+                    />
+                  ) : (
+                    <TrustAnswerCard
+                    answer={currentAnswer}
+                    mode={selectedMode}
+                    onCopy={handleCopy}
+                    onSave={handleSave}
+                    onEmail={handleEmail}
+                    onEdit={(type, value) => {
+                      // Handle edit actions
+                      console.log('Edit:', type, value);
+                    }}
+                    onSourceRemove={(sourceId) => {
+                      // Handle source removal
+                      console.log('Remove source:', sourceId);
+                    }}
+                    onSourceAdd={() => setShowSourcePanel(true)}
+                    onRebuild={handleRebuild}
+                    onComplianceFix={(checkId) => {
+                      // Handle compliance fix
+                      console.log('Fix compliance:', checkId);
+                    }}
+                    onComplianceFixAll={() => {
+                      // Handle fix all compliance issues
+                      console.log('Fix all compliance issues');
+                    }}
+                  />
+                  )}
+                </div>
+
+                {/* Follow-up Input */}
+                <div id="follow-up-input" className="max-w-3xl mx-auto sticky bottom-0 self-end w-full pt-8">
+                  <div className="relative flex flex-col bg-white/80 border border-foreground/30 backdrop-blur-sm transition focus:border-sidebar-primary focus-within:border-sidebar-primary focus-within:shadow-[0_5px_15px_hsla(60deg,21%,29%,0.30)] rounded-lg shadow-[0_3px_9px_hsla(0deg,0%,0%,0.09)]">
+                    <div className="flex items-stretch">
+                      <Textarea
+                        placeholder="Add follow-up instructions or click 'New Conversation' to start fresh..."
+                        className="flex-grow bg-transparent resize-none border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-0 focus:outline-none p-4 min-h-[60px] placeholder:text-gray-500"
+                        rows={1}
+                      />
+                      <div className="flex-shrink-0 flex items-center p-2 px-3 border-l border-gray-400 gap-2">
+                        <Button variant="ghost" size="sm" className="h-9 w-11 gap-0 text-gray-500 hover:text-gray-700">
+                          <Type className="h-5 w-5" />
+                          <ChevronDown className="h-4 w-4 ml-1" />
+                        </Button>
+                        <Button className="h-9 w-9 bg-sidebar-primary hover:text-foreground">
+                            <Send className="h-5 w-5 text-sidebar-primary-foreground" />
+                          </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-        </main>
+        </div>
+      </main>
 
       {/* Source Management Panel */}
       <SourceManagementPanel
