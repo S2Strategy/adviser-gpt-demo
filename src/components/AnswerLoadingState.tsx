@@ -7,7 +7,7 @@ interface AnswerLoadingStateProps {
   progress: number;
   currentStep: string;
   sourcesFound: number;
-  mode?: 'answer' | 'chat';
+  mode?: 'answer' | 'chat' | 'riaOutreach';
 }
 
 export function AnswerLoadingState({ 

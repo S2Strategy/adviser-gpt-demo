@@ -32,7 +32,7 @@ export interface ChatResult {
   lastSynced: Date;
   version: number;
   complianceChecks?: ComplianceCheck[];
-  mode: 'answer' | 'chat';
+  mode: 'answer' | 'chat' | 'riaOutreach';
   timestamp: number;
   displayTitle: string;
 }
@@ -147,7 +147,7 @@ export function useChatResults() {
   /**
    * Get a chat result by query and mode.
    */
-  const getChatResultByQuery = useCallback((query: string, mode: 'answer' | 'chat'): ChatResult | null => {
+  const getChatResultByQuery = useCallback((query: string, mode: 'answer' | 'chat' | 'riaOutreach'): ChatResult | null => {
     return chatResults.find(result => 
       result.query.toLowerCase() === query.toLowerCase() && result.mode === mode
     ) || null;

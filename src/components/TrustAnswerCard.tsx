@@ -48,7 +48,7 @@ interface Answer {
 
 interface TrustAnswerCardProps {
   answer: Answer;
-  mode?: 'answer' | 'chat';
+  mode?: 'answer' | 'chat' | 'riaOutreach';
   onCopy?: () => void;
   onSave?: (updatedAnswer?: Answer) => void;
   onEmail?: () => void;

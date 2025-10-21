@@ -10,7 +10,7 @@ import {
   FileText,  
   ChevronUp,
   ChevronDown,
-  MessageCircle,
+  MessageCirclePlus,
   UserRound,
   Settings,
   LogOut,
@@ -92,7 +92,7 @@ export function VaultSidebar() {
   const getActiveChatId = () => {
     const searchParams = new URLSearchParams(location.search);
     const queryParam = searchParams.get('query');
-    const modeParam = searchParams.get('mode') as 'answer' | 'chat' | null;
+    const modeParam = searchParams.get('mode') as 'answer' | 'chat' | 'riaOutreach' | null;
     
     if (queryParam && modeParam) {
       // Find the recent search that matches the current query and mode
@@ -288,7 +288,7 @@ export function VaultSidebar() {
                     ${isActiveRoute('/') ? 'bg-sidebar-primary/10' : ''}
                   `}
                 >
-                  <MessageCircle className="w-4 h-4" />
+                  <MessageCirclePlus className="w-4 h-4" />
                   <span 
                     className="text-md font-medium" 
                     style={{

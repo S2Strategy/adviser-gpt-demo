@@ -9,8 +9,17 @@ import {
   BookOpenText,
   MessageSquare,
   ChevronDown,
+  ShieldPlus,
+  UserRoundSearch,
   Type,
-  Send
+  Send,
+  Paperclip,
+  FileText,
+  File,
+  Image,
+  FileSpreadsheet,
+  FileType,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,6 +55,15 @@ interface Answer {
   lastSynced: Date;
   version: number;
   complianceChecks?: ComplianceCheck[];
+  uploadedFiles?: UploadedFile[];
+}
+
+interface UploadedFile {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  file: File;
 }
 
 export function AdviserGPTHome() {
@@ -57,7 +75,7 @@ export function AdviserGPTHome() {
   
   // State management
   const [inputValue, setInputValue] = useState('');
-  const [selectedMode, setSelectedMode] = useState<'answer' | 'chat'>(() => getLastMode());
+  const [selectedMode, setSelectedMode] = useState<'answer' | 'chat' | 'riaOutreach'>(() => getLastMode());
   const [selectedStrategy, setSelectedStrategy] = useState<string>('');
   const [responseFormat, setResponseFormat] = useState<'text' | 'table'>('text');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -67,6 +85,8 @@ export function AdviserGPTHome() {
   const [loadingStep, setLoadingStep] = useState('search');
   const [sourcesFound, setSourcesFound] = useState(0);
   const [showSourcePanel, setShowSourcePanel] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [followUpFiles, setFollowUpFiles] = useState<UploadedFile[]>([]);
   const processedStoredResult = useRef<string | null>(null);
   const [availableSources] = useState<Source[]>([
     {
@@ -118,8 +138,95 @@ export function AdviserGPTHome() {
     "Can you turn this into a cover letter paragraph for prospective RIA partners?"
   ];
 
+  const riaOutreachModeExamples = [
+    "Find advisers in Miami, Florida specializing in high net worth clients",
+    "Search for advisers at Morgan Stanley Investment Management",
+    "Find information about BlackRock Investment Management",
+    "Research the investment strategies of Fidelity Investments"
+  ];
+
   // Get current example questions based on mode
-  const exampleQuestions = selectedMode === 'answer' ? answerModeExamples : chatModeExamples;
+  const exampleQuestions = selectedMode === 'answer' ? answerModeExamples : selectedMode === 'chat' ? chatModeExamples : riaOutreachModeExamples;
+
+  // File handling functions
+  const getFileIcon = (fileType: string) => {
+    if (fileType.includes('pdf')) return FileType;
+    if (fileType.includes('image')) return Image;
+    if (fileType.includes('spreadsheet') || fileType.includes('excel') || fileType.includes('csv')) return FileSpreadsheet;
+    if (fileType.includes('text') || fileType.includes('document')) return FileText;
+    return File;
+  };
+
+  const getFileTypeDisplay = (fileType: string) => {
+    if (fileType.includes('pdf')) return 'PDF Document';
+    if (fileType.includes('image')) return 'Image';
+    if (fileType.includes('spreadsheet') || fileType.includes('excel')) return 'Spreadsheet';
+    if (fileType.includes('csv')) return 'CSV File';
+    if (fileType.includes('text')) return 'Text Document';
+    if (fileType.includes('document') || fileType.includes('doc')) return 'Document';
+    return 'File';
+  };
+
+  const handleFileUpload = (files: FileList | null, isFollowUp: boolean = false) => {
+    if (!files) return;
+    
+    const newFiles: UploadedFile[] = Array.from(files).map(file => ({
+      id: `${Date.now()}-${Math.random()}`,
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      file: file
+    }));
+
+    if (isFollowUp) {
+      setFollowUpFiles(prev => [...prev, ...newFiles]);
+    } else {
+      setUploadedFiles(prev => [...prev, ...newFiles]);
+    }
+
+    toast({
+      title: "Files uploaded ✓",
+      description: `${newFiles.length} file(s) added successfully.`
+    });
+  };
+
+  const removeFile = (fileId: string, isFollowUp: boolean = false) => {
+    if (isFollowUp) {
+      setFollowUpFiles(prev => prev.filter(file => file.id !== fileId));
+    } else {
+      setUploadedFiles(prev => prev.filter(file => file.id !== fileId));
+    }
+  };
+
+  // FileCard component
+  const FileCard = ({ file, onRemove, showRemoveButton = true }: { file: UploadedFile; onRemove: () => void; showRemoveButton?: boolean }) => {
+    const FileIcon = getFileIcon(file.type);
+    const fileTypeDisplay = getFileTypeDisplay(file.type);
+    
+    return (
+      <div className="flex items-center gap-2 bg-sidebar-background/70 border border-foreground/20 rounded-lg px-3 py-2 min-w-0 flex-shrink-0">
+        <FileIcon className="h-4 w-4 text-foreground/60 flex-shrink-0" />
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-medium text-foreground/90 truncate" title={file.name}>
+            {file.name}
+          </div>
+          <div className="text-xs text-foreground/70">
+            {fileTypeDisplay}
+          </div>
+        </div>
+        {showRemoveButton && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0 hover:bg-foreground/10 flex-shrink-0"
+            onClick={onRemove}
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        )}
+      </div>
+    );
+  };
 
   // Handle URL parameters
   useEffect(() => {
@@ -140,6 +247,8 @@ export function AdviserGPTHome() {
       setLoadingStep('search');
       setSourcesFound(0);
       setShowSourcePanel(false);
+      setUploadedFiles([]);
+      setFollowUpFiles([]);
       
       // Remove the reset parameter from URL
       const newSearchParams = new URLSearchParams(searchParams);
@@ -155,7 +264,7 @@ export function AdviserGPTHome() {
       
       // Handle query and mode parameters from recent search clicks
       setInputValue(queryParam);
-      if (modeParam === 'answer' || modeParam === 'chat') {
+      if (modeParam === 'answer' || modeParam === 'chat' || modeParam === 'riaOutreach') {
         setSelectedMode(modeParam);
       }
       
@@ -382,7 +491,13 @@ export function AdviserGPTHome() {
         clearInterval(stepInterval);
         
         
-        setCurrentAnswer(mockAnswer);
+        // Add uploaded files to the answer
+        const answerWithFiles = {
+          ...mockAnswer,
+          uploadedFiles: uploadedFiles
+        };
+        
+        setCurrentAnswer(answerWithFiles);
         setIsGenerating(false);
         
         // Save the chat result for future retrieval (async to prevent render issues)
@@ -546,7 +661,13 @@ Client relationships are built on transparency, communication, and alignment of 
           ]
         };
         
-        setCurrentAnswer(mockAnswer);
+        // Add uploaded files to the answer
+        const answerWithFiles = {
+          ...mockAnswer,
+          uploadedFiles: uploadedFiles
+        };
+        
+        setCurrentAnswer(answerWithFiles);
         setLoadingProgress(100);
         setLoadingStep(steps[3]);
         setIsGenerating(false);
@@ -706,13 +827,10 @@ Client relationships are built on transparency, communication, and alignment of 
             {!currentAnswer && !isGenerating ? (
               /* Initial State */
               <div className="flex flex-col items-center justify-center space-y-12 h-full">
-                <div className="text-center mb-8">
+                <div className="text-center mb-8 space-y-6">
                   <h2 className="text-4xl font-bold mb-2"><Logo aria-label="AdviserGPT" className="h-8 w-auto mx-auto" /></h2>
-                  <p className="text-xl text-gray-700">
-                    Search or ask: we'll build answers from your firm's approved documents.
-                  </p>
-                  <p className="text-md text-gray-600 mt-1">
-                    Every response is sourced from your Vault and matched to your firm's tone.
+                  <p className="text-lg text-foreground/90">
+                    Every response is sourced from your Vault to match to your firm's tone of voice.
                   </p>
                   
                 </div>
@@ -751,12 +869,30 @@ Client relationships are built on transparency, communication, and alignment of 
                                   : 'text-foreground/60 hover:text-foreground'
                               }`}
                             >
-                              <MessageSquare className="h-4 w-4" />
+                              <ShieldPlus className="h-4 w-4" />
                               Vault + Web
                             </button>
                           </TooltipTrigger>
                           <TooltipContent>
                             <p>For internal questions - searches web + Vault sources</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => setSelectedMode('riaOutreach')}
+                              className={`flex flex-1 md:flex-none justify-center md:justify-start items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 ${
+                                selectedMode === 'riaOutreach'
+                                  ? 'bg-background text-foreground shadow-sm'
+                                  : 'text-foreground/60 hover:text-foreground'
+                              }`}
+                            >
+                              <UserRoundSearch className="h-4 w-4" />
+                              RIA Outreach
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Find RIA firms and advisors for outreach, trip planning, and research.</p>
                           </TooltipContent>
                         </Tooltip>
                       </div>
@@ -778,13 +914,51 @@ Client relationships are built on transparency, communication, and alignment of 
 
                     {/* Main Input */}
                     <div className="relative flex flex-col bg-white/80 border border-foreground/30 backdrop-blur-sm transition focus:border-sidebar-primary focus-within:border-sidebar-primary focus-within:shadow-[0_5px_15px_hsla(60deg,21%,29%,0.30)] rounded-lg shadow-[0_3px_9px_hsla(0deg,0%,0%,0.09)]">
+                      {/* File Cards */}
+                      {uploadedFiles.length > 0 && (
+                        <div className="flex gap-2 p-3 border-b border-foreground/10 overflow-x-auto">
+                          {uploadedFiles.map((file) => (
+                            <FileCard
+                              key={file.id}
+                              file={file}
+                              onRemove={() => removeFile(file.id, false)}
+                            />
+                          ))}
+                        </div>
+                      )}
+                      
                       <div className="flex items-stretch">
-                        <Textarea
+                        <div className="flex items-center pl-2">
+                          <input
+                            type="file"
+                            multiple
+                            className="hidden"
+                            id="file-upload"
+                            onChange={(e) => handleFileUpload(e.target.files, false)}
+                            accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.gif"
+                          />
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-9 w-9 gap-0 text-foreground/70 hover:text-foreground"
+                                onClick={() => document.getElementById('file-upload')?.click()}
+                              >
+                                <Paperclip className="h-5 w-5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Add reports, files, and more</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                        <Input
                           placeholder="e.g. What is our investment research process?"
                           value={inputValue}
+                          autoFocus={true}
                           onChange={(e) => setInputValue(e.target.value)}
-                          className="flex-grow bg-transparent flex items-center resize-none border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-0 focus:outline-none p-4 min-h-[60px] placeholder:text-foreground/60 text-foreground"
-                          rows={1}
+                          className="flex-grow bg-transparent flex items-center resize-none border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-0 focus:outline-none p-4 min-h-[60px] placeholder:text-foreground/60 text-foreground hover:shadow-none focus:shadow-none focus-visible:shadow-none"
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
                               e.preventDefault();
@@ -795,7 +969,7 @@ Client relationships are built on transparency, communication, and alignment of 
                         <div className="flex-shrink-0 flex items-center p-2 px-3 border-l border-foreground/20 gap-2">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-9 w-11 gap-0 text-foreground/50 hover:text-foreground">
+                              <Button variant="ghost" size="sm" className="h-9 w-11 gap-0 text-foreground/70 hover:text-foreground">
                                 <Type className="h-5 w-5" />
                                 <ChevronDown className="h-4 w-4 ml-1" />
                               </Button>
@@ -829,7 +1003,7 @@ Client relationships are built on transparency, communication, and alignment of 
                         key={index}
                         variant="outline"
                         size="sm"
-                        className="text-sm font-normal bg-sidebar-primary/5 flex flex-wrap justify-between min-h-14 h-auto px-4 py-2 items-center text-sidebar-foreground hover:bg-sidebar-primary/10 border-foreground/10 hover:border-sidebar whitespace-normal text-left"
+                        className="text-sm font-normal bg-sidebar-background/50 flex flex-wrap justify-between min-h-14 h-auto px-4 py-2 items-center text-sidebar-foreground hover:bg-sidebar-background/70 border-foreground/10 hover:border-foreground/20 whitespace-normal text-left"
                         onClick={() => handleExampleClick(question)}
                       >
                         <span className="flex flex-1">{question}</span> <PlusCircle className="h-4 w-4 text-sidebar-foreground/70" />
@@ -845,6 +1019,19 @@ Client relationships are built on transparency, communication, and alignment of 
                 {/* User Question */}
                 <div className="flex justify-end">
                   <div className="max-w-[90%]">
+                    {/* Uploaded Files Display */}
+                    {currentAnswer?.uploadedFiles && currentAnswer.uploadedFiles.length > 0 && (
+                      <div className="flex gap-2 mb-2 overflow-x-auto">
+                        {currentAnswer.uploadedFiles.map((file) => (
+                          <FileCard
+                            key={file.id}
+                            file={file}
+                            onRemove={() => {}} // No remove functionality in answer view
+                            showRemoveButton={false}
+                          />
+                        ))}
+                      </div>
+                    )}
                     <div className="p-2.5 rounded-lg bg-foreground/5 border border-gray-200 text-foreground text-[15px] leading-6">
                       {isGenerating ? inputValue : currentAnswer.question}
                     </div>
@@ -892,11 +1079,49 @@ Client relationships are built on transparency, communication, and alignment of 
                 {/* Follow-up Input */}
                 <div id="follow-up-input" className="max-w-3xl mx-auto sticky bottom-0 self-end w-full pt-8">
                   <div className="relative flex flex-col bg-white/80 border border-foreground/30 backdrop-blur-sm transition focus:border-sidebar-primary focus-within:border-sidebar-primary focus-within:shadow-[0_5px_15px_hsla(60deg,21%,29%,0.30)] rounded-lg shadow-[0_3px_9px_hsla(0deg,0%,0%,0.09)]">
+                    {/* Follow-up File Cards */}
+                    {followUpFiles.length > 0 && (
+                      <div className="flex gap-2 p-3 border-b border-foreground/10 overflow-x-auto">
+                        {followUpFiles.map((file) => (
+                          <FileCard
+                            key={file.id}
+                            file={file}
+                            onRemove={() => removeFile(file.id, true)}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    
                     <div className="flex items-stretch">
-                      <Textarea
+                      <div className="flex items-center pl-2">
+                        <input
+                          type="file"
+                          multiple
+                          className="hidden"
+                          id="file-upload"
+                          onChange={(e) => handleFileUpload(e.target.files, false)}
+                          accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.gif"
+                        />
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-9 w-9 gap-0 text-foreground/70 hover:text-foreground"
+                              onClick={() => document.getElementById('file-upload')?.click()}
+                            >
+                              <Paperclip className="h-5 w-5" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Add reports, files, and more</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <Input
                         placeholder="Add follow-up instructions or click 'New Conversation' to start fresh..."
-                        className="flex-grow bg-transparent resize-none border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-0 focus:outline-none p-4 min-h-[60px] placeholder:text-gray-500"
-                        rows={1}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        className="flex-grow bg-transparent flex items-center resize-none border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-0 focus:outline-none p-4 min-h-[60px] placeholder:text-foreground/60 text-foreground hover:shadow-none focus:shadow-none focus-visible:shadow-none"
                       />
                       <div className="flex-shrink-0 flex items-center p-2 px-3 border-l border-gray-400 gap-2">
                         <Button variant="ghost" size="sm" className="h-9 w-11 gap-0 text-gray-500 hover:text-gray-700">

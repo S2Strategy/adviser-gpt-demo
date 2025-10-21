@@ -10,7 +10,7 @@ export interface RecentSearchItem {
   query: string;
   displayTitle: string;
   timestamp: number;
-  mode: 'answer' | 'chat';
+  mode: 'answer' | 'chat' | 'riaOutreach';
 }
 
 /** Safely read from localStorage (SSR/first paint safe). */
@@ -46,18 +46,18 @@ const write = (next: RecentSearchItem[]) => {
 };
 
 /** Safely read last mode from localStorage. */
-const readLastMode = (): 'answer' | 'chat' => {
+const readLastMode = (): 'answer' | 'chat' | 'riaOutreach' => {
   if (typeof window === 'undefined') return 'answer';
   try {
     const mode = window.localStorage.getItem(LAST_MODE_KEY);
-    return (mode === 'answer' || mode === 'chat') ? mode : 'answer';
+    return (mode === 'answer' || mode === 'chat' || mode === 'riaOutreach') ? mode : 'answer';
   } catch {
     return 'answer';
   }
 };
 
 /** Safely write last mode to localStorage. */
-const writeLastMode = (mode: 'answer' | 'chat') => {
+const writeLastMode = (mode: 'answer' | 'chat' | 'riaOutreach') => {
   if (typeof window === 'undefined') return;
   try {
     window.localStorage.setItem(LAST_MODE_KEY, mode);
@@ -108,7 +108,7 @@ export function useRecentSearches() {
    * Add a new search to recent searches.
    */
   const addRecentSearch = useCallback(
-    (query: string, mode: 'answer' | 'chat' = 'answer') => {
+    (query: string, mode: 'answer' | 'chat' | 'riaOutreach' = 'answer') => {
       if (!query.trim()) return;
 
       setRecentSearches(prev => {
