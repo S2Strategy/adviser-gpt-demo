@@ -1,58 +1,190 @@
-import React from 'react';
-import { BookOpenText, Search, FileText, CheckCircle } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { BookOpenText, Search, FileText, CheckCircle, Copy, Save, Mail, Check } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useToast } from '@/hooks/use-toast';
+import { SourceHighlightedText } from './SourceHighlightedText';
+
+interface Answer {
+  id: string;
+  question: string;
+  answer: string;
+  version: number;
+}
 
 interface AnswerLoadingStateProps {
   progress: number;
   currentStep: string;
   sourcesFound: number;
   mode?: 'answer' | 'chat' | 'riaOutreach';
+  streamingText?: string;
+  isTransitioning?: boolean;
+  answer?: Answer;
+  onCopy?: () => void;
+  onSave?: (updatedAnswer?: Answer) => void;
+  onEmail?: () => void;
+  onEdit?: (type: 'grammar' | 'shorter' | 'longer' | 'tone', value?: string) => void;
 }
 
 export function AnswerLoadingState({ 
   progress, 
-  currentStep, 
   sourcesFound,
-  mode = 'answer'
+  mode = 'answer',
+  streamingText = '',
+  isTransitioning = false,
+  answer,
+  onCopy,
+  onSave,
+  onEmail,
+  onEdit
 }: AnswerLoadingStateProps) {
-  // Define steps based on mode
-  const answerModeSteps = [
-    { id: 'Searching Vault', label: 'Searching Vault', icon: Search },
-    { id: 'Analyzing Sources', label: 'Analyzing Sources', icon: BookOpenText },
-    { id: 'Composing Answer', label: 'Composing Answer', icon: FileText },
-    { id: 'Verifying Compliance', label: 'Verifying Compliance', icon: CheckCircle }
-  ];
+  const { toast } = useToast();
+  const [isCopied, setIsCopied] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState(answer?.answer || '');
+  const contentRef = useRef<HTMLDivElement>(null);
 
-  const chatModeSteps = [
-    { id: 'Searching the web', label: 'Searching the web', icon: Search },
-    { id: 'Analyzing Sources', label: 'Analyzing Sources', icon: BookOpenText },
-    { id: 'Composing Answer', label: 'Composing Answer', icon: FileText }
-  ];
+  const handleCopy = () => {
+    if (answer) {
+      navigator.clipboard.writeText(answer.answer);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+      onCopy?.();
+      toast({
+        title: "Copied to clipboard ✓",
+        description: "Answer copied successfully."
+      });
+    }
+  };
 
-  const steps = mode === 'answer' ? answerModeSteps : chatModeSteps;
+  const handleSave = () => {
+    if (isEditing && answer) {
+      const updatedAnswer = { ...answer, answer: editedContent };
+      onSave?.(updatedAnswer);
+      setIsEditing(false);
+      toast({
+        title: "Saved to Vault ✓",
+        description: "Edited answer has been saved to your Vault"
+      });
+    } else {
+      onSave?.();
+      toast({
+        title: "Saved to Vault ✓",
+        description: "Answer saved to RIA Strategy / Investment Process"
+      });
+    }
+  };
 
-  const currentStepIndex = steps.findIndex(step => step.id === currentStep);
+  const handleEmail = () => {
+    onEmail?.();
+    toast({
+      title: "Email opened",
+      description: "Your default email client has opened with the formatted text."
+    });
+  };
+
+  const handleEdit = (type: 'grammar' | 'shorter' | 'longer' | 'tone', value?: string) => {
+    onEdit?.(type, value);
+    toast({
+      title: "Updated ✓",
+      description: `Answer ${type} has been applied.`
+    });
+  };
+
+  const handleStartEdit = () => {
+    if (answer) {
+      setIsEditing(true);
+      setEditedContent(answer.answer);
+      setTimeout(() => {
+        if (contentRef.current) {
+          contentRef.current.focus();
+        }
+      }, 100);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditedContent(answer?.answer || '');
+  };
+
+  const handleContentChange = (e: React.FormEvent<HTMLDivElement>) => {
+    const newContent = e.currentTarget.textContent || '';
+    setEditedContent(newContent);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Escape') {
+      handleCancelEdit();
+    }
+  };
+
+  const handleBlur = () => {
+    handleCancelEdit();
+  };
+
+  // Determine if we're in the final state (answer is complete)
+  const isComplete = answer && progress >= 100;
 
   return (
     <div className="max-w-3xl mx-auto">
-      <div className="bg-background rounded-lg overflow-hidden border border-foreground/20 shadow-sm">
-        {/* Header */}
-        <div className="pt-4 px-4 bg-sidebar-background border-b border-foreground/10">
+      <div className="bg-background rounded-lg border border-foreground/20 shadow-sm">
+        {/* Loading Header */}
+        <div className="pt-2 px-4 bg-sidebar-background rounded-t-lg border-b border-foreground/10 transition-all duration-500 ease-out">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <Badge className="bg-blue-600 text-white">AdviserGPT</Badge>
-              <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-300">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse" />
-                  <span className="font-semibold text-sm">Building</span>
-                </div>
-                <span className="text-xs ml-1">From Vault</span>
+              <Badge className="bg-accent text-white flex items-center gap-1">
+                AdviserGPT • <span className="font-semibold">{mode === 'answer' ? 'Vault Only' : mode === 'chat' ? 'Vault + Web' : 'RIA Outreach'}</span>
               </Badge>
             </div>
+
+            {/* Action Buttons - Only show for Answer Mode */}
+            {mode === 'answer' && (
+              <div className={`flex items-center gap-2 ${
+              isComplete
+                ? 'opacity-100 translate-y-0' 
+                : 'opacity-0 -translate-y-2 m-0'
+              }`}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleCopy}
+                      className={isCopied ? "text-accent" : ""}
+                    >
+                      {isCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Copy</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="sm" onClick={handleSave}>
+                      <Save className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{isEditing ? "Save Changes" : "Save to Vault"}</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="sm" onClick={handleEmail}>
+                      <Mail className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Send as Email</TooltipContent>
+                </Tooltip>
+              </div>
+            )}
           </div>
           
-          <div className="space-y-2">
+          <div className={`space-y-2 transition-all duration-500 ease-out ${
+            isComplete
+              ? 'opacity-0 -translate-y-2 h-0 p-0 m-0' 
+              : 'opacity-100 translate-y-0'
+            }`}>
             <div className="flex items-center justify-between text-xs text-foreground/70">
               <span>Assembling your firm's approved content...</span>
               <span>{sourcesFound > 0 ? `Gathering ${sourcesFound} relevant sources...` : 'Searching Vault...'}</span>
@@ -69,93 +201,45 @@ export function AnswerLoadingState({
         </div>
 
         {/* Body */}
-        <div className="p-6">
-          {/* Question */}
-
-          {/* Steps */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-medium text-foreground/70">
-              Building from: {mode === 'answer' ? 'Vault' : 'Web'}
-            </h3>
-            
-            {/* Source Skeleton */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 p-2 bg-sidebar-background border-foreground/10 rounded border animate-pulse">
-                <div className="w-4 h-4 bg-foreground/10 rounded" />
-                <div className="flex-1">
-                  <div className="h-3 bg-foreground/10 rounded w-48 mb-1" />
-                  <div className="h-2 bg-foreground/10 rounded w-32" />
-                </div>
-                <Badge variant="outline" className="bg-foreground/10">
-                  <div className="w-8 h-2 bg-foreground/10 rounded" />
-                </Badge>
-              </div>
-              <div className="flex items-center gap-2 p-2 bg-sidebar-background border-foreground/10 rounded border animate-pulse">
-                <div className="w-4 h-4 bg-foreground/10 rounded" />
-                <div className="flex-1">
-                  <div className="h-3 bg-foreground/10 rounded w-40 mb-1" />
-                  <div className="h-2 bg-foreground/10 rounded w-28" />
-                </div>
-                <Badge variant="outline" className="bg-foreground/10">
-                  <div className="w-8 h-2 bg-foreground/10 rounded" />
-                </Badge>
-              </div>
-              <div className="flex items-center gap-2 p-2 bg-sidebar-background border-foreground/10 rounded border animate-pulse">
-                <div className="w-4 h-4 bg-foreground/10 rounded" />
-                <div className="flex-1">
-                  <div className="h-3 bg-foreground/10 rounded w-36 mb-1" />
-                  <div className="h-2 bg-foreground/10 rounded w-24" />
-                </div>
-                <Badge variant="outline" className="bg-foreground/10">
-                  <div className="w-8 h-2 bg-foreground/10 rounded" />
-                </Badge>
-              </div>
+        <div className="p-4">
+          {!isComplete ? (
+            /* Streaming Answer Text */
+            <div className="prose max-w-none space-y-2">
+              <p className="text-foreground text-sm p-3 leading-6">
+                <span>{streamingText}</span>
+                {streamingText && (
+                  <span className="w-2 h-5 bg-foreground animate-pulse ml-1" />
+                )}
+              </p>
             </div>
-
-            {/* Process Steps */}
-            <div className="space-y-2">
-              {steps.map((step, index) => {
-                const Icon = step.icon;
-                const isCompleted = index < currentStepIndex;
-                const isCurrent = index === currentStepIndex;
-                
-                return (
+          ) : (
+            /* Final Answer Content */
+            <div className="prose max-w-none space-y-2">
+              {/* Content */}
+              <div className="prose max-w-none space-y-6">
+                {isEditing ? (
                   <div 
-                    key={step.id}
-                    className={`flex items-center gap-3 p-2 rounded ${
-                      isCurrent ? 'bg-blue-50 border border-blue-200' : 
-                      isCompleted ? 'bg-green-50 border border-green-200' : 
-                      'bg-foreground/5 border border-foreground/10'
-                    }`}
+                    ref={contentRef}
+                    contentEditable
+                    suppressContentEditableWarning
+                    onInput={handleContentChange}
+                    onKeyDown={handleKeyDown}
+                    onBlur={handleBlur}
+                    className="text-foreground text-sm leading-6 p-3 border border-foreground/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent min-h-[100px]"
+                    dangerouslySetInnerHTML={{ __html: editedContent }}
+                  />
+                ) : (
+                  <p 
+                    className="text-foreground text-sm cursor-pointer hover:bg-sidebar-background/30 p-2 rounded transition-colors"
+                    onClick={handleStartEdit}
+                    title="Click to edit"
                   >
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                      isCompleted ? 'bg-green-500 text-white' :
-                      isCurrent ? 'bg-blue-500 text-white animate-pulse' :
-                      'bg-foreground/10 text-foreground/70'
-                    }`}>
-                      {isCompleted ? (
-                        <CheckCircle className="w-4 h-4" />
-                      ) : (
-                        <Icon className="w-4 h-4" />
-                      )}
-                    </div>
-                    <span className={`text-sm ${
-                      isCurrent ? 'text-blue-800 font-medium' :
-                      isCompleted ? 'text-green-800' :
-                      'text-foreground/70'
-                    }`}>
-                      {step.label}
-                    </span>
-                    {isCurrent && (
-                      <div className="ml-auto">
-                        <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                    <SourceHighlightedText text={answer?.answer || ''} />
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

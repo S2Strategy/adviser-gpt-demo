@@ -152,17 +152,6 @@ export function SourceManagementPanel({
                 <h3 className="font-medium text-sm">
                   {query ? `Sources in Answer (${usedSources.length})` : 'Recent Sources (0)'}
                 </h3>
-                {usedSources.length > 0 && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={onRebuild}
-                    className="flex items-center gap-1.5"
-                  >
-                    <RefreshCw className="h-3 w-3" />
-                    Rebuild
-                  </Button>
-                )}
               </div>
               
               {usedSources.length === 0 ? (
@@ -183,7 +172,7 @@ export function SourceManagementPanel({
                     <div key={source.id} className={`border rounded-lg p-3 ${HIGHLIGHT_COLORS.vault.background} ${HIGHLIGHT_COLORS.vault.border}`}>
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <FileText className={`h-4 w-4 ${HIGHLIGHT_COLORS.vault.accent}`} />
+                          <FileText className={`h-4 w-4 ${HIGHLIGHT_COLORS.vault.text}`} />
                           <span className={`font-medium text-sm ${HIGHLIGHT_COLORS.vault.text}`}>{source.name}</span>
                           {query && (
                             <Badge 
@@ -194,21 +183,6 @@ export function SourceManagementPanel({
                               <span className="ml-1">{source.similarity}%</span>
                             </Badge>
                           )}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => onSourceRemove(source.id)}
-                                className={`h-6 w-6 p-0 ${HIGHLIGHT_COLORS.vault.accent} hover:text-red-500`}
-                              >
-                                <Minus className="h-3 w-3" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Remove from answer</TooltipContent>
-                          </Tooltip>
                         </div>
                       </div>
                       <p className={`text-xs ${HIGHLIGHT_COLORS.vault.text} leading-relaxed`}>
@@ -267,19 +241,6 @@ export function SourceManagementPanel({
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => onSourceAdd(source.id)}
-                                className={`text-foreground/70 hover:${HIGHLIGHT_COLORS.vault.accent}`}
-                              >
-                                <Plus className="h-3 w-3" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>{query ? 'Add to answer' : 'Add for context'}</TooltipContent>
-                          </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
                                 className="text-foreground/70 hover:text-gray-800"
                               >
                                 <ExternalLink className="h-3 w-3" />
@@ -324,15 +285,6 @@ export function SourceManagementPanel({
               <Button variant="outline" size="sm" onClick={onClose}>
                 Close
               </Button>
-              {query && (
-                <Button 
-                  size="sm" 
-                  onClick={onRebuild}
-                  disabled={usedSources.length === 0}
-                >
-                  Rebuild Answer
-                </Button>
-              )}
             </div>
           </div>
         </div>

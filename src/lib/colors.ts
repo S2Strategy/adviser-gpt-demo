@@ -16,10 +16,10 @@ export const HIGHLIGHT_COLORS = {
   
   // Vault source content colors
   vault: {
-    background: 'bg-accent',
-    border: 'border-accent',
-    hover: 'hover:bg-accent',
-    text: 'text-accent',
+    background: 'bg-primary/20',
+    border: 'border-primary',
+    hover: 'hover:bg-primary/40',
+    text: 'text-foreground',
     accent: 'text-accent',
     indicator: 'bg-accent', // For legend dots/bars
     underline: 'decoration-foreground/40',

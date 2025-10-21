@@ -87,6 +87,8 @@ export function AdviserGPTHome() {
   const [showSourcePanel, setShowSourcePanel] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [followUpFiles, setFollowUpFiles] = useState<UploadedFile[]>([]);
+  const [streamingAnswer, setStreamingAnswer] = useState<string>('');
+  const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
   const processedStoredResult = useRef<string | null>(null);
   const [availableSources] = useState<Source[]>([
     {
@@ -198,6 +200,28 @@ export function AdviserGPTHome() {
     }
   };
 
+  // Function to simulate streaming answer text
+  const streamAnswerText = (fullAnswer: string, onComplete: () => void) => {
+    setStreamingAnswer('');
+    let currentIndex = 0;
+    // Remove line breaks and normalize whitespace for inline display
+    const normalizedAnswer = fullAnswer.replace(/\n\s*\n/g, ' ').replace(/\s+/g, ' ').trim();
+    const words = normalizedAnswer.split(' ');
+    
+    const streamInterval = setInterval(() => {
+      if (currentIndex < words.length) {
+        // Add 1-3 words at a time for realistic streaming
+        const wordsToAdd = Math.min(1 + Math.floor(Math.random() * 3), words.length - currentIndex);
+        const newText = words.slice(0, currentIndex + wordsToAdd).join(' ');
+        setStreamingAnswer(newText);
+        currentIndex += wordsToAdd;
+      } else {
+        clearInterval(streamInterval);
+        onComplete();
+      }
+    }, 50 + Math.random() * 100); // Random delay between 50-150ms for realistic typing
+  };
+
   // FileCard component
   const FileCard = ({ file, onRemove, showRemoveButton = true }: { file: UploadedFile; onRemove: () => void; showRemoveButton?: boolean }) => {
     const FileIcon = getFileIcon(file.type);
@@ -249,6 +273,8 @@ export function AdviserGPTHome() {
       setShowSourcePanel(false);
       setUploadedFiles([]);
       setFollowUpFiles([]);
+      setStreamingAnswer('');
+      setIsTransitioning(false);
       
       // Remove the reset parameter from URL
       const newSearchParams = new URLSearchParams(searchParams);
@@ -463,42 +489,29 @@ export function AdviserGPTHome() {
     setIsGenerating(true);
     setLoadingProgress(0);
     setLoadingStep('Searching Vault');
-    setSourcesFound(0);
-    
-    // Simulate loading process with proper step progression
-    const steps = [
-      { step: 'Searching Vault', progress: 25, sources: 0 },
-      { step: 'Analyzing Sources', progress: 50, sources: 8 },
-      { step: 'Composing Answer', progress: 75, sources: 8 },
-      { step: 'Verifying Compliance', progress: 100, sources: 8 }
-    ];
-    
-    let currentStepIndex = 0;
+    setSourcesFound(8);
     
     // Generate answer based on mode
     const mockAnswer = selectedMode === 'answer' 
       ? generateAnswerModeResponse(inputValue)
       : generateChatModeResponse(inputValue);
     
-    const stepInterval = setInterval(() => {
-      if (currentStepIndex < steps.length) {
-        const currentStepData = steps[currentStepIndex];
-        setLoadingStep(currentStepData.step);
-        setLoadingProgress(currentStepData.progress);
-        setSourcesFound(currentStepData.sources);
-        currentStepIndex++;
-      } else {
-        clearInterval(stepInterval);
-        
-        
-        // Add uploaded files to the answer
-        const answerWithFiles = {
-          ...mockAnswer,
-          uploadedFiles: uploadedFiles
-        };
-        
-        setCurrentAnswer(answerWithFiles);
+    // Start streaming the answer text
+    streamAnswerText(mockAnswer.answer, () => {
+      // Ensure progress bar is at 100% when streaming completes
+      setLoadingProgress(100);
+      
+      // Set the answer immediately so the component can transition
+      const answerWithFiles = {
+        ...mockAnswer,
+        uploadedFiles: uploadedFiles
+      };
+      setCurrentAnswer(answerWithFiles);
+      
+      // After a brief delay, complete the transition
+      setTimeout(() => {
         setIsGenerating(false);
+        setStreamingAnswer('');
         
         // Save the chat result for future retrieval (async to prevent render issues)
         setTimeout(() => {
@@ -514,8 +527,19 @@ export function AdviserGPTHome() {
             mode: selectedMode
           });
         }, 0);
+      }, 500); // 500ms delay to allow animation to complete
+    });
+    
+    // Simulate progress bar completion - slower to match streaming
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+      progress += Math.random() * 8 + 2; // Slower progress
+      if (progress >= 95) { // Stop at 95%, let streaming completion set it to 100%
+        progress = 95;
+        clearInterval(progressInterval);
       }
-    }, 500); // Delay for each step
+      setLoadingProgress(progress);
+    }, 150); // Slower interval
   };
 
   const handleExampleClick = (question: string) => {
@@ -532,44 +556,14 @@ export function AdviserGPTHome() {
     setIsGenerating(true);
     setCurrentAnswer(null);
     setShowSourcePanel(false);
-    
-    // Simulate the loading process with proper step progression
-    let progress = 0;
-    let step = 0;
-    const steps = [
-      "Searching Vault",
-      "Analyzing Sources", 
-      "Composing Answer",
-      "Verifying Compliance"
-    ];
-    
-    // Set initial step
-    setLoadingStep(steps[0]);
     setLoadingProgress(0);
+    setLoadingStep('Searching Vault');
+    setSourcesFound(8);
     
-    const interval = setInterval(() => {
-      progress += Math.random() * 8 + 2; // Slower, more controlled progress
-      
-      // Progress through steps at specific intervals
-      if (progress >= 25 && step === 0) {
-        step = 1;
-        setLoadingStep(steps[1]);
-      } else if (progress >= 50 && step === 1) {
-        step = 2;
-        setLoadingStep(steps[2]);
-      } else if (progress >= 75 && step === 2) {
-        step = 3;
-        setLoadingStep(steps[3]);
-      }
-      
-      if (progress >= 100) {
-        progress = 100;
-        clearInterval(interval);
-        
-        // Generate realistic mock answer based on question type with minimal AI formatting
-        const generateRealisticAnswer = (question: string) => {
-          if (question.includes('investment research') || question.includes('research process')) {
-            return `Investment research process combines quantitative screening with qualitative analysis. 
+    // Generate realistic mock answer based on question type with minimal AI formatting
+    const generateRealisticAnswer = (question: string) => {
+      if (question.includes('investment research') || question.includes('research process')) {
+        return `Investment research process combines quantitative screening with qualitative analysis. 
 
 **Quantitative Analysis**: Proprietary screening models evaluate companies based on financial metrics including revenue growth, profitability margins, debt-to-equity ratios, and cash flow generation. Quantitative tools identify companies that meet fundamental criteria for investment consideration.
 
@@ -578,16 +572,16 @@ export function AdviserGPTHome() {
 **Risk Management**: Every investment undergoes risk assessment, including scenario analysis and stress testing. We maintain position sizing guidelines and monitor portfolio concentration risks.
 
 This approach ensures high standards while adapting to changing market conditions.`;
-          } else if (question.includes('organization') || question.includes('history') || question.includes('leadership')) {
-            return `**Company History**: Founded in 2010, firm has grown from boutique investment management company to leading institutional asset manager with over $15 billion in assets under management. Consistently delivered strong risk-adjusted returns across multiple market cycles.
+      } else if (question.includes('organization') || question.includes('history') || question.includes('leadership')) {
+        return `**Company History**: Founded in 2010, firm has grown from boutique investment management company to leading institutional asset manager with over $15 billion in assets under management. Consistently delivered strong risk-adjusted returns across multiple market cycles.
 
 **Leadership Team**: Leadership team combines decades of investment experience with deep industry expertise. Chief Investment Officer has over 25 years of experience in equity research and portfolio management, previously serving as senior analyst at major investment banks.
 
 **Investment Philosophy**: We believe in fundamental, research-driven investing with focus on long-term value creation. Approach emphasizes thorough due diligence, disciplined risk management, and alignment with client objectives.
 
 **Regulatory Compliance**: We maintain highest standards of regulatory compliance, with dedicated compliance officers and regular audits to ensure adherence to all applicable regulations and industry best practices.`;
-          } else if (question.includes('investment opportunities') || question.includes('evaluation criteria')) {
-            return `**Investment Opportunity Identification**: We identify investment opportunities through multi-faceted approach that combines bottom-up fundamental analysis with top-down macroeconomic considerations.
+      } else if (question.includes('investment opportunities') || question.includes('evaluation criteria')) {
+        return `**Investment Opportunity Identification**: We identify investment opportunities through multi-faceted approach that combines bottom-up fundamental analysis with top-down macroeconomic considerations.
 
 **Evaluation Criteria**: Investment evaluation process focuses on several key factors:
 - **Financial Strength**: Strong balance sheet, consistent cash flow generation, and sustainable competitive advantages
@@ -598,8 +592,8 @@ This approach ensures high standards while adapting to changing market condition
 **Due Diligence Process**: Each potential investment undergoes extensive due diligence including financial modeling, management meetings, industry analysis, and peer comparisons. We typically spend 2-4 weeks on initial research before making investment decisions.
 
 **Risk Assessment**: We evaluate both company-specific and systematic risks, ensuring each investment fits within overall portfolio construction and risk management framework.`;
-          } else if (question.includes('compliance') || question.includes('pre-trade') || question.includes('post-trade')) {
-            return `**Pre-Trade Compliance**: Pre-trade compliance process begins with automated screening through compliance monitoring system, which checks all proposed trades against client investment guidelines, regulatory restrictions, and internal risk limits.
+      } else if (question.includes('compliance') || question.includes('pre-trade') || question.includes('post-trade')) {
+        return `**Pre-Trade Compliance**: Pre-trade compliance process begins with automated screening through compliance monitoring system, which checks all proposed trades against client investment guidelines, regulatory restrictions, and internal risk limits.
 
 **Trade Execution**: All trades are executed through approved brokers and trading platforms that maintain strict regulatory compliance standards. We maintain detailed trade logs and ensure proper documentation for all transactions.
 
@@ -608,69 +602,75 @@ This approach ensures high standards while adapting to changing market condition
 **Escalation Procedures**: Any compliance violations or exceptions are immediately escalated to senior management and Chief Compliance Officer. We maintain detailed incident reporting procedures and implement corrective actions as needed.
 
 **Regulatory Reporting**: We provide regular compliance reports to clients and maintain ongoing communication with regulatory authorities to ensure full transparency and adherence to all applicable regulations.`;
-          } else {
-            return `Investment approach combines rigorous fundamental analysis with disciplined risk management to deliver consistent, risk-adjusted returns for clients. We focus on identifying high-quality companies with sustainable competitive advantages and strong management teams.
+      } else {
+        return `Investment approach combines rigorous fundamental analysis with disciplined risk management to deliver consistent, risk-adjusted returns for clients. We focus on identifying high-quality companies with sustainable competitive advantages and strong management teams.
 
 Research process integrates quantitative screening with qualitative assessment, ensuring we thoroughly evaluate both financial metrics and business fundamentals. We maintain strict compliance standards and regularly review investment processes to ensure they meet highest industry standards.
 
 Client relationships are built on transparency, communication, and alignment of interests. We provide regular reporting and maintain open dialogue with clients to ensure investment approach continues to meet their evolving needs and objectives.`;
-          }
-        };
+      }
+    };
 
-        const mockAnswer: Answer = {
-          id: `example-${Date.now()}`,
-          question,
-          answer: generateRealisticAnswer(question),
-          sources: [
-            {
-              id: '1',
-              name: 'Investment Research Process.pdf',
-              type: 'PDF',
-              similarity: 95,
-              snippet: 'Our investment research process follows a systematic approach...',
-              isUsed: true,
-              lastModified: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
-            },
-            {
-              id: '2', 
-              name: 'Compliance Guidelines.docx',
-              type: 'Document',
-              similarity: 88,
-              snippet: 'Compliance procedures ensure all activities meet regulatory requirements...',
-              isUsed: true,
-              lastModified: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
-            }
-          ],
-          vaultRatio: 92,
-          aiRatio: 8,
-          lastSynced: new Date(),
-          version: 1,
-          complianceChecks: [
-            {
-              id: '1',
-              title: 'Content Review',
-              status: 'passed',
-              description: 'Content has been reviewed for compliance'
-            },
-            {
-              id: '2',
-              title: 'Risk Assessment',
-              status: 'passed',
-              description: 'Low risk content identified'
-            }
-          ]
-        };
-        
-        // Add uploaded files to the answer
-        const answerWithFiles = {
-          ...mockAnswer,
-          uploadedFiles: uploadedFiles
-        };
-        
-        setCurrentAnswer(answerWithFiles);
-        setLoadingProgress(100);
-        setLoadingStep(steps[3]);
+    const mockAnswer: Answer = {
+      id: `example-${Date.now()}`,
+      question,
+      answer: generateRealisticAnswer(question),
+      sources: [
+        {
+          id: '1',
+          name: 'Investment Research Process.pdf',
+          type: 'PDF',
+          similarity: 95,
+          snippet: 'Our investment research process follows a systematic approach...',
+          isUsed: true,
+          lastModified: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+        },
+        {
+          id: '2', 
+          name: 'Compliance Guidelines.docx',
+          type: 'Document',
+          similarity: 88,
+          snippet: 'Compliance procedures ensure all activities meet regulatory requirements...',
+          isUsed: true,
+          lastModified: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+        }
+      ],
+      vaultRatio: 92,
+      aiRatio: 8,
+      lastSynced: new Date(),
+      version: 1,
+      complianceChecks: [
+        {
+          id: '1',
+          title: 'Content Review',
+          status: 'passed',
+          description: 'Content has been reviewed for compliance'
+        },
+        {
+          id: '2',
+          title: 'Risk Assessment',
+          status: 'passed',
+          description: 'Low risk content identified'
+        }
+      ]
+    };
+    
+    // Start streaming the answer text
+    streamAnswerText(mockAnswer.answer, () => {
+      // Ensure progress bar is at 100% when streaming completes
+      setLoadingProgress(100);
+      
+      // Set the answer immediately so the component can transition
+      const answerWithFiles = {
+        ...mockAnswer,
+        uploadedFiles: uploadedFiles
+      };
+      setCurrentAnswer(answerWithFiles);
+      
+      // After a brief delay, complete the transition
+      setTimeout(() => {
         setIsGenerating(false);
+        setStreamingAnswer('');
         
         // Save the chat result for future retrieval (async to prevent render issues)
         setTimeout(() => {
@@ -686,10 +686,19 @@ Client relationships are built on transparency, communication, and alignment of 
             mode: selectedMode
           });
         }, 0);
-      } else {
-        setLoadingProgress(Math.min(progress, 95));
+      }, 500); // 500ms delay to allow animation to complete
+    });
+    
+    // Simulate progress bar completion - slower to match streaming
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+      progress += Math.random() * 8 + 2; // Slower progress
+      if (progress >= 95) { // Stop at 95%, let streaming completion set it to 100%
+        progress = 95;
+        clearInterval(progressInterval);
       }
-    }, 300); // Slower interval for more realistic timing
+      setLoadingProgress(progress);
+    }, 150); // Slower interval
   };
 
   const handleCopy = () => {
@@ -1038,19 +1047,16 @@ Client relationships are built on transparency, communication, and alignment of 
                   </div>
                 </div>
 
-                {/* Loading State or Answer Card */}
+                {/* Unified Loading/Answer Component */}
                 <div className="flex-1 h-full">
-                  {isGenerating ? (
-                    <AnswerLoadingState
-                      progress={loadingProgress}
-                      currentStep={loadingStep}
-                      sourcesFound={sourcesFound}
-                      mode={selectedMode}
-                    />
-                  ) : (
-                    <TrustAnswerCard
-                    answer={currentAnswer}
+                  <AnswerLoadingState
+                    progress={loadingProgress}
+                    currentStep={loadingStep}
+                    sourcesFound={sourcesFound}
                     mode={selectedMode}
+                    streamingText={streamingAnswer}
+                    isTransitioning={isTransitioning}
+                    answer={currentAnswer}
                     onCopy={handleCopy}
                     onSave={handleSave}
                     onEmail={handleEmail}
@@ -1058,22 +1064,7 @@ Client relationships are built on transparency, communication, and alignment of 
                       // Handle edit actions
                       console.log('Edit:', type, value);
                     }}
-                    onSourceRemove={(sourceId) => {
-                      // Handle source removal
-                      console.log('Remove source:', sourceId);
-                    }}
-                    onSourceAdd={() => setShowSourcePanel(true)}
-                    onRebuild={handleRebuild}
-                    onComplianceFix={(checkId) => {
-                      // Handle compliance fix
-                      console.log('Fix compliance:', checkId);
-                    }}
-                    onComplianceFixAll={() => {
-                      // Handle fix all compliance issues
-                      console.log('Fix all compliance issues');
-                    }}
                   />
-                  )}
                 </div>
 
                 {/* Follow-up Input */}
