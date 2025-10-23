@@ -948,7 +948,7 @@ Client relationships are built on transparency, communication, and alignment of 
                     value={inputValue}
                     onChange={setInputValue}
                     onSubmit={handleSubmit}
-                    placeholder="Add follow-up instructions or click 'New Conversation' to start fresh..."
+                    placeholder="Add follow-up instructions or click 'Answers' to start fresh..."
                     disabled={isGenerating}
                     variant="followup"
                     uploadedFiles={followUpFiles}
