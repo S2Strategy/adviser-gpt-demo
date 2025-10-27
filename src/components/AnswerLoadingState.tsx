@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { BookOpenText, Search, FileText, CheckCircle, Copy, Save, Mail, Check } from 'lucide-react';
+import { Copy, Save, Mail, Check, ShieldCheck, Scissors, Ruler, Drama } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -235,6 +235,47 @@ export function AnswerLoadingState({
                     <SourceHighlightedText text={answer?.answer || ''} />
                   </p>
                 )}
+                <div className="grid gap-2 px-2">
+                  <p className="text-xs text-gray-600">Adjust answer with AI</p>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="xs" 
+                      onClick={() => handleEdit('grammar')}
+                      className="flex items-center gap-1.5"
+                    >
+                      <ShieldCheck className="h-3.5 w-3.5" />
+                      <span>Grammar</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="xs" 
+                      onClick={() => handleEdit('shorter')}
+                      className="flex items-center gap-1.5"
+                    >
+                      <Scissors className="h-3 w-3" />
+                      <span>Shorter</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="xs" 
+                      onClick={() => handleEdit('longer')}
+                      className="flex items-center gap-1.5"
+                    >
+                      <Ruler className="h-3 w-3" />
+                      <span>Longer</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="xs" 
+                      onClick={() => handleEdit('tone')}
+                      className="flex items-center gap-1.5"
+                    >
+                      <Drama className="h-3 w-3" />
+                      <span>Tone</span>
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           )}

@@ -13,6 +13,7 @@ import { SuggestedUpdates } from "./pages/SuggestedUpdates";
 import { DuplicateDetail } from "./pages/DuplicateDetail";
 import { ProfilePage } from "./components/ProfilePage";
 import { FirmSettings } from "./pages/FirmSettings";
+import { RIAOutreach } from "./pages/RIAOutreach";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/vault/duplicates/:actionId" element={<DuplicateDetail />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/firm-settings" element={<FirmSettings />} />
+            <Route path="/outreach" element={<RIAOutreach />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -748,24 +748,6 @@ Client relationships are built on transparency, communication, and alignment of 
       
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden bg-background mt-4 rounded-tl-2xl vault-scroll">
-        {/* Top Navigation */}
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b border-foreground/10 px-4">
-
-          <div className="ml-auto flex items-center gap-2">
-            <Button variant="ghost" size="sm">
-              <HelpCircle className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex items-center gap-1.5"
-              onClick={() => setShowSourcePanel(true)}
-            >
-              <Search className="h-4 w-4" />
-              <span>Search Vault</span>
-            </Button>
-          </div>
-        </header>
         <div className="flex-1 overflow-y-auto p-8">
           <div className="max-w-4xl mx-auto h-full">
             {!currentAnswer && !isGenerating ? (
@@ -819,24 +801,6 @@ Client relationships are built on transparency, communication, and alignment of 
                           </TooltipTrigger>
                           <TooltipContent>
                             <p>For internal questions - searches web + Vault sources</p>
-                          </TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button
-                              onClick={() => setSelectedMode('riaOutreach')}
-                              className={`flex flex-1 md:flex-none justify-center md:justify-start items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 ${
-                                selectedMode === 'riaOutreach'
-                                  ? 'bg-background text-foreground shadow-sm'
-                                  : 'text-foreground/60 hover:text-foreground'
-                              }`}
-                            >
-                              <UserRoundSearch className="h-4 w-4" />
-                              RIA Outreach
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Find RIA firms and advisors for outreach, trip planning, and research.</p>
                           </TooltipContent>
                         </Tooltip>
                       </div>

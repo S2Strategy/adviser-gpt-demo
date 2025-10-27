@@ -335,16 +335,8 @@ function Menu({
       onClick={(e) => e.stopPropagation()}
     >
       <button role="menuitem" className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-sidebar-foreground hover:bg-sidebar-primary/10 focus:bg-sidebar-primary/10">
-        <Forward className="w-3 h-3 text-sidebar-foreground" />
-        <span onClick={onShare}>Share</span>
-      </button>
-      <button role="menuitem" className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-sidebar-foreground hover:bg-sidebar-primary/10 focus:bg-sidebar-primary/10">
         <Pencil className="w-3 h-3 text-sidebar-foreground" />
         <span onClick={onRename}>Rename</span>
-      </button>
-      <button role="menuitem" className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-sidebar-foreground hover:bg-sidebar-primary/10 focus:bg-sidebar-primary/10">
-        <Archive className="w-3 h-3 text-sidebar-foreground" />
-        <span onClick={onArchive}>Archive</span>
       </button>
       <button role="menuitem" className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-red-600 hover:bg-red-50 focus:bg-red-50">
         <Trash className="w-3 h-3 text-red-600" />

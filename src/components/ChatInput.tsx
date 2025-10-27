@@ -79,6 +79,7 @@ interface ChatInputProps {
   showFormatDropdown?: boolean;
   showAttachButton?: boolean;
   showFileCards?: boolean;
+  showBottom?: boolean;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -92,6 +93,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onFileUpload,
   onFileRemove,
   variant = 'main',
+  showBottom = true,
   showFormatDropdown = true,
   showAttachButton = true,
   showFileCards = true,
@@ -115,32 +117,33 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   return (
     <div className="relative flex flex-col bg-white/80 border border-foreground/30 backdrop-blur-sm transition focus:border-sidebar-primary focus-within:border-sidebar-primary focus-within:shadow-[0_5px_15px_hsla(60deg,21%,29%,0.30)] rounded-lg shadow-[0_3px_9px_hsla(0deg,0%,0%,0.09)]">
 
-        <div className="flex items-center">
-          {/* Main Input */}
-          <Input
-            placeholder={placeholder}
-            value={value}
-            autoFocus={autoFocus}
-            onChange={(e) => onChange(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={disabled}
-            className="flex-grow bg-transparent flex items-center resize-none border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-0 focus:outline-none p-4 min-h-[60px] placeholder:text-foreground/60 text-foreground hover:shadow-none focus:shadow-none focus-visible:shadow-none"
-          />
+      <div className="flex items-center">
+        {/* Main Input */}
+        <Input
+          placeholder={placeholder}
+          value={value}
+          autoFocus={autoFocus}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={handleKeyDown}
+          disabled={disabled}
+          className="flex-grow bg-transparent flex items-center resize-none border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-0 focus:outline-none p-4 min-h-[60px] placeholder:text-foreground/60 text-foreground hover:shadow-none focus:shadow-none focus-visible:shadow-none"
+        />
 
-          {/* Action Buttons */}
-          <div className="flex-shrink-0 flex items-center p-2 px-3 gap-2">
+        {/* Action Buttons */}
+        <div className="flex-shrink-0 flex items-center p-2 px-3 gap-2">
 
-            {/* Send Button */}
-            <Button 
-              onClick={onSubmit}
-              disabled={!value.trim() || disabled}
-              className="h-9 w-11 bg-sidebar-primary hover:text-foreground"
-            >
-              <Send className="h-5 w-5 text-sidebar-primary-foreground" />
-            </Button>
-          </div>
+          {/* Send Button */}
+          <Button 
+            onClick={onSubmit}
+            disabled={!value.trim() || disabled}
+            className="h-9 w-11 bg-sidebar-primary hover:text-foreground"
+          >
+            <Send className="h-5 w-5 text-sidebar-primary-foreground" />
+          </Button>
         </div>
+      </div>
 
+      {showBottom && (
       <div className="flex items-center gap-2 p-1.5 border-t border-foreground/20">
         {/* File Upload Button */}
         {showAttachButton && (
@@ -153,37 +156,19 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               onChange={handleFileUpload}
               accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.gif"
             />
-            {isMainVariant ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-9 gap-2 text-foreground/70 hover:text-foreground"
-                onClick={() => document.getElementById(`file-upload-${variant}`)?.click()}
-              >
-                <Paperclip className="h-5 w-5" />
-                Attach
-              </Button>
-            ) : (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-9 w-9 gap-0 text-foreground/70 hover:text-foreground"
-                    onClick={() => document.getElementById(`file-upload-${variant}`)?.click()}
-                  >
-                    <Paperclip className="h-5 w-5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Add reports, files, and more</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 gap-2 text-foreground/70 hover:text-foreground"
+              onClick={() => document.getElementById(`file-upload-${variant}`)?.click()}
+            >
+              <Paperclip className="h-5 w-5" />
+              Attach
+            </Button>
           </div>
         )}
         {/* Format Dropdown */}
-        {showFormatDropdown && isMainVariant && (
+        {showFormatDropdown && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -194,7 +179,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               <div className="flex items-center gap-0">
                 <Type className="h-5 w-5" />
               </div>
-              Format
+              Response Type
               <ChevronDown className="h-4 w-4 ml-1" />
             </Button>
           </DropdownMenuTrigger>
@@ -205,8 +190,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         </DropdownMenu>
         )}
       </div>
-
-      {/* File Cards */}
+      )}
       {hasFiles && showFileCards && (
         <div className="flex gap-2 p-3 pt-0 border-b border-foreground/10 overflow-x-auto">
           {uploadedFiles.map((file) => (
@@ -218,6 +202,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           ))}
         </div>
       )}
+
     </div>
   );
 };

@@ -12,6 +12,7 @@ import {
   ChevronDown,
   MessageCirclePlus,
   UserRound,
+  UserRoundSearch,
   Settings,
   LogOut,
 } from "lucide-react";
@@ -458,6 +459,42 @@ export function VaultSidebar() {
                     }}
                   >
                     Vault
+                  </span>
+                </Link>
+              )}
+            </li>
+
+            <li>
+              {isCollapsed ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link
+                      to="/outreach"
+                      className={`h-10 px-2 rounded-md flex items-center justify-center transition active:scale-[0.98] text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent
+                        ${isActiveRoute('/outreach') ? 'bg-sidebar-primary/10' : ''}
+                      `}
+                    >
+                      <UserRoundSearch className="w-4 h-4" />
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Outreach</TooltipContent>
+                </Tooltip>
+              ) : (
+                <Link
+                  to="/outreach"
+                  className={`h-10 px-2 rounded-md flex items-center gap-2 transition active:scale-[0.98] text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent
+                    ${isActiveRoute('/outreach') ? 'bg-sidebar-primary/10' : ''}
+                  `}
+                >
+                  <UserRoundSearch className="w-4 h-4" />
+                  <span 
+                    className="text-md font-medium" 
+                    style={{
+                      lineHeight: "1.5",
+                      letterSpacing: "-0.3px"
+                    }}
+                  >
+                    Outreach
                   </span>
                 </Link>
               )}
