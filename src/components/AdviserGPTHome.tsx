@@ -19,7 +19,8 @@ import {
   Image,
   FileSpreadsheet,
   FileType,
-  X
+  X,
+  Filter
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +28,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useRecentSearches } from '@/hooks/useRecentSearches';
 import { useChatResults, ChatResult, Source } from '@/hooks/useChatResults';
@@ -35,6 +37,8 @@ import { AnswerLoadingState } from './AnswerLoadingState';
 import { SourceManagementPanel } from './SourceManagementPanel';
 import { VaultSidebar } from './VaultSidebar';
 import { ChatInput } from './ChatInput';
+import { FiltersPanel } from './FiltersPanel';
+import { STRATEGIES, CONTENT_TYPES, TAGS_INFO } from '@/types/vault';
 
 
 
@@ -91,6 +95,20 @@ export function AdviserGPTHome() {
   const [streamingAnswer, setStreamingAnswer] = useState<string>('');
   const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
   const processedStoredResult = useRef<string | null>(null);
+  
+  // Filter state management
+  const [showFiltersPanel, setShowFiltersPanel] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedStrategies, setSelectedStrategies] = useState<string[]>([]);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [selectedPriorSamples, setSelectedPriorSamples] = useState<string[]>([]);
+  const [fileHistory, setFileHistory] = useState<Array<{
+    id: string;
+    name: string;
+    type: string;
+    size: number;
+    uploadedAt: Date;
+  }>>([]);
   const [availableSources] = useState<Source[]>([
     {
       id: '4',
@@ -184,6 +202,41 @@ export function AdviserGPTHome() {
     }
   };
 
+  // Filter helper functions
+  const handleClearAllFilters = () => {
+    setSelectedTags([]);
+    setSelectedStrategies([]);
+    setSelectedTypes([]);
+    setSelectedPriorSamples([]);
+  };
+
+  const removeTag = (tag: string) => {
+    setSelectedTags(prev => prev.filter(t => t !== tag));
+  };
+
+  const removeStrategy = (strategy: string) => {
+    setSelectedStrategies(prev => prev.filter(s => s !== strategy));
+  };
+
+  const removeType = (type: string) => {
+    setSelectedTypes(prev => prev.filter(t => t !== type));
+  };
+
+  const removePriorSample = (sampleId: string) => {
+    setSelectedPriorSamples(prev => prev.filter(id => id !== sampleId));
+  };
+
+  const addToFileHistory = (files: UploadedFile[]) => {
+    const newHistoryEntries = files.map(file => ({
+      id: file.id,
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      uploadedAt: new Date()
+    }));
+    setFileHistory(prev => [...prev, ...newHistoryEntries]);
+  };
+
   // Function to simulate streaming answer text with dynamic progress
   const streamAnswerText = (fullAnswer: string, onComplete: () => void) => {
     setStreamingAnswer('');
@@ -237,6 +290,10 @@ export function AdviserGPTHome() {
       setFollowUpFiles([]);
       setStreamingAnswer('');
       setIsTransitioning(false);
+      
+      // Clear all filters on reset
+      handleClearAllFilters();
+      setFileHistory([]);
       
       // Remove the reset parameter from URL
       const newSearchParams = new URLSearchParams(searchParams);
@@ -448,6 +505,11 @@ export function AdviserGPTHome() {
     
     // Add to recent searches
     addRecentSearch(inputValue.trim(), selectedMode);
+    
+    // Add uploaded files to history for Prior Samples filter
+    if (uploadedFiles.length > 0) {
+      addToFileHistory(uploadedFiles);
+    }
     
     setIsGenerating(true);
     setLoadingProgress(0);
@@ -805,20 +867,72 @@ Client relationships are built on transparency, communication, and alignment of 
                         </Tooltip>
                       </div>
 
-                      {/* Strategy Selector */}
+                      {/* Filters Button */}
                       <div className="flex flex-1 w-full md:w-auto md:flex-none justify-center text-xs">
-                        <Select value={selectedStrategy} onValueChange={setSelectedStrategy}>
-                          <SelectTrigger className="w-full md:w-48 border-foreground/20 transition text-xs">
-                            <SelectValue placeholder="Select Strategy" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="growth">Growth Strategy</SelectItem>
-                            <SelectItem value="value">Value Strategy</SelectItem>
-                            <SelectItem value="balanced">Balanced Strategy</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowFiltersPanel(true)}
+                          className="flex items-center gap-2 w-full md:w-auto"
+                        >
+                          <Filter className="h-4 w-4" />
+                          Open Filters
+                          {(selectedTags.length + selectedStrategies.length + 
+                            selectedTypes.length + selectedPriorSamples.length) > 0 && (
+                            <Badge variant="secondary" className="text-xs">
+                              {selectedTags.length + selectedStrategies.length + 
+                               selectedTypes.length + selectedPriorSamples.length}
+                            </Badge>
+                          )}
+                        </Button>
                       </div>
                     </div>
+
+                    {/* Filter Badges */}
+                    {(selectedTags.length > 0 || selectedStrategies.length > 0 || 
+                      selectedTypes.length > 0 || selectedPriorSamples.length > 0) && (
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {selectedTags.map(tag => (
+                          <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                            {tag}
+                            <X 
+                              className="h-3 w-3 cursor-pointer hover:text-foreground" 
+                              onClick={() => removeTag(tag)}
+                            />
+                          </Badge>
+                        ))}
+                        {selectedStrategies.map(strategy => (
+                          <Badge key={strategy} variant="secondary" className="flex items-center gap-1">
+                            {strategy}
+                            <X 
+                              className="h-3 w-3 cursor-pointer hover:text-foreground" 
+                              onClick={() => removeStrategy(strategy)}
+                            />
+                          </Badge>
+                        ))}
+                        {selectedTypes.map(type => (
+                          <Badge key={type} variant="secondary" className="flex items-center gap-1">
+                            {type}
+                            <X 
+                              className="h-3 w-3 cursor-pointer hover:text-foreground" 
+                              onClick={() => removeType(type)}
+                            />
+                          </Badge>
+                        ))}
+                        {selectedPriorSamples.map(sampleId => {
+                          const sample = fileHistory.find(f => f.id === sampleId);
+                          return sample ? (
+                            <Badge key={sampleId} variant="secondary" className="flex items-center gap-1">
+                              {sample.name}
+                              <X 
+                                className="h-3 w-3 cursor-pointer hover:text-foreground" 
+                                onClick={() => removePriorSample(sampleId)}
+                              />
+                            </Badge>
+                          ) : null;
+                        })}
+                      </div>
+                    )}
 
                     {/* Main Input */}
                     <ChatInput
@@ -939,6 +1053,22 @@ Client relationships are built on transparency, communication, and alignment of 
         onSourceAdd={handleSourceAdd}
         onSourceRemove={handleSourceRemove}
         onRebuild={handleRebuild}
+      />
+
+      {/* Filters Panel */}
+      <FiltersPanel
+        isOpen={showFiltersPanel}
+        onClose={() => setShowFiltersPanel(false)}
+        selectedTags={selectedTags}
+        onTagsChange={setSelectedTags}
+        selectedStrategies={selectedStrategies}
+        onStrategiesChange={setSelectedStrategies}
+        selectedTypes={selectedTypes}
+        onTypesChange={setSelectedTypes}
+        selectedPriorSamples={selectedPriorSamples}
+        onPriorSamplesChange={setSelectedPriorSamples}
+        priorSamples={fileHistory}
+        onClearAll={handleClearAllFilters}
       />
     </div>
   );
