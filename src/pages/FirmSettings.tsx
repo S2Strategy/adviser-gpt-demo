@@ -81,8 +81,8 @@ export function FirmSettings() {
   };
 
   const handleAddTeammate = () => {
-    console.log('Adding new teammate');
-    alert('Add teammate functionality would open here');
+    console.log('Adding new team member');
+    alert('Add team member functionality would open here');
   };
 
   const handleDeleteMember = (memberId: string) => {
@@ -198,7 +198,7 @@ export function FirmSettings() {
                         </div>
                         <Button onClick={handleAddTeammate} className="flex items-center gap-2">
                           <Plus className="h-4 w-4" />
-                          Add Teammate
+                          Add Team Member
                         </Button>
                       </div>
                     </CardHeader>
