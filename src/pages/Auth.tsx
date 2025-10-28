@@ -54,7 +54,7 @@ export default function Auth() {
           <Logo className="h-12 w-auto" />
         </div>
         
-        <Card>
+        <Card className="bg-background">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
             <CardDescription>
@@ -73,6 +73,7 @@ export default function Auth() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   autoFocus
+                  className="bg-white/80 border border-foreground/30 backdrop-blur-sm transition focus:border-sidebar-primary focus-within:border-sidebar-primary focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-0 focus:outline-none"
                 />
               </div>
               
@@ -85,6 +86,7 @@ export default function Auth() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  className="bg-white/80 border border-foreground/30 backdrop-blur-sm transition focus:border-sidebar-primary focus-within:border-sidebar-primary focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-0 focus:outline-none"
                 />
               </div>
               
