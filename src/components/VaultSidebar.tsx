@@ -514,6 +514,9 @@ export function VaultSidebar() {
                   >
                     Outreach
                   </span>
+                  <Badge variant="secondary" className="text-xs px-1 py-0 h-4 text-[10px]">
+                    BETA
+                  </Badge>
                 </Link>
               )}
             </li>
@@ -523,9 +526,8 @@ export function VaultSidebar() {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Link
-                      to="/commentary"
+                      to="#"
                       className={`h-10 px-2 rounded-md flex items-center justify-center transition active:scale-[0.98] text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent
-                        ${isActiveRoute('/commentary') ? 'bg-sidebar-primary/10' : ''}
                       `}
                     >
                       <Megaphone className="w-4 h-4" />
@@ -535,9 +537,8 @@ export function VaultSidebar() {
                 </Tooltip>
               ) : (
                 <Link
-                  to="/commentary"
+                  to="#"
                   className={`h-10 px-2 rounded-md flex items-center gap-2 transition active:scale-[0.98] text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent
-                    ${isActiveRoute('/commentary') ? 'bg-sidebar-primary/10' : ''}
                   `}
                 >
                   <Megaphone className="w-4 h-4" />
@@ -562,9 +563,8 @@ export function VaultSidebar() {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Link
-                      to="/insights"
+                      to="#"
                       className={`h-10 px-2 rounded-md flex items-center justify-center transition active:scale-[0.98] text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent
-                        ${isActiveRoute('/insights') ? 'bg-sidebar-primary/10' : ''}
                       `}
                     >
                       <Sparkles className="w-4 h-4" />
@@ -574,9 +574,8 @@ export function VaultSidebar() {
                 </Tooltip>
               ) : (
                 <Link
-                  to="/insights"
+                  to="#"
                   className={`h-10 px-2 rounded-md flex items-center gap-2 transition active:scale-[0.98] text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent
-                    ${isActiveRoute('/insights') ? 'bg-sidebar-primary/10' : ''}
                   `}
                 >
                   <Sparkles className="w-4 h-4" />
