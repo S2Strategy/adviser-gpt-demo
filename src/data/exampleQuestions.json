@@ -1,0 +1,20 @@
+{
+  "answerMode": [
+    "Provide a brief overview of your organization's history and leadership.",
+    "List any additions or departures from your investment team the past five years.",
+    "Describe your process for identifying investment opportunities and evaluation criteria.",
+    "Describe your firm's internal AI usage policy including limitations, if any."
+  ],
+  "chatMode": [
+    "Draft a client email on recent market volatility, stressing our firm's investment philosophy and long-term investing goals.",
+    "Write a Monthly Market Recap based on the performance of the S&P 500 and NASDAQ benchmarks last month.",
+    "List key talking points on US-China tariffs and the related trade war for upcoming client calls.",
+    "Write a cover letter summary for the attached quarterly commentary report."
+  ],
+  "riaOutreachMode": [
+    "Find advisers in Miami, Florida specializing in high net worth clients",
+    "Search for advisers at Morgan Stanley Investment Management",
+    "Find information about BlackRock Investment Management",
+    "Research the investment strategies of Fidelity Investments"
+  ]
+}

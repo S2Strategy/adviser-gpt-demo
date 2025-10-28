@@ -2,43 +2,24 @@ import React, { useState, useEffect, useRef } from 'react';
 import Logo from '@/assets/AdviserGPT-logo.svg?react';
 import { useSearchParams, useLocation } from 'react-router-dom';
 import { 
-  Search,
   PlusCircle, 
-  HelpCircle, 
-  User, 
   BookOpenText,
-  MessageSquare,
-  ChevronDown,
   ShieldPlus,
-  UserRoundSearch,
-  Type,
-  Send,
-  Paperclip,
-  FileText,
-  File,
-  Image,
-  FileSpreadsheet,
-  FileType,
   X,
   Filter
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useRecentSearches } from '@/hooks/useRecentSearches';
 import { useChatResults, ChatResult, Source } from '@/hooks/useChatResults';
-import { TrustAnswerCard } from './TrustAnswerCard';
 import { AnswerLoadingState } from './AnswerLoadingState';
 import { SourceManagementPanel } from './SourceManagementPanel';
 import { VaultSidebar } from './VaultSidebar';
 import { ChatInput } from './ChatInput';
 import { FiltersPanel } from './FiltersPanel';
-import { STRATEGIES, CONTENT_TYPES, TAGS_INFO } from '@/types/vault';
+import { getExampleQuestions, getAvailableSources, getMockVaultData, getAnswerModeResponse, getChatModeResponse, getExampleResponse } from '@/utils/contentUtils';
 
 
 
@@ -91,11 +72,8 @@ export function AdviserGPTHome() {
   // State management
   const [inputValue, setInputValue] = useState('');
   const [selectedMode, setSelectedMode] = useState<'answer' | 'chat' | 'riaOutreach'>(() => getLastMode());
-  const [selectedStrategy, setSelectedStrategy] = useState<string>('');
-  const [responseFormat, setResponseFormat] = useState<'text' | 'table'>('text');
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentAnswer, setCurrentAnswer] = useState<Answer | null>(null);
-  const [showSources, setShowSources] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingStep, setLoadingStep] = useState('search');
   const [sourcesFound, setSourcesFound] = useState(0);
@@ -103,7 +81,6 @@ export function AdviserGPTHome() {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [followUpFiles, setFollowUpFiles] = useState<UploadedFile[]>([]);
   const [streamingAnswer, setStreamingAnswer] = useState<string>('');
-  const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
   const processedStoredResult = useRef<string | null>(null);
   
   // Filter state management
@@ -119,65 +96,10 @@ export function AdviserGPTHome() {
     size: number;
     uploadedAt: Date;
   }>>([]);
-  const [availableSources] = useState<Source[]>([
-    {
-      id: '4',
-      name: 'Risk Management Policy.pdf',
-      type: 'policy',
-      similarity: 78,
-      snippet: 'Our risk management framework includes comprehensive monitoring...',
-      strategy: 'Balanced Strategy',
-      isUsed: false,
-      lastModified: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
-    },
-    {
-      id: '5',
-      name: 'Client Communication Guidelines.docx',
-      type: 'document',
-      similarity: 65,
-      snippet: 'When communicating with clients about investment strategies...',
-      strategy: 'Growth Strategy',
-      isUsed: false,
-      lastModified: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-    },
-    {
-      id: '6',
-      name: 'Portfolio Construction Memo.pdf',
-      type: 'memo',
-      similarity: 82,
-      snippet: 'Portfolio construction follows a systematic approach...',
-      strategy: 'Value Strategy',
-      isUsed: false,
-      lastModified: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
-    }
-  ]);
-
-  // Example questions
-  // Example questions for Answer Mode (client questions/RFPs/DDQs)
-  const answerModeExamples = [
-    "Provide a brief overview of your organization's history and leadership.",
-    "List any additions or departures from your investment team the past five years.",
-    "Describe your process for identifying investment opportunities and evaluation criteria.",
-    "Describe your firm's internal AI usage policy including limitations, if any."
-  ];
-
-  // Example questions for Chat Mode (internal questions/web research)
-  const chatModeExamples = [
-    "Draft a client email on recent market volatility, stressing our firm's investment philosophy and long-term investing goals.",
-    "Write a Monthly Market Recap based on the performance of the S&P 500 and NASDAQ benchmarks last month.",
-    "List key talking points on US-China tariffs and the related trade war for upcoming client calls.",
-    "Write a cover letter summary for the attached quarterly commentary report."
-  ];
-
-  const riaOutreachModeExamples = [
-    "Find advisers in Miami, Florida specializing in high net worth clients",
-    "Search for advisers at Morgan Stanley Investment Management",
-    "Find information about BlackRock Investment Management",
-    "Research the investment strategies of Fidelity Investments"
-  ];
+  const [availableSources] = useState<Source[]>(getAvailableSources());
 
   // Get current example questions based on mode
-  const exampleQuestions = selectedMode === 'answer' ? answerModeExamples : selectedMode === 'chat' ? chatModeExamples : riaOutreachModeExamples;
+  const exampleQuestions = getExampleQuestions(selectedMode);
 
   // File handling functions
 
@@ -287,11 +209,8 @@ export function AdviserGPTHome() {
       // Reset all state to pristine values, but preserve the last selected mode
       setInputValue('');
       setSelectedMode(getLastMode()); // Use last selected mode instead of defaulting to 'answer'
-      setSelectedStrategy('');
-      setResponseFormat('text');
       setIsGenerating(false);
       setCurrentAnswer(null);
-      setShowSources(false);
       setLoadingProgress(0);
       setLoadingStep('search');
       setSourcesFound(0);
@@ -299,7 +218,6 @@ export function AdviserGPTHome() {
       setUploadedFiles([]);
       setFollowUpFiles([]);
       setStreamingAnswer('');
-      setIsTransitioning(false);
       
       // Clear all filters on reset
       handleClearAllFilters();
@@ -417,7 +335,6 @@ export function AdviserGPTHome() {
         complianceChecks: storedResult.complianceChecks
       });
       setIsGenerating(false);
-      setShowSources(false);
       setLoadingProgress(100); // Set to 100% to show completed state
       setLoadingStep('search');
       setSourcesFound(8);
@@ -436,123 +353,30 @@ export function AdviserGPTHome() {
 
   // Function to generate Answer Mode response (vault-focused)
   const generateAnswerModeResponse = (question: string) => {
-    // For Answer Mode, we use vault content with AI formatting
-    // This is for client questions (RFPs, DDQs, memos, emails)
+    const template = getAnswerModeResponse();
     return {
       id: Date.now().toString(),
       question: question,
-      answer: 'Our investment research process combines quantitative screening with qualitative analysis to identify compelling investment opportunities. We employ proprietary screening models that evaluate companies based on financial metrics including revenue growth, profitability margins, debt-to-equity ratios, and cash flow generation. Beyond the numbers, we conduct thorough qualitative analysis focusing on management quality, competitive positioning, industry dynamics, and ESG factors. Every investment undergoes comprehensive risk assessment, including scenario analysis and stress testing. We maintain strict position sizing guidelines and continuously monitor portfolio concentration risks. This disciplined approach ensures we maintain high standards while adapting to changing market conditions and maintaining our long-term investment perspective.',
-      sources: [
-        { id: '1', name: 'Investment Policy.docx', type: 'document', similarity: 95, snippet: 'Our research process combines quantitative screening...', strategy: 'Growth Strategy', isUsed: true, lastModified: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) },
-        { id: '2', name: 'Research Overview.pdf', type: 'document', similarity: 87, snippet: 'Qualitative analysis focuses on management quality...', strategy: 'Value Strategy', isUsed: true, lastModified: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) },
-        { id: '3', name: 'Compliance Memo 2025', type: 'document', similarity: 92, snippet: 'Risk management is integrated throughout...', strategy: 'Balanced Strategy', isUsed: true, lastModified: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) }
-      ],
-      vaultRatio: 92,
-      aiRatio: 8,
+      answer: template.answer,
+      sources: template.sources,
+      vaultRatio: template.vaultRatio,
+      aiRatio: template.aiRatio,
       lastSynced: new Date(),
       version: 1,
-      complianceChecks: [
-        {
-          id: '1',
-          title: 'Adequate Risk Disclosure Check',
-          status: 'passed',
-          description: 'All required risk disclosures are present and properly formatted.'
-        },
-        {
-          id: '2',
-          title: 'Investment Process Documentation',
-          status: 'passed',
-          description: 'Investment process is clearly documented and follows regulatory requirements.'
-        },
-        {
-          id: '3',
-          title: 'Performance Claims Verification',
-          status: 'failed',
-          description: 'Performance claims should be accompanied by appropriate disclaimers and time periods.',
-          suggestion: 'Add standard performance disclaimer: "Past performance does not guarantee future results."'
-        },
-        {
-          id: '4',
-          title: 'Regulatory Compliance Review',
-          status: 'warning',
-          description: 'Content should be reviewed for any recent regulatory changes that may affect the information.'
-        }
-      ]
+      complianceChecks: template.complianceChecks
     };
   };
 
   // Function to generate Chat Mode response (web + vault)
   const generateChatModeResponse = (question: string) => {
-    // For Chat Mode, we search both web and vault for answers
-    // This is for internal questions that may need current information
-    
-    // Simulate web search results based on question content
-    const getWebSearchResults = (question: string) => {
-      const lowerQuestion = question.toLowerCase();
-      
-      if (lowerQuestion.includes('volatility') || lowerQuestion.includes('email')) {
-        return {
-          answer: 'Dear Valued Client,\n\nWe understand that recent market volatility may be concerning, and we want to reassure you about your long-term investment strategy. Market fluctuations are a normal part of the investment cycle, and our disciplined approach to portfolio management is designed to weather these periods.\n\n**Key Points to Emphasize:**\n• **Patience is Paramount**: Historical data shows that staying invested through volatility typically yields better long-term results than attempting to time the market.\n• **Diversification Works**: Your portfolio is constructed with multiple asset classes and sectors to help mitigate risk during turbulent periods.\n• **Long-term Focus**: We remain committed to your financial goals and will continue to monitor and adjust your portfolio as needed.\n\nWe encourage you to view this volatility as an opportunity rather than a threat. Our research team continues to identify quality investments that may be temporarily undervalued due to market sentiment.\n\nPlease don\'t hesitate to reach out if you have any concerns or questions about your portfolio.',
-          sources: [
-            { id: '1', name: 'Market Volatility Trends and Client Communication Strategies - Federal Reserve', type: 'web', similarity: 94, snippet: 'The VIX (Volatility Index) has shown increased activity in recent weeks...', strategy: 'Economic Data', isUsed: true, lastModified: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) },
-            { id: '2', name: 'Navigating Market Volatility: A Guide for Financial Advisors - Morningstar', type: 'web', similarity: 91, snippet: 'Historical analysis shows that periods of high volatility often precede market recoveries...', strategy: 'Market Research', isUsed: true, lastModified: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) },
-            { id: '3', name: 'Investment Policy.docx', type: 'document', similarity: 85, snippet: 'Our firm\'s approach to volatility management includes...', strategy: 'Firm Policy', isUsed: true, lastModified: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
-            { id: '4', name: 'Best Practices for Client Communication During Market Uncertainty - Bloomberg', type: 'web', similarity: 88, snippet: 'Effective client communication during volatile periods should emphasize...', strategy: 'Communication', isUsed: true, lastModified: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) }
-          ]
-        };
-      } else if (lowerQuestion.includes('tariff') || lowerQuestion.includes('china')) {
-        return {
-          answer: '**Key Talking Points on U.S.–China Tariffs for Client Calls:**\n\n**Current Situation:**\n• Recent tariff announcements have created uncertainty in global supply chains\n• Technology and manufacturing sectors are most directly impacted\n• Trade tensions continue to influence market sentiment and corporate earnings\n\n**Investment Implications:**\n• **Diversification Benefits**: Our international exposure helps mitigate single-country risks\n• **Supply Chain Resilience**: We favor companies with diversified manufacturing bases\n• **Long-term Perspective**: Trade relationships tend to normalize over time despite short-term tensions\n\n**Client Messaging:**\n• Emphasize that our investment process accounts for geopolitical risks\n• Highlight our focus on companies with strong competitive moats\n• Reassure clients that we monitor these developments closely and adjust portfolios as needed\n\n**Market Opportunities:**\n• Some quality companies may be temporarily undervalued due to tariff concerns\n• Domestic companies with limited China exposure may benefit from trade tensions\n• Infrastructure and defense sectors often see increased investment during geopolitical uncertainty',
-          sources: [
-            { id: '1', name: 'Latest U.S.-China Tariff Updates and Economic Impact - U.S. Trade Representative', type: 'web', similarity: 95, snippet: 'Latest tariff schedules affecting Chinese imports...', strategy: 'Government Data', isUsed: true, lastModified: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) },
-            { id: '2', name: 'China Trade Relations: Analysis of Current Tensions and Market Effects - Financial Times', type: 'web', similarity: 92, snippet: 'Chinese response to U.S. tariffs and potential countermeasures...', strategy: 'News Analysis', isUsed: true, lastModified: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) },
-            { id: '3', name: 'Investment Policy.docx', type: 'document', similarity: 88, snippet: 'Our firm\'s approach to geopolitical risk management...', strategy: 'Firm Policy', isUsed: true, lastModified: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
-            { id: '4', name: 'Sector Analysis: How Tariffs Impact Corporate Earnings and Investment Strategies - Reuters', type: 'web', similarity: 89, snippet: 'Sector-by-sector analysis of tariff impacts on corporate earnings...', strategy: 'Market Research', isUsed: true, lastModified: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) }
-          ]
-        };
-      } else if (lowerQuestion.includes('soft-dollar') || lowerQuestion.includes('soft dollar')) {
-        return {
-          answer: '**Our Soft-Dollar Practices and Current Policy:**\n\n**Definition and Framework:**\nSoft-dollar arrangements refer to the practice of using client commission dollars to pay for research and other services that benefit the investment management process. Our firm operates under strict regulatory guidelines to ensure these arrangements serve client interests.\n\n**Current Policy and Controls:**\n• **Research Focus**: Soft dollars are used exclusively for bona fide research services that directly benefit client portfolios\n• **Transparency**: All soft-dollar arrangements are disclosed to clients in our Form ADV and other regulatory filings\n• **Documentation**: We maintain detailed records of all research services received and their value to the investment process\n• **Regular Review**: Our compliance team reviews all soft-dollar arrangements quarterly to ensure continued appropriateness\n\n**Services Covered:**\n• Independent research reports and analysis\n• Market data and analytics platforms\n• Economic research and macroeconomic analysis\n• Company-specific research and due diligence\n\n**Client Benefits:**\n• Access to high-quality research without additional fees\n• Enhanced investment decision-making capabilities\n• Cost-effective research procurement\n• Improved portfolio performance through better information\n\n**Compliance Oversight:**\nOur Chief Compliance Officer oversees all soft-dollar arrangements to ensure they meet regulatory requirements and provide genuine value to our investment process.',
-          sources: [
-            { id: '1', name: 'SEC Guidance on Soft Dollar Arrangements and Best Practices - SEC.gov', type: 'web', similarity: 96, snippet: 'SEC guidance on appropriate use of soft dollar arrangements...', strategy: 'Regulatory', isUsed: true, lastModified: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) },
-            { id: '2', name: 'Investment Policy.docx', type: 'document', similarity: 92, snippet: 'Our firm\'s soft dollar policy and procedures...', strategy: 'Firm Policy', isUsed: true, lastModified: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
-            { id: '3', name: 'Industry Best Practices for Soft Dollar Arrangements - FINRA', type: 'web', similarity: 90, snippet: 'Industry best practices for soft dollar arrangements...', strategy: 'Industry Standards', isUsed: true, lastModified: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) },
-            { id: '4', name: 'Compliance Manual 2025', type: 'document', similarity: 87, snippet: 'Internal compliance procedures for soft dollar oversight...', strategy: 'Compliance', isUsed: true, lastModified: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) }
-          ]
-        };
-      } else if (lowerQuestion.includes('cover letter') || lowerQuestion.includes('prospective') || lowerQuestion.includes('partners')) {
-        return {
-          answer: '**Cover Letter Paragraph for Prospective RIA Partners:**\n\n*"We are excited about the opportunity to partner with your firm and believe our complementary strengths will create significant value for both our organizations and our shared clients. Our firm brings over 15 years of experience in wealth management, with a particular expertise in alternative investments and tax-efficient portfolio construction. We have consistently delivered above-benchmark returns while maintaining our commitment to transparent, client-first service. Our team of certified financial planners and chartered financial analysts is supported by robust compliance infrastructure and cutting-edge technology platforms. We are particularly drawn to your firm\'s innovative approach to client engagement and your strong track record in sustainable investing. Together, we believe we can expand our service offerings, enhance our research capabilities, and provide our clients with even more comprehensive financial solutions. We are committed to a seamless integration process that prioritizes client continuity and maintains the high service standards that both our firms are known for. We look forward to discussing how this partnership can create mutual growth opportunities while delivering exceptional value to our clients."*',
-          sources: [
-            { id: '1', name: 'Investment Policy.docx', type: 'document', similarity: 90, snippet: 'Our firm\'s investment philosophy and track record...', strategy: 'Firm Profile', isUsed: true, lastModified: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
-            { id: '2', name: 'SEC Form ADV Part 2A', type: 'document', similarity: 88, snippet: 'Regulatory disclosures about our firm\'s services and capabilities...', strategy: 'Regulatory', isUsed: true, lastModified: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
-            { id: '3', name: 'Best Practices for RIA Partnership Negotiations and Integration - InvestmentNews', type: 'web', similarity: 87, snippet: 'Best practices for RIA partnership negotiations and integration...', strategy: 'Industry Research', isUsed: true, lastModified: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) },
-            { id: '4', name: 'Performance Reports 2024', type: 'document', similarity: 87, snippet: 'Historical performance data and client satisfaction metrics...', strategy: 'Performance', isUsed: true, lastModified: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) }
-          ]
-        };
-      } else {
-        // Generic response for other questions
-        return {
-          answer: 'Based on current market analysis and our firm\'s research, here\'s a comprehensive overview of the topic. Our investment research process combines quantitative screening with qualitative analysis to identify compelling opportunities. Recent market developments have shown increased volatility, which reinforces the importance of our disciplined approach to risk management. We continue to focus on companies with strong fundamentals, competitive advantages, and sustainable business models. Our proprietary screening models evaluate companies based on financial metrics including revenue growth, profitability margins, debt-to-equity ratios, and cash flow generation. This approach has served our clients well through various market cycles.',
-          sources: [
-            { id: '1', name: 'Market Analysis and Investment Trends 2025 - Bloomberg', type: 'web', similarity: 90, snippet: 'Recent market developments show increased volatility...', strategy: 'Market Research', isUsed: true, lastModified: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) },
-            { id: '2', name: 'Investment Policy.docx', type: 'document', similarity: 85, snippet: 'Our research process combines quantitative screening...', strategy: 'Growth Strategy', isUsed: true, lastModified: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
-            { id: '3', name: 'Current Market Conditions and Investment Strategy Updates - Financial Times', type: 'web', similarity: 87, snippet: 'Market volatility continues to impact investment decisions...', strategy: 'News Analysis', isUsed: true, lastModified: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) },
-            { id: '4', name: 'Research Overview.pdf', type: 'document', similarity: 79, snippet: 'Qualitative analysis focuses on management quality...', strategy: 'Value Strategy', isUsed: true, lastModified: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) }
-          ]
-        };
-      }
-    };
-
-    const searchResults = getWebSearchResults(question);
-    
+    const template = getChatModeResponse(question);
     return {
       id: Date.now().toString(),
       question: question,
-      answer: searchResults.answer,
-      sources: searchResults.sources,
-      vaultRatio: 15, // Only 15% from vault, 85% from web
-      aiRatio: 85,
+      answer: template.answer,
+      sources: template.sources,
+      vaultRatio: template.vaultRatio,
+      aiRatio: template.aiRatio,
       lastSynced: new Date(),
       version: 1,
       complianceChecks: []
@@ -686,98 +510,18 @@ export function AdviserGPTHome() {
     setSourcesFound(8);
     
     // Generate realistic mock answer based on question type with minimal AI formatting
-    const generateRealisticAnswer = (question: string) => {
-      if (question.includes('investment research') || question.includes('research process')) {
-        return `Investment research process combines quantitative screening with qualitative analysis. 
-
-**Quantitative Analysis**: Proprietary screening models evaluate companies based on financial metrics including revenue growth, profitability margins, debt-to-equity ratios, and cash flow generation. Quantitative tools identify companies that meet fundamental criteria for investment consideration.
-
-**Qualitative Assessment**: Analysis focuses on management quality, competitive positioning, industry dynamics, and ESG factors. We meet with company management teams, analyze competitive landscapes, and assess long-term strategic positioning.
-
-**Risk Management**: Every investment undergoes risk assessment, including scenario analysis and stress testing. We maintain position sizing guidelines and monitor portfolio concentration risks.
-
-This approach ensures high standards while adapting to changing market conditions.`;
-      } else if (question.includes('organization') || question.includes('history') || question.includes('leadership')) {
-        return `**Company History**: Founded in 2010, firm has grown from boutique investment management company to leading institutional asset manager with over $15 billion in assets under management. Consistently delivered strong risk-adjusted returns across multiple market cycles.
-
-**Leadership Team**: Leadership team combines decades of investment experience with deep industry expertise. Chief Investment Officer has over 25 years of experience in equity research and portfolio management, previously serving as senior analyst at major investment banks.
-
-**Investment Philosophy**: We believe in fundamental, research-driven investing with focus on long-term value creation. Approach emphasizes thorough due diligence, disciplined risk management, and alignment with client objectives.
-
-**Regulatory Compliance**: We maintain highest standards of regulatory compliance, with dedicated compliance officers and regular audits to ensure adherence to all applicable regulations and industry best practices.`;
-      } else if (question.includes('investment opportunities') || question.includes('evaluation criteria')) {
-        return `**Investment Opportunity Identification**: We identify investment opportunities through multi-faceted approach that combines bottom-up fundamental analysis with top-down macroeconomic considerations.
-
-**Evaluation Criteria**: Investment evaluation process focuses on several key factors:
-- **Financial Strength**: Strong balance sheet, consistent cash flow generation, and sustainable competitive advantages
-- **Growth Prospects**: Clear path to revenue and earnings growth with reasonable valuation metrics
-- **Management Quality**: Experienced leadership team with proven track record and shareholder-friendly policies
-- **Industry Position**: Market leadership or strong competitive positioning within attractive industry dynamics
-
-**Due Diligence Process**: Each potential investment undergoes extensive due diligence including financial modeling, management meetings, industry analysis, and peer comparisons. We typically spend 2-4 weeks on initial research before making investment decisions.
-
-**Risk Assessment**: We evaluate both company-specific and systematic risks, ensuring each investment fits within overall portfolio construction and risk management framework.`;
-      } else if (question.includes('compliance') || question.includes('pre-trade') || question.includes('post-trade')) {
-        return `**Pre-Trade Compliance**: Pre-trade compliance process begins with automated screening through compliance monitoring system, which checks all proposed trades against client investment guidelines, regulatory restrictions, and internal risk limits.
-
-**Trade Execution**: All trades are executed through approved brokers and trading platforms that maintain strict regulatory compliance standards. We maintain detailed trade logs and ensure proper documentation for all transactions.
-
-**Post-Trade Monitoring**: Following trade execution, compliance team conducts post-trade reviews to ensure all trades were executed in accordance with client guidelines and regulatory requirements. We maintain comprehensive audit trails and conduct regular compliance testing.
-
-**Escalation Procedures**: Any compliance violations or exceptions are immediately escalated to senior management and Chief Compliance Officer. We maintain detailed incident reporting procedures and implement corrective actions as needed.
-
-**Regulatory Reporting**: We provide regular compliance reports to clients and maintain ongoing communication with regulatory authorities to ensure full transparency and adherence to all applicable regulations.`;
-      } else {
-        return `Investment approach combines rigorous fundamental analysis with disciplined risk management to deliver consistent, risk-adjusted returns for clients. We focus on identifying high-quality companies with sustainable competitive advantages and strong management teams.
-
-Research process integrates quantitative screening with qualitative assessment, ensuring we thoroughly evaluate both financial metrics and business fundamentals. We maintain strict compliance standards and regularly review investment processes to ensure they meet highest industry standards.
-
-Client relationships are built on transparency, communication, and alignment of interests. We provide regular reporting and maintain open dialogue with clients to ensure investment approach continues to meet their evolving needs and objectives.`;
-      }
-    };
-
+    const template = getExampleResponse(question);
+    
     const mockAnswer: Answer = {
       id: `example-${Date.now()}`,
       question,
-      answer: generateRealisticAnswer(question),
-      sources: [
-        {
-          id: '1',
-          name: 'Investment Research Process.pdf',
-          type: 'PDF',
-          similarity: 95,
-          snippet: 'Our investment research process follows a systematic approach...',
-          isUsed: true,
-          lastModified: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
-        },
-        {
-          id: '2', 
-          name: 'Compliance Guidelines.docx',
-          type: 'Document',
-          similarity: 88,
-          snippet: 'Compliance procedures ensure all activities meet regulatory requirements...',
-          isUsed: true,
-          lastModified: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
-        }
-      ],
-      vaultRatio: 92,
-      aiRatio: 8,
+      answer: template.answer,
+      sources: template.sources,
+      vaultRatio: template.vaultRatio,
+      aiRatio: template.aiRatio,
       lastSynced: new Date(),
       version: 1,
-      complianceChecks: [
-        {
-          id: '1',
-          title: 'Content Review',
-          status: 'passed',
-          description: 'Content has been reviewed for compliance'
-        },
-        {
-          id: '2',
-          title: 'Risk Assessment',
-          status: 'passed',
-          description: 'Low risk content identified'
-        }
-      ]
+      complianceChecks: template.complianceChecks
     };
     
     // Start streaming the answer text
@@ -821,22 +565,7 @@ Client relationships are built on transparency, communication, and alignment of 
   };
 
   // Mock Vault Data - in a real app, this would come from an API
-  const [mockVaultData, setMockVaultData] = useState([
-    {
-      id: 'vault-1',
-      question: 'What is your investment research and analysis process?',
-      answer: 'Investment research process combines quantitative screening with qualitative analysis. Proprietary screening models evaluate companies based on financial metrics including revenue growth, profitability margins, debt-to-equity ratios, and cash flow generation.',
-      category: 'Investment Process',
-      lastModified: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-    },
-    {
-      id: 'vault-2', 
-      question: 'Describe our pre-trade and post-trade compliance process',
-      answer: 'Pre-trade compliance process begins with automated screening through compliance monitoring system, which checks all proposed trades against client investment guidelines, regulatory restrictions, and internal risk limits.',
-      category: 'Compliance',
-      lastModified: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
-    }
-  ]);
+  const [mockVaultData, setMockVaultData] = useState(getMockVaultData());
 
   const handleSave = (updatedAnswer?: Answer) => {
     if (updatedAnswer) {
@@ -1205,7 +934,7 @@ Client relationships are built on transparency, communication, and alignment of 
                     sourcesFound={sourcesFound}
                     mode={selectedMode}
                     streamingText={streamingAnswer}
-                    isTransitioning={isTransitioning}
+                    isTransitioning={false}
                     answer={currentAnswer}
                     onCopy={handleCopy}
                     onSave={handleSave}

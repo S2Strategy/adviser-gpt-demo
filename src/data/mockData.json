@@ -1,0 +1,50 @@
+{
+  "availableSources": [
+    {
+      "id": "4",
+      "name": "Risk Management Policy.pdf",
+      "type": "policy",
+      "similarity": 78,
+      "snippet": "Our risk management framework includes comprehensive monitoring...",
+      "strategy": "Balanced Strategy",
+      "isUsed": false,
+      "lastModifiedOffset": -5
+    },
+    {
+      "id": "5",
+      "name": "Client Communication Guidelines.docx",
+      "type": "document",
+      "similarity": 65,
+      "snippet": "When communicating with clients about investment strategies...",
+      "strategy": "Growth Strategy",
+      "isUsed": false,
+      "lastModifiedOffset": -7
+    },
+    {
+      "id": "6",
+      "name": "Portfolio Construction Memo.pdf",
+      "type": "memo",
+      "similarity": 82,
+      "snippet": "Portfolio construction follows a systematic approach...",
+      "strategy": "Value Strategy",
+      "isUsed": false,
+      "lastModifiedOffset": -3
+    }
+  ],
+  "mockVaultData": [
+    {
+      "id": "vault-1",
+      "question": "What is your investment research and analysis process?",
+      "answer": "Investment research process combines quantitative screening with qualitative analysis. Proprietary screening models evaluate companies based on financial metrics including revenue growth, profitability margins, debt-to-equity ratios, and cash flow generation.",
+      "category": "Investment Process",
+      "lastModifiedOffset": -7
+    },
+    {
+      "id": "vault-2",
+      "question": "Describe our pre-trade and post-trade compliance process",
+      "answer": "Pre-trade compliance process begins with automated screening through compliance monitoring system, which checks all proposed trades against client investment guidelines, regulatory restrictions, and internal risk limits.",
+      "category": "Compliance",
+      "lastModifiedOffset": -3
+    }
+  ]
+}
