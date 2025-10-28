@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import Logo from '@/assets/AdviserGPT-logo.svg?react';
 import { 
-  Building, 
+  Megaphone, 
   ChevronsUpDown, 
   CloudUpload,
   ShieldCheck, 
@@ -14,11 +14,13 @@ import {
   UserRound,
   UserRoundSearch,
   Settings,
+  Sparkles,
   LogOut,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useSavedSearches } from "@/contexts/SavedSearchesContext";
 import { useSearchHistory } from "@/hooks/useSearchHistory";
@@ -506,6 +508,84 @@ export function VaultSidebar() {
                   >
                     Outreach
                   </span>
+                </Link>
+              )}
+            </li>
+
+            <li>
+              {isCollapsed ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link
+                      to="/commentary"
+                      className={`h-10 px-2 rounded-md flex items-center justify-center transition active:scale-[0.98] text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent
+                        ${isActiveRoute('/commentary') ? 'bg-sidebar-primary/10' : ''}
+                      `}
+                    >
+                      <Megaphone className="w-4 h-4" />
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Commentary</TooltipContent>
+                </Tooltip>
+              ) : (
+                <Link
+                  to="/commentary"
+                  className={`h-10 px-2 rounded-md flex items-center gap-2 transition active:scale-[0.98] text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent
+                    ${isActiveRoute('/commentary') ? 'bg-sidebar-primary/10' : ''}
+                  `}
+                >
+                  <Megaphone className="w-4 h-4" />
+                  <span 
+                    className="text-md font-medium" 
+                    style={{
+                      lineHeight: "1.5",
+                      letterSpacing: "-0.3px"
+                    }}
+                  >
+                    Commentary
+                  </span>
+                  <Badge variant="secondary" className="text-xs px-1 py-0 h-4 text-[10px]">
+                    BETA
+                  </Badge>
+                </Link>
+              )}
+            </li>
+
+            <li>
+              {isCollapsed ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link
+                      to="/insights"
+                      className={`h-10 px-2 rounded-md flex items-center justify-center transition active:scale-[0.98] text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent
+                        ${isActiveRoute('/insights') ? 'bg-sidebar-primary/10' : ''}
+                      `}
+                    >
+                      <Sparkles className="w-4 h-4" />
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Insights</TooltipContent>
+                </Tooltip>
+              ) : (
+                <Link
+                  to="/insights"
+                  className={`h-10 px-2 rounded-md flex items-center gap-2 transition active:scale-[0.98] text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent
+                    ${isActiveRoute('/insights') ? 'bg-sidebar-primary/10' : ''}
+                  `}
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span 
+                    className="text-md font-medium" 
+                    style={{
+                      lineHeight: "1.5",
+                      letterSpacing: "-0.3px"
+                    }}
+                  >
+                    Insights
+                  </span>
+                  <Badge variant="secondary" className="text-xs px-1 py-0 h-4 text-[10px]">
+                    BETA
+                  </Badge>
                 </Link>
               )}
             </li>

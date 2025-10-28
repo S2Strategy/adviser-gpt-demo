@@ -14,6 +14,8 @@ import { DuplicateDetail } from "./pages/DuplicateDetail";
 import { ProfilePage } from "./components/ProfilePage";
 import { FirmSettings } from "./pages/FirmSettings";
 import { RIAOutreach } from "./pages/RIAOutreach";
+import { Commentary } from "./pages/Commentary";
+import { Insights } from "./pages/Insights";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +36,8 @@ const App = () => (
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/firm-settings" element={<FirmSettings />} />
             <Route path="/outreach" element={<RIAOutreach />} />
+            <Route path="/commentary" element={<Commentary />} />
+            <Route path="/insights" element={<Insights />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
