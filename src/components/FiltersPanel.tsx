@@ -101,9 +101,9 @@ export function FiltersPanel({
   return (
     <div className="fixed inset-0 z-50 bg-black/50 transition duration-200" onClick={onClose}>
       <div 
-        className={`fixed right-4 top-4 h-[calc(100%-32px)] flex flex-col w-120 bg-background rounded-2xl shadow-xl transition-all duration-300 transform
+        className={`fixed right-4 top-4 h-[calc(100%-32px)] flex flex-col w-96 bg-background rounded-2xl shadow-xl transition-all duration-300 transform
           ${
-            isOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
+            isOpen ? 'translate-x-0 opacity-100 pointer-events-auto' : 'translate-x-full opacity-0 pointer-events-none'
           }`}
         onClick={(e) => e.stopPropagation()}
       >
@@ -139,11 +139,6 @@ export function FiltersPanel({
                 placeholder="Select tags"
                 size="sm"
               />
-              {selectedTags.length > 0 && (
-                <p className="text-xs text-foreground/60 mt-1">
-                  {selectedTags.length} tag{selectedTags.length !== 1 ? 's' : ''} selected
-                </p>
-              )}
             </div>
 
             {/* Strategies Section */}
@@ -157,11 +152,6 @@ export function FiltersPanel({
                 placeholder="Select strategies"
                 size="sm"
               />
-              {selectedStrategies.length > 0 && (
-                <p className="text-xs text-foreground/60 mt-1">
-                  {selectedStrategies.length} strateg{selectedStrategies.length !== 1 ? 'ies' : 'y'} selected
-                </p>
-              )}
             </div>
 
             {/* Document Types Section */}
@@ -175,11 +165,6 @@ export function FiltersPanel({
                 placeholder="Select document types"
                 size="sm"
               />
-              {selectedTypes.length > 0 && (
-                <p className="text-xs text-foreground/60 mt-1">
-                  {selectedTypes.length} type{selectedTypes.length !== 1 ? 's' : ''} selected
-                </p>
-              )}
             </div>
 
             {/* Prior Samples Section */}

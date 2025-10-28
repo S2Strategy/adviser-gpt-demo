@@ -61,6 +61,16 @@ interface Answer {
   version: number;
   complianceChecks?: ComplianceCheck[];
   uploadedFiles?: UploadedFile[];
+  filters?: {
+    tags: string[];
+    strategies: string[];
+    types: string[];
+    priorSamples: Array<{
+      id: string;
+      name: string;
+      type: string;
+    }>;
+  };
 }
 
 interface UploadedFile {
@@ -301,7 +311,27 @@ export function AdviserGPTHome() {
       setSearchParams(newSearchParams, { replace: true });
     } else if (queryParam) {
       // Check if we have a stored result in navigation state - if so, don't handle URL params
-      const state = location.state as { storedChatResult?: ChatResult; skipLoading?: boolean } | null;
+      const state = location.state as { 
+        storedChatResult?: ChatResult; 
+        skipLoading?: boolean;
+        filters?: {
+          tags: string[];
+          strategies: string[];
+          types: string[];
+          priorSamples: Array<{
+            id: string;
+            name: string;
+            type: string;
+          }>;
+        };
+        uploadedFiles?: Array<{
+          id: string;
+          name: string;
+          type: string;
+          size: number;
+        }>;
+      } | null;
+      
       if (state?.storedChatResult && state?.skipLoading) {
         // We have a stored result, let the other useEffect handle it
         return;
@@ -311,6 +341,35 @@ export function AdviserGPTHome() {
       setInputValue(queryParam);
       if (modeParam === 'answer' || modeParam === 'chat' || modeParam === 'riaOutreach') {
         setSelectedMode(modeParam);
+      }
+      
+      // Restore filters and uploaded files from navigation state
+      if (state?.filters) {
+        setSelectedTags(state.filters.tags || []);
+        setSelectedStrategies(state.filters.strategies || []);
+        setSelectedTypes(state.filters.types || []);
+        setSelectedPriorSamples(state.filters.priorSamples?.map(s => s.id) || []);
+      }
+      
+      if (state?.uploadedFiles) {
+        // Convert back to UploadedFile format for the component
+        const restoredFiles: UploadedFile[] = state.uploadedFiles.map(file => {
+          // Create a dummy File object for the restored file
+          const dummyFile = {
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            lastModified: Date.now()
+          } as File;
+          return {
+            id: file.id,
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            file: dummyFile
+          };
+        });
+        setUploadedFiles(restoredFiles);
       }
       
       // Auto-run the query if no stored result is available
@@ -504,7 +563,29 @@ export function AdviserGPTHome() {
     if (!inputValue.trim()) return;
     
     // Add to recent searches
-    addRecentSearch(inputValue.trim(), selectedMode);
+    addRecentSearch(
+      inputValue.trim(), 
+      selectedMode,
+      {
+        tags: selectedTags,
+        strategies: selectedStrategies,
+        types: selectedTypes,
+        priorSamples: selectedPriorSamples.map(id => {
+          const sample = fileHistory.find(f => f.id === id);
+          return sample ? {
+            id: sample.id,
+            name: sample.name,
+            type: sample.type
+          } : null;
+        }).filter(Boolean)
+      },
+      uploadedFiles.map(file => ({
+        id: file.id,
+        name: file.name,
+        type: file.type,
+        size: file.size
+      }))
+    );
     
     // Add uploaded files to history for Prior Samples filter
     if (uploadedFiles.length > 0) {
@@ -524,11 +605,24 @@ export function AdviserGPTHome() {
     // Start streaming the answer text
     streamAnswerText(mockAnswer.answer, () => {
       // Set the answer immediately so the component can transition
-      const answerWithFiles = {
+      const answerWithFilesAndFilters = {
         ...mockAnswer,
-        uploadedFiles: uploadedFiles
+        uploadedFiles: uploadedFiles,
+        filters: {
+          tags: selectedTags,
+          strategies: selectedStrategies,
+          types: selectedTypes,
+          priorSamples: selectedPriorSamples.map(id => {
+            const sample = fileHistory.find(f => f.id === id);
+            return sample ? {
+              id: sample.id,
+              name: sample.name,
+              type: sample.type
+            } : null;
+          }).filter(Boolean)
+        }
       };
-      setCurrentAnswer(answerWithFiles);
+      setCurrentAnswer(answerWithFilesAndFilters);
       
       // After a brief delay, complete the transition
       setTimeout(() => {
@@ -556,7 +650,29 @@ export function AdviserGPTHome() {
   const handleExampleClick = (question: string) => {
     setInputValue(question);
     // Add to recent searches
-    addRecentSearch(question, selectedMode);
+    addRecentSearch(
+      question, 
+      selectedMode,
+      {
+        tags: selectedTags,
+        strategies: selectedStrategies,
+        types: selectedTypes,
+        priorSamples: selectedPriorSamples.map(id => {
+          const sample = fileHistory.find(f => f.id === id);
+          return sample ? {
+            id: sample.id,
+            name: sample.name,
+            type: sample.type
+          } : null;
+        }).filter(Boolean)
+      },
+      uploadedFiles.map(file => ({
+        id: file.id,
+        name: file.name,
+        type: file.type,
+        size: file.size
+      }))
+    );
     // Start the chat immediately with the selected question
     startChatWithQuestion(question);
   };
@@ -979,10 +1095,10 @@ Client relationships are built on transparency, communication, and alignment of 
               <div className="space-y-6 h-full flex flex-col ">
                 {/* User Question */}
                 <div className="flex justify-end">
-                  <div className="max-w-[90%]">
+                  <div className="max-w-[90%] flex justify-end items-end flex-col">
                     {/* Uploaded Files Display */}
                     {currentAnswer?.uploadedFiles && currentAnswer.uploadedFiles.length > 0 && (
-                      <div className="flex gap-2 mb-2 overflow-x-auto">
+                      <div className="w-full flex gap-2 mb-2 overflow-x-auto">
                         {currentAnswer.uploadedFiles.map((file) => (
                           <div key={file.id} className="flex items-center gap-2 bg-foreground/5 border border-foreground/10 rounded-lg p-2 min-w-0 flex-shrink-0">
                             <span className="text-sm">📄</span>
@@ -993,6 +1109,37 @@ Client relationships are built on transparency, communication, and alignment of 
                           </div>
                         ))}
                       </div>
+                    )}
+
+                    {/* Filters Display */}
+                    {currentAnswer?.filters && (
+                      (currentAnswer.filters.tags.length > 0 || 
+                       currentAnswer.filters.strategies.length > 0 || 
+                       currentAnswer.filters.types.length > 0 || 
+                       currentAnswer.filters.priorSamples.length > 0) && (
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {currentAnswer.filters.tags.map(tag => (
+                            <Badge key={tag} variant="secondary" className="text-xs">
+                              Tag: {tag}
+                            </Badge>
+                          ))}
+                          {currentAnswer.filters.strategies.map(strategy => (
+                            <Badge key={strategy} variant="secondary" className="text-xs">
+                              Strategy: {strategy}
+                            </Badge>
+                          ))}
+                          {currentAnswer.filters.types.map(type => (
+                            <Badge key={type} variant="secondary" className="text-xs">
+                              Type: {type}
+                            </Badge>
+                          ))}
+                          {currentAnswer.filters.priorSamples.map(sample => (
+                            <Badge key={sample.id} variant="secondary" className="text-xs">
+                              Sample: {sample.name}
+                            </Badge>
+                          ))}
+                        </div>
+                      )
                     )}
                     <div className="p-2.5 rounded-lg bg-foreground/5 border border-gray-200 text-foreground text-[15px] leading-6">
                       {isGenerating ? inputValue : currentAnswer.question}

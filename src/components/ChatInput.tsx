@@ -1,5 +1,5 @@
 import React from 'react';
-import { Send, Paperclip, Type, ChevronDown } from 'lucide-react';
+import { Send, Paperclip, Type, ChevronDown, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -80,6 +80,10 @@ interface ChatInputProps {
   showAttachButton?: boolean;
   showFileCards?: boolean;
   showBottom?: boolean;
+  
+  // Clear functionality
+  onClear?: () => void;
+  showClearButton?: boolean;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -97,6 +101,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   showFormatDropdown = true,
   showAttachButton = true,
   showFileCards = true,
+  onClear,
+  showClearButton = false,
 }) => {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -131,6 +137,17 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
         {/* Action Buttons */}
         <div className="flex-shrink-0 flex items-center p-2 px-3 gap-2">
+
+          {/* Clear Button */}
+          {showClearButton && onClear && (
+            <Button 
+              onClick={onClear}
+              variant="ghost"
+              className="h-9 w-9 p-0 text-foreground/60 hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
 
           {/* Send Button */}
           <Button 

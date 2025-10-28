@@ -56,7 +56,7 @@ export function MultiSelectFilter({
         >
           <div className="flex items-center gap-2">
             <span className="truncate">{displayText}</span>
-            <span className={`inline-flex items-center justify-center w-5 h-5 text-xs font-medium text-white bg-background rounded-full transition-all ease-bounce ${
+            <span className={`inline-flex items-center justify-center w-5 h-5 text-xs font-medium text-white bg-primary rounded-full transition-all ease-bounce ${
               selectedValues.length > 0 ? 'opacity-100 duration-180 scale-100' : 'opacity-0 duration-0 scale-50'
             }`}>
               {selectedValues.length}

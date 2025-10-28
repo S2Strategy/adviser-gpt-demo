@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronRight, Home, MapPin, Phone, Mail, ExternalLink, Building2 } from 'lucide-react';
+import { ChevronRight, Home, MapPin, Phone, Mail, ExternalLink, Building2, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -342,14 +342,14 @@ export function RIAOutreach() {
               </Link>
               <ChevronRight className="h-4 w-4 text-foreground/70" />
               <span className="text-foreground font-medium">
-                RIA Outreach
+                Outreach
               </span>
             </div>
 
             {/* Main Title */}
             <div className="flex items-center justify-between px-6 pb-6 max-w-[100rem] mx-auto">
               <div>
-                <h1 className="text-2xl font-semibold">RIA Outreach</h1>
+                <h1 className="text-2xl font-semibold">Outreach</h1>
                 <p className="text-foreground/70">Connect with certified Registered Investment Advisors</p>
               </div>
             </div>
@@ -370,9 +370,19 @@ export function RIAOutreach() {
                   showAttachButton={false}
                   showFileCards={false}
                   showBottom={false}
+                  onClear={() => {
+                    setSearchQuery('');
+                    setFilteredFirms(mockRIAFirms);
+                  }}
+                  showClearButton={searchQuery.trim().length > 0}
                 />
                 <p className="text-sm text-foreground/60 mt-2">
                   {filteredFirms.length} firm{filteredFirms.length !== 1 ? 's' : ''} found
+                  {searchQuery.trim() && (
+                    <span className="ml-2 text-sidebar-primary">
+                      • Searching for: "{searchQuery}"
+                    </span>
+                  )}
                 </p>
               </div>
 

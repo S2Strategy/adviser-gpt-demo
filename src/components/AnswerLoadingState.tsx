@@ -12,6 +12,22 @@ interface Answer {
   question: string;
   answer: string;
   version: number;
+  uploadedFiles?: Array<{
+    id: string;
+    name: string;
+    type: string;
+    size: number;
+  }>;
+  filters?: {
+    tags: string[];
+    strategies: string[];
+    types: string[];
+    priorSamples: Array<{
+      id: string;
+      name: string;
+      type: string;
+    }>;
+  };
 }
 
 interface AnswerLoadingStateProps {

@@ -11,6 +11,22 @@ export interface RecentSearchItem {
   displayTitle: string;
   timestamp: number;
   mode: 'answer' | 'chat' | 'riaOutreach';
+  filters?: {
+    tags: string[];
+    strategies: string[];
+    types: string[];
+    priorSamples: Array<{
+      id: string;
+      name: string;
+      type: string;
+    }>;
+  };
+  uploadedFiles?: Array<{
+    id: string;
+    name: string;
+    type: string;
+    size: number;
+  }>;
 }
 
 /** Safely read from localStorage (SSR/first paint safe). */
@@ -108,7 +124,26 @@ export function useRecentSearches() {
    * Add a new search to recent searches.
    */
   const addRecentSearch = useCallback(
-    (query: string, mode: 'answer' | 'chat' | 'riaOutreach' = 'answer') => {
+    (
+      query: string, 
+      mode: 'answer' | 'chat' | 'riaOutreach' = 'answer',
+      filters?: {
+        tags: string[];
+        strategies: string[];
+        types: string[];
+        priorSamples: Array<{
+          id: string;
+          name: string;
+          type: string;
+        }>;
+      },
+      uploadedFiles?: Array<{
+        id: string;
+        name: string;
+        type: string;
+        size: number;
+      }>
+    ) => {
       if (!query.trim()) return;
 
       setRecentSearches(prev => {
@@ -118,6 +153,8 @@ export function useRecentSearches() {
           displayTitle: truncateQuery(query.trim()),
           timestamp: Date.now(),
           mode,
+          filters,
+          uploadedFiles,
         };
 
         // Remove any existing identical searches to avoid duplicates

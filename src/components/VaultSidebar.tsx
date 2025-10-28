@@ -198,11 +198,21 @@ export function VaultSidebar() {
     if (storedResult) {
       // Instant render (no loading state)
       navigate(`/?${params.toString()}`, {
-        state: { storedChatResult: storedResult, skipLoading: true }
+        state: { 
+          storedChatResult: storedResult, 
+          skipLoading: true,
+          filters: searchItem.filters,
+          uploadedFiles: searchItem.uploadedFiles
+        }
       });
     } else {
       // Fall back to just seeding the query (user can run it)
-      navigate(`/?${params.toString()}`);
+      navigate(`/?${params.toString()}`, {
+        state: {
+          filters: searchItem.filters,
+          uploadedFiles: searchItem.uploadedFiles
+        }
+      });
     }
   };
 
