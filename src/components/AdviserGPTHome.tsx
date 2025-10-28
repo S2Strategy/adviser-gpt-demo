@@ -915,7 +915,7 @@ Client relationships are built on transparency, communication, and alignment of 
   };
 
   return (
-    <div className="h-screen w-full bg-sidebar-background flex gap-4">
+    <div className="h-screen w-full bg-sidebar-background flex">
       {/* Vault Sidebar */}
       <VaultSidebar />
 
@@ -933,11 +933,11 @@ Client relationships are built on transparency, communication, and alignment of 
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setShowSourcePanel(true)}
+                  onClick={() => setShowSourcePanel(!showSourcePanel)}
                   className="flex items-center gap-2"
                 >
                   <BookOpenText className="h-4 w-4" />
-                  View Sources
+                  {showSourcePanel ? 'Close Sources' : 'Open Sources'}
                 </Button>
               </div>
             </div>
@@ -1108,7 +1108,7 @@ Client relationships are built on transparency, communication, and alignment of 
               </div>
             ) : (
               /* Chat State (Loading or Answer) */
-              <div className="space-y-6 flex-1 pb-8 flex flex-col justify-end w-full">
+              <div className="space-y-6 flex-1 pb-8 flex flex-col justify-end w-full px-8">
                 {/* User Question */}
                 <div className="flex justify-end w-full">
                   <div className="max-w-[90%] flex justify-end items-end flex-col pt-4">
