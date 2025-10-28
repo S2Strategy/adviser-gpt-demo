@@ -76,9 +76,15 @@ export function VaultSidebar() {
   const { profile } = useUserProfile();
 
   const handleLogout = () => {
-      // Add logout logic here
-      console.log('Logging out...');
+      // Clear localStorage auth items
+      localStorage.removeItem('advisergpt-auth-token');
+      localStorage.removeItem('advisergpt-user-email');
+      
+      // Close account menu
       setIsAccountOpen(false);
+      
+      // Navigate to login page
+      navigate('/auth');
   };
 
   const handleProfileClick = () => {
