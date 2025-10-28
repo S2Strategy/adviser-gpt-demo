@@ -155,18 +155,18 @@ export function AdviserGPTHome() {
   // Example questions
   // Example questions for Answer Mode (client questions/RFPs/DDQs)
   const answerModeExamples = [
-    "What is your investment research and analysis process?",
     "Provide a brief overview of your organization's history and leadership.",
+    "List any additions or departures from your investment team the past five years.",
     "Describe your process for identifying investment opportunities and evaluation criteria.",
-    "Describe our pre-trade and post-trade compliance process, including systems and escalation."
+    "Describe your firm's internal AI usage policy including limitations, if any."
   ];
 
   // Example questions for Chat Mode (internal questions/web research)
   const chatModeExamples = [
-    "Can you draft a client email on volatility, stressing patience and long-term goals?",
-    "What are key talking points on U.S.–China tariffs for client calls?",
-    "Can you explain our soft-dollar practices, including current policy and controls?",
-    "Can you turn this into a cover letter paragraph for prospective RIA partners?"
+    "Draft a client email on recent market volatility, stressing our firm's investment philosophy and long-term investing goals.",
+    "Write a Monthly Market Recap based on the performance of the S&P 500 and NASDAQ benchmarks last month.",
+    "List key talking points on US-China tariffs and the related trade war for upcoming client calls.",
+    "Write a cover letter summary for the attached quarterly commentary report."
   ];
 
   const riaOutreachModeExamples = [
