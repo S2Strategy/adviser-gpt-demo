@@ -950,7 +950,7 @@ Client relationships are built on transparency, communication, and alignment of 
                 <div className="text-center mb-8 space-y-6">
                   <h2 className="text-4xl font-bold mb-2"><Logo aria-label="AdviserGPT" className="h-8 w-auto mx-auto" /></h2>
                   <p className="text-lg text-foreground/90">
-                    Every response is sourced from your Vault to match to your firm's tone of voice.
+                    Every response is sourced from your Vault to match your firm's tone of voice.
                   </p>
                   
                 </div>
