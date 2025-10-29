@@ -521,7 +521,7 @@ export function VaultSidebar() {
               )}
             </li>
 
-            <li>
+            {/* <li>
               {isCollapsed ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -556,7 +556,7 @@ export function VaultSidebar() {
                   </Badge>
                 </Link>
               )}
-            </li>
+            </li> */}
 
             <li>
               {isCollapsed ? (
