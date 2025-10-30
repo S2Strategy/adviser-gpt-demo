@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { ContentItem, QuestionItem } from "@/types/vault";
 import { STRATEGIES } from "@/types/vault";
+import StrategySelector from "@/components/StrategySelector";
 
 interface VaultEditSheetProps {
   item: QuestionItem;
@@ -29,7 +30,7 @@ export function VaultEditSheet({ item, open, onClose, onSave, existingEdit }: Va
   const [strategies, setStrategies] = useState<string[]>(normalizeStrategies(existingEdit?.strategy || item.strategy));
   const [tags, setTags] = useState<string[]>(existingEdit?.tags || item.tags || []);
   const [newTag, setNewTag] = useState("");
-  const [newStrategy, setNewStrategy] = useState("");
+  const [availableStrategies, setAvailableStrategies] = useState<string[]>(STRATEGIES);
   const { toast } = useToast();
 
   // Reset form when item changes
@@ -105,13 +106,6 @@ export function VaultEditSheet({ item, open, onClose, onSave, existingEdit }: Va
     setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
-  const handleAddStrategy = () => {
-    if (newStrategy.trim() && !strategies.includes(newStrategy.trim())) {
-      setStrategies([...strategies, newStrategy.trim()]);
-      setNewStrategy("");
-    }
-  };
-
   const handleRemoveStrategy = (strategyToRemove: string) => {
     setStrategies(strategies.filter(strategy => strategy !== strategyToRemove));
   };
@@ -173,50 +167,17 @@ export function VaultEditSheet({ item, open, onClose, onSave, existingEdit }: Va
             <div className="space-y-2">
               <Label htmlFor="strategy">Strategies</Label>
 
-              <div className="flex items-start justify-between gap-4">
-              
-                {/* Current Strategies */}
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {strategies.map((strategy, index) => (
-                    <Badge 
-                      key={`${strategy}-${index}`} 
-                      variant="outline" 
-                      className="flex items-center gap-1"
-                    >
-                      <Lightbulb className="h-3 w-3" />
-                      {strategy}
-                      <X 
-                        className="h-3 w-3 cursor-pointer hover:text-sidebar-accent" 
-                        onClick={() => handleRemoveStrategy(strategy)}
-                      />
-                    </Badge>
-                  ))}
-                </div>
-                
-                {/* Add New Strategy */}
-                <div className="flex gap-2">
-                  <Select value={newStrategy} onValueChange={setNewStrategy}>
-                    <SelectTrigger className="flex-1 min-w-40 h-9">
-                      <SelectValue placeholder="Select strategy" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {STRATEGIES.filter(strategy => !strategies.includes(strategy)).map(strategyOption => (
-                        <SelectItem key={strategyOption} value={strategyOption}>
-                          {strategyOption}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button 
-                    type="button" 
-                    size="sm"
-                    onClick={handleAddStrategy}
-                    disabled={!newStrategy.trim()}
-                  >
-                    Add
-                  </Button>
-                </div>
-              </div>
+              <StrategySelector
+                value={strategies}
+                onChange={setStrategies}
+                options={availableStrategies}
+                onCreateOption={(name) =>
+                  setAvailableStrategies((prev) => (prev.includes(name) ? prev : [...prev, name]))
+                }
+                maxInline={3}
+                size="sm"
+                triggerLabel="Edit"
+              />
             </div>
 
             {/* Tags Field */}

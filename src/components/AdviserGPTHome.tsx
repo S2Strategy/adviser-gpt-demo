@@ -96,7 +96,7 @@ export function AdviserGPTHome() {
     size: number;
     uploadedAt: Date;
   }>>([]);
-  const [availableSources] = useState<Source[]>(getAvailableSources());
+  const [availableSources, setAvailableSources] = useState<Source[]>(getAvailableSources());
 
   // Get current example questions based on mode
   const exampleQuestions = getExampleQuestions(selectedMode);
@@ -979,6 +979,26 @@ export function AdviserGPTHome() {
         onSourceAdd={handleSourceAdd}
         onSourceRemove={handleSourceRemove}
         onRebuild={handleRebuild}
+        onSourceStrategiesChange={(sourceId, strategies) => {
+          // Update current answer sources (if present)
+          setCurrentAnswer(prev => {
+            if (!prev) return prev;
+            const nextSources = prev.sources.map(s => s.id === sourceId ? { ...s, strategies } as any : s);
+            return { ...prev, sources: nextSources };
+          });
+
+          // Update available sources list for consistency in UI
+          setAvailableSources(prev => prev.map(s => s.id === sourceId ? { ...s, strategies } as any : s));
+        }}
+        knownStrategies={[
+          'Firm-Wide (Not Strategy Specific)',
+          'Small Cap Value',
+          'Small Cap Index',
+          'Large Cap Index',
+          'Small Cap Growth',
+          'Mid Cap Growth',
+          'Large Cap Growth',
+        ]}
       />
 
       {/* Filters Panel */}

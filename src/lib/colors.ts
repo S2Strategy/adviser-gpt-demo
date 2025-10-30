@@ -16,7 +16,7 @@ export const HIGHLIGHT_COLORS = {
   
   // Vault source content colors
   vault: {
-    background: 'bg-primary/10',
+    background: 'bg-primary/5',
     border: 'border-primary/50',
     hover: 'hover:bg-primary/40',
     text: 'text-foreground',

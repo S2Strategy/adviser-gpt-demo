@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { 
   X, 
   Search, 
@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { HIGHLIGHT_COLORS } from '@/lib/colors';
+import StrategySelector from '@/components/StrategySelector';
 
 interface Source {
   id: string;
@@ -25,7 +26,7 @@ interface Source {
   type: string;
   similarity: number;
   snippet: string;
-  strategy?: string;
+  strategies?: string[];
   isUsed: boolean;
   lastModified: Date;
 }
@@ -39,6 +40,8 @@ interface SourceManagementPanelProps {
   onSourceAdd: (sourceId: string) => void;
   onSourceRemove: (sourceId: string) => void;
   onRebuild: () => void;
+  onSourceStrategiesChange: (sourceId: string, strategies: string[]) => void;
+  knownStrategies?: string[];
 }
 
 export function SourceManagementPanel({
@@ -49,11 +52,29 @@ export function SourceManagementPanel({
   availableSources,
   onSourceAdd,
   onSourceRemove,
-  onRebuild
+  onRebuild,
+  onSourceStrategiesChange,
+  knownStrategies
 }: SourceManagementPanelProps) {
   const [searchFilter, setSearchFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [similarityFilter, setSimilarityFilter] = useState<string>('all');
+
+  const strategyOptions = useMemo(
+    () =>
+      knownStrategies?.length
+        ? knownStrategies
+        : [
+            'Firm-Wide (Not Strategy Specific)',
+            'Small Cap Value',
+            'Small Cap Index',
+            'Large Cap Index',
+            'Small Cap Growth',
+            'Mid Cap Growth',
+            'Large Cap Growth',
+          ],
+    [knownStrategies]
+  );
 
   if (!isOpen) return null;
 
@@ -187,11 +208,16 @@ export function SourceManagementPanel({
                     <p className={`text-xs ${HIGHLIGHT_COLORS.vault.text} leading-relaxed`}>
                       {source.snippet}
                     </p>
-                    {source.strategy && (
-                      <Badge variant="secondary" className="text-xs mt-2">
-                        {source.strategy}
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-1 flex-wrap mt-2">
+                      
+                      <StrategySelector
+                        value={source.strategies ?? []}
+                        onChange={(v) => onSourceStrategiesChange(source.id, v)}
+                        options={strategyOptions}
+                        maxInline={2}
+                        size="sm"
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -219,7 +245,7 @@ export function SourceManagementPanel({
             ) : (
               <div className="space-y-2">
                 {filteredAvailableSources.map((source) => (
-                  <div key={source.id} className="border border-sidebar-foreground/10 rounded-lg p-3 bg-sidebar-background/60">
+                  <div key={source.id} className="border border-sidebar-foreground/10 rounded-lg p-3 bg-sidebar-background/20">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4 text-foreground/70" />
@@ -253,11 +279,15 @@ export function SourceManagementPanel({
                       {source.snippet}
                     </p>
                     <div className="flex items-center justify-between mt-2">
-                      {source.strategy && (
-                        <Badge variant="outline" className="text-xs bg-background border-foreground/20">
-                          {source.strategy}
-                        </Badge>
-                      )}
+                      <div className="flex items-center gap-1 flex-wrap">
+                        <StrategySelector
+                          value={source.strategies ?? []}
+                          onChange={(v) => onSourceStrategiesChange(source.id, v)}
+                          options={strategyOptions}
+                          maxInline={2}
+                          size="sm"
+                        />
+                      </div>
                       <span className="text-xs text-foreground/70">
                         {source.lastModified.toLocaleDateString()}
                       </span>
