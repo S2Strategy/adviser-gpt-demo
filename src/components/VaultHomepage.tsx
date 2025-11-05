@@ -42,7 +42,7 @@ import { MOCK_CONTENT_ITEMS } from "@/data/mockVaultData";
 import { STRATEGIES, CONTENT_TYPES, STATUS_OPTIONS, TAGS_INFO, QuestionItem } from "@/types/vault";
 import { FiltersPanel, DateRange } from "./FiltersPanel";
 import { smartSearch, getSemanticVariations, getSearchSuggestions } from "@/utils/smartSearch";
-import { format } from "date-fns";
+import { format, subDays, subMonths } from "date-fns";
 
 export function VaultHomepage() {
   const navigate = useNavigate();
@@ -322,6 +322,54 @@ export function VaultHomepage() {
     });
   };
 
+  // Utility function to get date range bounds from DateRange object
+  const getDateRangeBounds = (dateRange: DateRange | null): { from: Date; to: Date } | null => {
+    if (!dateRange || dateRange.type === 'any') {
+      return null;
+    }
+    
+    if (dateRange.type === 'custom') {
+      if (dateRange.from && dateRange.to) {
+        return { from: dateRange.from, to: dateRange.to };
+      }
+      return null;
+    }
+    
+    // Calculate preset date ranges (same logic as FiltersPanel)
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // End of today
+    
+    switch (dateRange.type) {
+      case '7d': {
+        const from = subDays(today, 7);
+        from.setHours(0, 0, 0, 0);
+        return { from, to: today };
+      }
+      case '30d': {
+        const from = subDays(today, 30);
+        from.setHours(0, 0, 0, 0);
+        return { from, to: today };
+      }
+      case '3mo': {
+        const from = subMonths(today, 3);
+        from.setHours(0, 0, 0, 0);
+        return { from, to: today };
+      }
+      case '6mo': {
+        const from = subMonths(today, 6);
+        from.setHours(0, 0, 0, 0);
+        return { from, to: today };
+      }
+      case '1y': {
+        const from = subDays(today, 365);
+        from.setHours(0, 0, 0, 0);
+        return { from, to: today };
+      }
+      default:
+        return null;
+    }
+  };
+
   // Only perform search when explicitly triggered (not on every keystroke)
   const smartSearchResults = state.query ? smartSearch(allItems, state.query) : allItems;
   
@@ -344,7 +392,26 @@ export function VaultHomepage() {
     const matchesStatus = selectedStatus.length === 0 || 
       selectedStatus.includes(displayData.type); // Using type as status for mock data
     
-    return matchesStrategy && matchesType && matchesTags && matchesStatus;
+    // Date range filtering
+    const dateBounds = getDateRangeBounds(selectedDateRange);
+    let matchesDateRange = true;
+    if (dateBounds) {
+      try {
+        const itemDate = new Date(displayData.updatedAt);
+        // Check if date is valid and within range (inclusive)
+        if (isNaN(itemDate.getTime())) {
+          // Invalid date - exclude from results when date filter is active
+          matchesDateRange = false;
+        } else {
+          matchesDateRange = itemDate >= dateBounds.from && itemDate <= dateBounds.to;
+        }
+      } catch {
+        // If parsing fails, exclude when date filter is active
+        matchesDateRange = false;
+      }
+    }
+    
+    return matchesStrategy && matchesType && matchesTags && matchesStatus && matchesDateRange;
   });
 
   // Sort filtered items
