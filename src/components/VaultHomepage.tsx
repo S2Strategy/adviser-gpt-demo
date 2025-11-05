@@ -27,7 +27,8 @@ import {
   FolderOpen,
   X,
   Check,
-  Archive
+  Archive,
+  Filter
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,8 +40,9 @@ import { useSearchHistory } from "@/hooks/useSearchHistory";
 import { useToast } from "@/hooks/use-toast";
 import { MOCK_CONTENT_ITEMS } from "@/data/mockVaultData";
 import { STRATEGIES, CONTENT_TYPES, STATUS_OPTIONS, TAGS_INFO, QuestionItem } from "@/types/vault";
-import { MultiSelectFilter } from "./MultiSelectFilter";
+import { FiltersPanel, DateRange } from "./FiltersPanel";
 import { smartSearch, getSemanticVariations, getSearchSuggestions } from "@/utils/smartSearch";
+import { format } from "date-fns";
 
 export function VaultHomepage() {
   const navigate = useNavigate();
@@ -89,6 +91,19 @@ export function VaultHomepage() {
   const [selectedType, setSelectedType] = useState<string[]>([]);  
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<string[]>([]);
+  
+  // FiltersPanel state
+  const [showFiltersPanel, setShowFiltersPanel] = useState(false);
+  const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
+  const [selectedDateRange, setSelectedDateRange] = useState<DateRange | null>(null);
+  const [selectedPriorSamples, setSelectedPriorSamples] = useState<string[]>([]);
+  const [fileHistory] = useState<Array<{
+    id: string;
+    name: string;
+    type: string;
+    size: number;
+    uploadedAt: Date;
+  }>>([]); // Empty array as VaultHomepage doesn't use file uploads
   
   // Sorting and view state
   const [sortColumn, setSortColumn] = useState<SortColumn>("name");
@@ -347,7 +362,8 @@ export function VaultHomepage() {
 
   const sortedAndFilteredItems = sortItems(filteredItems, currentSort);
 
-  const hasActiveFilters = selectedStrategy.length > 0 || selectedType.length > 0 || selectedTags.length > 0 || selectedStatus.length > 0;
+  const hasActiveFilters = selectedStrategy.length > 0 || selectedType.length > 0 || selectedTags.length > 0 || selectedStatus.length > 0 ||
+                           selectedDocuments.length > 0 || selectedPriorSamples.length > 0 || (selectedDateRange && selectedDateRange.type !== 'any');
   const hasActiveSearch = (state.query && state.query.trim()) || hasActiveFilters;
   
   // Check if there are any parent questions with children
@@ -356,7 +372,8 @@ export function VaultHomepage() {
   const handleSearch = () => {
     // Check if there's search text or any filters selected
     const hasSearchText = searchInput.trim();
-    const hasFilters = selectedStrategy.length > 0 || selectedType.length > 0 || selectedTags.length > 0 || selectedStatus.length > 0;
+    const hasFilters = selectedStrategy.length > 0 || selectedType.length > 0 || selectedTags.length > 0 || selectedStatus.length > 0 ||
+                       selectedDocuments.length > 0 || selectedPriorSamples.length > 0 || (selectedDateRange && selectedDateRange.type !== 'any');
     
     if (hasSearchText || hasFilters) {
       setQuery(searchInput);
@@ -385,6 +402,7 @@ export function VaultHomepage() {
       if (selectedType.length > 0) params.set('type', selectedType.join(','));
       if (selectedTags.length > 0) params.set('tags', selectedTags.join(','));
       if (selectedStatus.length > 0) params.set('status', selectedStatus.join(','));
+      // Note: documents, dateRange, and priorSamples can be added to URL params later if needed
       
       // Update URL using React Router navigation
       const newUrl = `/vault?${params.toString()}`;
@@ -403,6 +421,9 @@ export function VaultHomepage() {
     setSelectedType([]);
     setSelectedStatus([]);
     setSelectedTags([]);
+    setSelectedDocuments([]);
+    setSelectedDateRange(null);
+    setSelectedPriorSamples([]);
     
     // Update URL parameters using React Router navigation
     const params = new URLSearchParams();
@@ -848,32 +869,24 @@ export function VaultHomepage() {
                       )}
                     </div>
                     
-                    <MultiSelectFilter
-                      title="Strategies"
-                      options={STRATEGIES}
-                      selectedValues={selectedStrategy}
-                      onSelectionChange={setSelectedStrategy}
-                      placeholder="Strategies"
+                    <Button
+                      variant="outline"
                       size="xl"
-                    />
-
-                    <MultiSelectFilter
-                      title="Types"
-                      options={CONTENT_TYPES}
-                      selectedValues={selectedType}
-                      onSelectionChange={setSelectedType}
-                      placeholder="Types"
-                      size="xl"
-                    />
-
-                    <MultiSelectFilter
-                      title="Tags"
-                      options={TAGS_INFO.map(tag => tag.name)}
-                      selectedValues={selectedTags}
-                      onSelectionChange={setSelectedTags}
-                      placeholder="Tags"
-                      size="xl"
-                    />
+                      onClick={() => setShowFiltersPanel(true)}
+                      className="flex items-center gap-2 h-12 px-4"
+                    >
+                      <Filter className="h-4 w-4" />
+                      Open Filters
+                      {(selectedStrategy.length + selectedType.length + selectedTags.length + 
+                        selectedDocuments.length + selectedPriorSamples.length +
+                        (selectedDateRange && selectedDateRange.type !== 'any' ? 1 : 0)) > 0 && (
+                        <Badge variant="secondary" className="text-xs">
+                          {selectedStrategy.length + selectedType.length + selectedTags.length + 
+                           selectedDocuments.length + selectedPriorSamples.length +
+                           (selectedDateRange && selectedDateRange.type !== 'any' ? 1 : 0)}
+                        </Badge>
+                      )}
+                    </Button>
 
                     <Button 
                       onClick={handleSearch}
@@ -938,6 +951,47 @@ export function VaultHomepage() {
                               />
                             </Badge>
                           ))}
+                          {selectedDocuments.map(document => (
+                            <Badge key={document} variant="secondary" className="gap-1">
+                              Document: {document}
+                              <X 
+                                className="h-3 w-3 cursor-pointer" 
+                                onClick={() => {
+                                  setSelectedDocuments(prev => prev.filter(d => d !== document));
+                                }}
+                              />
+                            </Badge>
+                          ))}
+                          {selectedDateRange && selectedDateRange.type !== 'any' && (
+                            <Badge variant="secondary" className="gap-1">
+                              Date: {selectedDateRange.type === 'custom' && selectedDateRange.from && selectedDateRange.to
+                                ? `${format(selectedDateRange.from, 'MMM d')} - ${format(selectedDateRange.to, 'MMM d, yyyy')}`
+                                : selectedDateRange.type === '7d' ? 'Past 7 days'
+                                : selectedDateRange.type === '30d' ? 'Past 30 days'
+                                : selectedDateRange.type === '3mo' ? 'Past 3 months'
+                                : selectedDateRange.type === '6mo' ? 'Past 6 months'
+                                : selectedDateRange.type === '1y' ? 'Past year'
+                                : 'Date range'}
+                              <X 
+                                className="h-3 w-3 cursor-pointer" 
+                                onClick={() => setSelectedDateRange(null)}
+                              />
+                            </Badge>
+                          )}
+                          {selectedPriorSamples.map(sampleId => {
+                            const sample = fileHistory.find(f => f.id === sampleId);
+                            return sample ? (
+                              <Badge key={sampleId} variant="secondary" className="gap-1">
+                                Sample: {sample.name}
+                                <X 
+                                  className="h-3 w-3 cursor-pointer" 
+                                  onClick={() => {
+                                    setSelectedPriorSamples(prev => prev.filter(id => id !== sampleId));
+                                  }}
+                                />
+                              </Badge>
+                            ) : null;
+                          })}
                           <Button variant="link" size="sm" onClick={clearFilters}>
                             Clear filters
                           </Button>
@@ -1509,6 +1563,25 @@ export function VaultHomepage() {
       <SmartUploadSheet
         open={showSmartUploadSheet}
         onClose={() => setShowSmartUploadSheet(false)}
+      />
+      
+      <FiltersPanel
+        isOpen={showFiltersPanel}
+        onClose={() => setShowFiltersPanel(false)}
+        selectedTags={selectedTags}
+        onTagsChange={setSelectedTags}
+        selectedStrategies={selectedStrategy}
+        onStrategiesChange={setSelectedStrategy}
+        selectedTypes={selectedType}
+        onTypesChange={setSelectedType}
+        selectedDocuments={selectedDocuments}
+        onDocumentsChange={setSelectedDocuments}
+        selectedDateRange={selectedDateRange}
+        onDateRangeChange={setSelectedDateRange}
+        selectedPriorSamples={selectedPriorSamples}
+        onPriorSamplesChange={setSelectedPriorSamples}
+        priorSamples={fileHistory}
+        onClearAll={clearFilters}
       />
     </div>
   );
