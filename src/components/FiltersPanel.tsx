@@ -9,7 +9,8 @@ import {
   FileType,
   Filter,
   Check,
-  ChevronDown
+  ChevronDown,
+  Calendar as CalendarIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,8 @@ import { STRATEGIES, TAGS_INFO } from '@/types/vault';
 import { MOCK_CONTENT_ITEMS } from '@/data/mockVaultData';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { subDays, subMonths, format } from 'date-fns';
 
 interface PriorSample {
   id: string;
@@ -28,6 +31,14 @@ interface PriorSample {
   size: number;
   uploadedAt: Date;
 }
+
+export type DateRangePreset = 'any' | '7d' | '30d' | '3mo' | '6mo' | '1y' | 'custom';
+
+export type DateRange = {
+  type: DateRangePreset;
+  from?: Date;
+  to?: Date;
+};
 
 interface FiltersPanelProps {
   isOpen: boolean;
@@ -38,6 +49,8 @@ interface FiltersPanelProps {
   onStrategiesChange: (strategies: string[]) => void;
   selectedDocuments: string[];
   onDocumentsChange: (documents: string[]) => void;
+  selectedDateRange: DateRange | null;
+  onDateRangeChange: (range: DateRange | null) => void;
   selectedPriorSamples: string[];
   onPriorSamplesChange: (samples: string[]) => void;
   priorSamples: PriorSample[];
@@ -54,6 +67,8 @@ export function FiltersPanel({
   onStrategiesChange,
   selectedDocuments,
   onDocumentsChange,
+  selectedDateRange,
+  onDateRangeChange,
   selectedPriorSamples,
   onPriorSamplesChange,
   priorSamples,
@@ -63,6 +78,8 @@ export function FiltersPanel({
   const [priorSamplesSearch, setPriorSamplesSearch] = useState('');
   const [documentSearchQuery, setDocumentSearchQuery] = useState('');
   const [isDocumentDropdownOpen, setIsDocumentDropdownOpen] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [customDateRange, setCustomDateRange] = useState<{ from?: Date; to?: Date }>({});
   const documentInputRef = useRef<HTMLInputElement>(null);
 
   // Focus input when dropdown opens
@@ -74,6 +91,119 @@ export function FiltersPanel({
       }, 100);
     }
   }, [isDocumentDropdownOpen, isOpen]);
+
+  // Date range utility functions
+  const getPresetDateRange = (preset: DateRangePreset): { from: Date; to: Date } | null => {
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // End of today
+    
+    switch (preset) {
+      case 'any':
+        return null;
+      case '7d': {
+        const from = subDays(today, 7);
+        from.setHours(0, 0, 0, 0);
+        return { from, to: today };
+      }
+      case '30d': {
+        const from = subDays(today, 30);
+        from.setHours(0, 0, 0, 0);
+        return { from, to: today };
+      }
+      case '3mo': {
+        const from = subMonths(today, 3);
+        from.setHours(0, 0, 0, 0);
+        return { from, to: today };
+      }
+      case '6mo': {
+        const from = subMonths(today, 6);
+        from.setHours(0, 0, 0, 0);
+        return { from, to: today };
+      }
+      case '1y': {
+        const from = subDays(today, 365);
+        from.setHours(0, 0, 0, 0);
+        return { from, to: today };
+      }
+      case 'custom':
+        return null; // Custom handled separately
+      default:
+        return null;
+    }
+  };
+
+  const formatDateRangeDisplay = (range: DateRange | null): string => {
+    if (!range || range.type === 'any') {
+      return 'Any time';
+    }
+    
+    if (range.type === 'custom' && range.from && range.to) {
+      return `${format(range.from, 'MMM d, yyyy')} - ${format(range.to, 'MMM d, yyyy')}`;
+    }
+    
+    const presetLabels: Record<DateRangePreset, string> = {
+      'any': 'Any time',
+      '7d': 'Past 7 days',
+      '30d': 'Past 30 days',
+      '3mo': 'Past 3 months',
+      '6mo': 'Past 6 months',
+      '1y': 'Past year',
+      'custom': 'Custom range'
+    };
+    
+    return presetLabels[range.type] || 'Any time';
+  };
+
+  // Handle preset date range selection
+  const handlePresetSelect = (preset: DateRangePreset) => {
+    if (preset === 'any') {
+      onDateRangeChange(null);
+      setCustomDateRange({});
+      return;
+    }
+    
+    if (preset === 'custom') {
+      // Initialize custom date range with existing selection if available
+      if (selectedDateRange?.type === 'custom' && selectedDateRange.from && selectedDateRange.to) {
+        setCustomDateRange({ from: selectedDateRange.from, to: selectedDateRange.to });
+      }
+      setIsCalendarOpen(true);
+      return;
+    }
+    
+    const dateRange = getPresetDateRange(preset);
+    if (dateRange) {
+      onDateRangeChange({
+        type: preset,
+        from: dateRange.from,
+        to: dateRange.to
+      });
+      setCustomDateRange({}); // Clear custom range when selecting preset
+    }
+  };
+
+  // Handle custom date range selection
+  const handleCustomDateRangeSelect = (range: { from?: Date; to?: Date }) => {
+    setCustomDateRange(range);
+  };
+
+  // Apply custom date range
+  const handleApplyCustomRange = () => {
+    if (customDateRange.from && customDateRange.to) {
+      onDateRangeChange({
+        type: 'custom',
+        from: customDateRange.from,
+        to: customDateRange.to
+      });
+      setIsCalendarOpen(false);
+    }
+  };
+
+  // Clear date range
+  const handleClearDateRange = () => {
+    onDateRangeChange(null);
+    setCustomDateRange({});
+  };
 
   if (!isOpen) return null;
 
@@ -135,7 +265,8 @@ export function FiltersPanel({
   };
 
   const totalFiltersCount = selectedTags.length + selectedStrategies.length + 
-                           selectedDocuments.length + selectedPriorSamples.length;
+                           selectedDocuments.length + selectedPriorSamples.length +
+                           (selectedDateRange && selectedDateRange.type !== 'any' ? 1 : 0);
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 transition duration-200" onClick={onClose}>
@@ -166,9 +297,9 @@ export function FiltersPanel({
 
         {/* Content */}
         <ScrollArea className="flex-1 p-4">
-          <div className="space-y-6">
+          <div className="space-y-5">
             {/* Tags Section */}
-            <div>
+            <div className="border-b border-foreground/10 pb-5">
               <h3 className="text-sm font-medium mb-3">Tags</h3>
               <MultiSelectFilter
                 title="Tags"
@@ -181,7 +312,7 @@ export function FiltersPanel({
             </div>
 
             {/* Strategies Section */}
-            <div>
+            <div className="border-b border-foreground/10 pb-4">
               <h3 className="text-sm font-medium mb-3">Strategies</h3>
               <MultiSelectFilter
                 title="Strategies"
@@ -194,7 +325,7 @@ export function FiltersPanel({
             </div>
 
             {/* Document Names Section */}
-            <div>
+            <div className="border-b border-foreground/10 pb-4">
               <h3 className="text-sm font-medium mb-3">Document Names</h3>
               <div className="relative">
                 <Popover open={isDocumentDropdownOpen} onOpenChange={setIsDocumentDropdownOpen}>
@@ -320,8 +451,124 @@ export function FiltersPanel({
               </div>
             </div>
 
-            {/* Prior Samples Section */}
+            {/* Last Updated Date Section */}
             <div>
+              <h3 className="text-sm font-medium mb-3">Last Updated Date</h3>
+              <div className="space-y-3">
+                {/* Preset buttons */}
+                <div className="flex flex-wrap gap-2">
+                  {(['any', '7d', '30d', '3mo', '6mo', '1y'] as DateRangePreset[]).map((preset) => {
+                    const labels: Record<DateRangePreset, string> = {
+                      'any': 'Any time',
+                      '7d': 'Past 7 days',
+                      '30d': 'Past 30 days',
+                      '3mo': 'Past 3 months',
+                      '6mo': 'Past 6 months',
+                      '1y': 'Past year',
+                      'custom': 'Custom range'
+                    };
+                    const isSelected = selectedDateRange?.type === preset || (!selectedDateRange && preset === 'any');
+                    
+                    return (
+                      <Button
+                        key={preset}
+                        variant={isSelected ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => handlePresetSelect(preset)}
+                        className="text-xs"
+                      >
+                        {labels[preset]}
+                      </Button>
+                    );
+                  })}
+                </div>
+
+                {/* Custom date range */}
+                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={selectedDateRange?.type === 'custom' ? 'default' : 'outline'}
+                      size="sm"
+                      className="w-full justify-between"
+                    >
+                      <div className="flex items-center gap-2">
+                        <CalendarIcon className="h-4 w-4" />
+                        <span className="truncate">
+                          {selectedDateRange?.type === 'custom'
+                            ? formatDateRangeDisplay(selectedDateRange)
+                            : 'Custom date range'}
+                        </span>
+                      </div>
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="p-0 bg-popover border z-50 w-auto" align="start">
+                    <div className="flex flex-col">
+                      <Calendar
+                        mode="range"
+                        selected={
+                          customDateRange.from || customDateRange.to
+                            ? { from: customDateRange.from, to: customDateRange.to }
+                            : selectedDateRange?.type === 'custom' && selectedDateRange.from && selectedDateRange.to
+                            ? { from: selectedDateRange.from, to: selectedDateRange.to }
+                            : undefined
+                        }
+                        onSelect={(range) => {
+                          handleCustomDateRangeSelect(range || {});
+                        }}
+                        numberOfMonths={2}
+                        className="rounded-md border-0"
+                      />
+                      <div className="flex items-center justify-between p-3 border-t">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setCustomDateRange({});
+                            setIsCalendarOpen(false);
+                          }}
+                          className="text-xs"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={handleApplyCustomRange}
+                          disabled={!customDateRange.from || !customDateRange.to}
+                          className="text-xs"
+                        >
+                          Apply
+                        </Button>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+
+                {/* Selected range display */}
+                {selectedDateRange && selectedDateRange.type !== 'any' && (
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-foreground/5 border border-foreground/10">
+                    <div className="flex items-center gap-2">
+                      <CalendarIcon className="h-4 w-4 text-foreground/60" />
+                      <span className="text-sm text-foreground/80">
+                        {formatDateRangeDisplay(selectedDateRange)}
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleClearDateRange}
+                      className="h-6 w-6 p-0"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Prior Samples Section */}
+            {/* <div>
               <h3 className="text-sm font-medium mb-3">Prior Samples</h3>
               {priorSamples.length === 0 ? (
                 <div className="text-center py-6 text-sm text-foreground/60">
@@ -331,7 +578,7 @@ export function FiltersPanel({
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {/* Search bar for prior samples */}
+                  {/* Search bar for prior samples *
                   <div className="relative">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-foreground/70" />
                     <Input
@@ -342,7 +589,7 @@ export function FiltersPanel({
                     />
                   </div>
 
-                  {/* Prior samples list */}
+                  {/* Prior samples list *
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {filteredPriorSamples.length === 0 ? (
                       <div className="text-center py-4 text-sm text-foreground/60">
@@ -390,7 +637,8 @@ export function FiltersPanel({
                   )}
                 </div>
               )}
-            </div>
+            </div> */}
+
           </div>
         </ScrollArea>
 

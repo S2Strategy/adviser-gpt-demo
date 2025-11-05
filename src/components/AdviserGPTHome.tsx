@@ -18,8 +18,9 @@ import { AnswerLoadingState } from './AnswerLoadingState';
 import { SourceManagementPanel } from './SourceManagementPanel';
 import { VaultSidebar } from './VaultSidebar';
 import { ChatInput } from './ChatInput';
-import { FiltersPanel } from './FiltersPanel';
+import { FiltersPanel, DateRange } from './FiltersPanel';
 import { getExampleQuestions, getAvailableSources, getMockVaultData, getAnswerModeResponse, getChatModeResponse, getExampleResponse } from '@/utils/contentUtils';
+import { format } from 'date-fns';
 
 
 
@@ -46,6 +47,7 @@ interface Answer {
     tags: string[];
     strategies: string[];
     documents: string[];
+    dateRange?: DateRange | null;
     priorSamples: Array<{
       id: string;
       name: string;
@@ -88,6 +90,7 @@ export function AdviserGPTHome() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedStrategies, setSelectedStrategies] = useState<string[]>([]);
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
+  const [selectedDateRange, setSelectedDateRange] = useState<DateRange | null>(null);
   const [selectedPriorSamples, setSelectedPriorSamples] = useState<string[]>([]);
   const [fileHistory, setFileHistory] = useState<Array<{
     id: string;
@@ -139,6 +142,7 @@ export function AdviserGPTHome() {
     setSelectedTags([]);
     setSelectedStrategies([]);
     setSelectedDocuments([]);
+    setSelectedDateRange(null);
     setSelectedPriorSamples([]);
   };
 
@@ -236,6 +240,7 @@ export function AdviserGPTHome() {
           tags: string[];
           strategies: string[];
           documents: string[];
+          dateRange?: DateRange | null;
           priorSamples: Array<{
             id: string;
             name: string;
@@ -266,6 +271,7 @@ export function AdviserGPTHome() {
         setSelectedTags(state.filters.tags || []);
         setSelectedStrategies(state.filters.strategies || []);
         setSelectedDocuments(state.filters.documents || []);
+        setSelectedDateRange(state.filters.dateRange || null);
         setSelectedPriorSamples(state.filters.priorSamples?.map(s => s.id) || []);
       }
       
@@ -394,6 +400,7 @@ export function AdviserGPTHome() {
         tags: selectedTags,
         strategies: selectedStrategies,
         documents: selectedDocuments,
+        dateRange: selectedDateRange,
         priorSamples: selectedPriorSamples.map(id => {
           const sample = fileHistory.find(f => f.id === id);
           return sample ? {
@@ -436,6 +443,7 @@ export function AdviserGPTHome() {
           tags: selectedTags,
           strategies: selectedStrategies,
           documents: selectedDocuments,
+          dateRange: selectedDateRange,
           priorSamples: selectedPriorSamples.map(id => {
             const sample = fileHistory.find(f => f.id === id);
             return sample ? {
@@ -479,6 +487,7 @@ export function AdviserGPTHome() {
         tags: selectedTags,
         strategies: selectedStrategies,
         documents: selectedDocuments,
+        dateRange: selectedDateRange,
         priorSamples: selectedPriorSamples.map(id => {
           const sample = fileHistory.find(f => f.id === id);
           return sample ? {
@@ -739,10 +748,12 @@ export function AdviserGPTHome() {
                           <Filter className="h-4 w-4" />
                           Open Filters
                           {(selectedTags.length + selectedStrategies.length + 
-                            selectedDocuments.length + selectedPriorSamples.length) > 0 && (
+                            selectedDocuments.length + selectedPriorSamples.length +
+                            (selectedDateRange && selectedDateRange.type !== 'any' ? 1 : 0)) > 0 && (
                             <Badge variant="secondary" className="text-xs">
                               {selectedTags.length + selectedStrategies.length + 
-                               selectedDocuments.length + selectedPriorSamples.length}
+                               selectedDocuments.length + selectedPriorSamples.length +
+                               (selectedDateRange && selectedDateRange.type !== 'any' ? 1 : 0)}
                             </Badge>
                           )}
                         </Button>
@@ -751,7 +762,8 @@ export function AdviserGPTHome() {
 
                     {/* Filter Badges */}
                     {(selectedTags.length > 0 || selectedStrategies.length > 0 || 
-                      selectedDocuments.length > 0 || selectedPriorSamples.length > 0) && (
+                      selectedDocuments.length > 0 || selectedPriorSamples.length > 0 ||
+                      (selectedDateRange && selectedDateRange.type !== 'any')) && (
                       <div className="flex flex-wrap gap-2 mb-4">
                         {selectedTags.map(tag => (
                           <Badge key={tag} variant="secondary" className="flex items-center gap-1">
@@ -780,6 +792,22 @@ export function AdviserGPTHome() {
                             />
                           </Badge>
                         ))}
+                        {selectedDateRange && selectedDateRange.type !== 'any' && (
+                          <Badge variant="secondary" className="flex items-center gap-1">
+                            {selectedDateRange.type === 'custom' && selectedDateRange.from && selectedDateRange.to
+                              ? `${format(selectedDateRange.from, 'MMM d')} - ${format(selectedDateRange.to, 'MMM d, yyyy')}`
+                              : selectedDateRange.type === '7d' ? 'Past 7 days'
+                              : selectedDateRange.type === '30d' ? 'Past 30 days'
+                              : selectedDateRange.type === '3mo' ? 'Past 3 months'
+                              : selectedDateRange.type === '6mo' ? 'Past 6 months'
+                              : selectedDateRange.type === '1y' ? 'Past year'
+                              : 'Date range'}
+                            <X 
+                              className="h-3 w-3 cursor-pointer hover:text-foreground" 
+                              onClick={() => setSelectedDateRange(null)}
+                            />
+                          </Badge>
+                        )}
                         {selectedPriorSamples.map(sampleId => {
                           const sample = fileHistory.find(f => f.id === sampleId);
                           return sample ? (
@@ -857,11 +885,12 @@ export function AdviserGPTHome() {
                     )}
 
                     {/* Filters Display - Show during generation or when answer is loaded */}
-                    {((isGenerating && (selectedTags.length > 0 || selectedStrategies.length > 0 || selectedDocuments.length > 0 || selectedPriorSamples.length > 0)) || 
+                    {((isGenerating && (selectedTags.length > 0 || selectedStrategies.length > 0 || selectedDocuments.length > 0 || selectedPriorSamples.length > 0 || (selectedDateRange && selectedDateRange.type !== 'any'))) || 
                       (currentAnswer?.filters && (
                         currentAnswer.filters.tags.length > 0 || 
                         currentAnswer.filters.strategies.length > 0 || 
                         currentAnswer.filters.documents.length > 0 || 
+                        (currentAnswer.filters.dateRange && currentAnswer.filters.dateRange.type !== 'any') ||
                         currentAnswer.filters.priorSamples.length > 0
                       ))) && (
                         <div className="flex flex-wrap gap-2 mb-2">
@@ -883,6 +912,18 @@ export function AdviserGPTHome() {
                                   Document: {document}
                                 </Badge>
                               ))}
+                              {selectedDateRange && selectedDateRange.type !== 'any' && (
+                                <Badge variant="secondary" className="text-xs">
+                                  Date: {selectedDateRange.type === 'custom' && selectedDateRange.from && selectedDateRange.to
+                                    ? `${format(selectedDateRange.from, 'MMM d')} - ${format(selectedDateRange.to, 'MMM d, yyyy')}`
+                                    : selectedDateRange.type === '7d' ? 'Past 7 days'
+                                    : selectedDateRange.type === '30d' ? 'Past 30 days'
+                                    : selectedDateRange.type === '3mo' ? 'Past 3 months'
+                                    : selectedDateRange.type === '6mo' ? 'Past 6 months'
+                                    : selectedDateRange.type === '1y' ? 'Past year'
+                                    : 'Date range'}
+                                </Badge>
+                              )}
                               {selectedPriorSamples.map(sampleId => {
                                 const sample = fileHistory.find(f => f.id === sampleId);
                                 return sample ? (
@@ -910,6 +951,18 @@ export function AdviserGPTHome() {
                                   Document: {document}
                                 </Badge>
                               ))}
+                              {currentAnswer.filters.dateRange && currentAnswer.filters.dateRange.type !== 'any' && (
+                                <Badge variant="secondary" className="text-xs">
+                                  Date: {currentAnswer.filters.dateRange.type === 'custom' && currentAnswer.filters.dateRange.from && currentAnswer.filters.dateRange.to
+                                    ? `${format(currentAnswer.filters.dateRange.from, 'MMM d')} - ${format(currentAnswer.filters.dateRange.to, 'MMM d, yyyy')}`
+                                    : currentAnswer.filters.dateRange.type === '7d' ? 'Past 7 days'
+                                    : currentAnswer.filters.dateRange.type === '30d' ? 'Past 30 days'
+                                    : currentAnswer.filters.dateRange.type === '3mo' ? 'Past 3 months'
+                                    : currentAnswer.filters.dateRange.type === '6mo' ? 'Past 6 months'
+                                    : currentAnswer.filters.dateRange.type === '1y' ? 'Past year'
+                                    : 'Date range'}
+                                </Badge>
+                              )}
                               {currentAnswer.filters.priorSamples.map(sample => (
                                 <Badge key={sample.id} variant="secondary" className="text-xs">
                                   Sample: {sample.name}
@@ -1011,6 +1064,8 @@ export function AdviserGPTHome() {
         onStrategiesChange={setSelectedStrategies}
         selectedDocuments={selectedDocuments}
         onDocumentsChange={setSelectedDocuments}
+        selectedDateRange={selectedDateRange}
+        onDateRangeChange={setSelectedDateRange}
         selectedPriorSamples={selectedPriorSamples}
         onPriorSamplesChange={setSelectedPriorSamples}
         priorSamples={fileHistory}

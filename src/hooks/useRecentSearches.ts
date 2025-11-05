@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { DateRange } from '@/components/FiltersPanel';
 
 const RECENT_SEARCHES_KEY = 'adviser-gpt-recent-searches';
 const LAST_MODE_KEY = 'adviser-gpt-last-mode';
@@ -15,6 +16,7 @@ export interface RecentSearchItem {
     tags: string[];
     strategies: string[];
     documents: string[];
+    dateRange?: DateRange | null;
     priorSamples: Array<{
       id: string;
       name: string;
@@ -131,6 +133,7 @@ export function useRecentSearches() {
         tags: string[];
         strategies: string[];
         documents: string[];
+        dateRange?: DateRange | null;
         priorSamples: Array<{
           id: string;
           name: string;

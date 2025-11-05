@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { SourceHighlightedText } from './SourceHighlightedText';
+import { DateRange } from './FiltersPanel';
 
 interface Answer {
   id: string;
@@ -22,6 +23,7 @@ interface Answer {
     tags: string[];
     strategies: string[];
     documents: string[];
+    dateRange?: DateRange | null;
     priorSamples: Array<{
       id: string;
       name: string;
