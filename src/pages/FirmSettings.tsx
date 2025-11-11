@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { VaultSidebar } from '@/components/VaultSidebar';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useTagTypes } from '@/hooks/useTagTypes';
+import { useVaultEdits } from '@/hooks/useVaultState';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -79,6 +80,7 @@ export function FirmSettings() {
     deleteTagType,
     isTagValueInUse,
   } = useTagTypes();
+  const { saveManyEdits, getEdit } = useVaultEdits();
   const [newTagTypeName, setNewTagTypeName] = useState('');
   const [newValueInputs, setNewValueInputs] = useState<Record<string, string>>({});
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -174,12 +176,63 @@ export function FirmSettings() {
     }
   };
 
+  // Helper function to remove a specific tag value from tags array
+  const removeTagValueFromTags = (tags: any[], tagTypeName: string, tagValue: string): any[] => {
+    if (!tags || !Array.isArray(tags)) {
+      return [];
+    }
+    return tags.filter((tag: any) => {
+      // Handle both old format (string) and new format (object with type and value)
+      if (typeof tag === 'string') {
+        // Old format - this shouldn't happen after migration, but handle it
+        return tag !== tagValue;
+      }
+      if (typeof tag === 'object' && tag.type && tag.value) {
+        // New format - filter out matching tag
+        return !(tag.type === tagTypeName && tag.value === tagValue);
+      }
+      return true; // Keep unknown formats
+    });
+  };
+
   const handleConfirmDeleteValue = () => {
     if (deleteConfirmData) {
-      removeTagTypeValue(deleteConfirmData.tagTypeName, deleteConfirmData.value);
+      const { tagTypeName, value } = deleteConfirmData;
+      
+      // Remove from allowed list
+      removeTagTypeValue(tagTypeName, value);
+      
+      // Find all items that have this tag value and remove it
+      const itemsToUpdate: Array<[string, any]> = [];
+      
+      allVaultItems.forEach((item) => {
+        // Check if item has the tag (considering both original and edited tags)
+        const existingEdit = getEdit(item.id);
+        const currentTags = existingEdit?.tags || item.tags || [];
+        
+        // Check if this item has the tag we want to remove
+        const hasTag = currentTags.some((tag: any) => {
+          if (typeof tag === 'object' && tag.type && tag.value) {
+            return tag.type === tagTypeName && tag.value === value;
+          }
+          return false;
+        });
+        
+        if (hasTag) {
+          // Remove the tag from this item
+          const updatedTags = removeTagValueFromTags(currentTags, tagTypeName, value);
+          itemsToUpdate.push([item.id, { tags: updatedTags }]);
+        }
+      });
+      
+      // Update all affected items at once
+      if (itemsToUpdate.length > 0) {
+        saveManyEdits(itemsToUpdate);
+      }
+      
       setDeleteConfirmOpen(false);
       setDeleteConfirmData(null);
-      alert('Value removed. It has been removed from all vault items that used it.');
+      alert(`Value removed. It has been removed from ${itemsToUpdate.length} vault item${itemsToUpdate.length !== 1 ? 's' : ''} that used it.`);
     }
   };
 

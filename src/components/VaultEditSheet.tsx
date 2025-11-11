@@ -196,7 +196,7 @@ export function VaultEditSheet({ item, open, onClose, onSave, existingEdit }: Va
               ).sort();
               
               return (
-                <div key={tagType.id} className="flex items-center gap-2">
+                <div key={tagType.id} className="flex items-center gap-2f">
                   <Label>{tagType.name}</Label>
                   <MultiSelectFilter
                     title={tagType.name}

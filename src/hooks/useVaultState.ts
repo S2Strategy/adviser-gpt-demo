@@ -114,6 +114,15 @@ export function useVaultEdits() {
     }
   }, []);
 
+  // Persist edits to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.edits, JSON.stringify(edits));
+    } catch (error) {
+      console.warn('Failed to save vault edits:', error);
+    }
+  }, [edits]);
+
   // const saveEdit = (itemId: string, editData: any) => {
   //   const currentEdit = edits[itemId] || {};
   //   const newEdit = { ...currentEdit, ...editData };

@@ -18,7 +18,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { QuestionItem, Tag } from '@/types/vault';
@@ -62,12 +63,14 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   formatRelativeTime = (date) => date,
   formatFullDate = (date) => date,
 }) => {
-  const { getAllTagTypes, getTagTypeValues } = useTagTypes();
+  const { getAllTagTypes, getTagTypeValues, addTagTypeValue } = useTagTypes();
   const tagTypes = getAllTagTypes();
   const [addingTagToItem, setAddingTagToItem] = useState<{ itemId: string; tagTypeName: string } | null>(null);
   const [newTagValue, setNewTagValue] = useState('');
   const [selectedTagType, setSelectedTagType] = useState<string>('');
   const [isCopied, setIsCopied] = useState(false);
+  const [tagSearchOpen, setTagSearchOpen] = useState(false);
+  const [tagSearchQuery, setTagSearchQuery] = useState('');
   
   // Migrate item to new format
   const migratedItem = migrateQuestionItem(item);
@@ -114,12 +117,18 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const handleNewTagSave = (itemId: string, tagTypeName: string) => {
     if (newTagValue.trim() && onTagAdd) {
       const availableValues = getTagTypeValues(tagTypeName);
-      if (availableValues.includes(newTagValue.trim())) {
-        onTagAdd(itemId, { type: tagTypeName, value: newTagValue.trim() });
-        setNewTagValue("");
-        setAddingTagToItem(null);
-        setSelectedTagType("");
+      const trimmedValue = newTagValue.trim();
+      
+      // Auto-add value to allowed list if it's not present
+      if (!availableValues.includes(trimmedValue)) {
+        addTagTypeValue(tagTypeName, trimmedValue);
       }
+      
+      // Add the tag to the item
+      onTagAdd(itemId, { type: tagTypeName, value: trimmedValue });
+      setNewTagValue("");
+      setAddingTagToItem(null);
+      setSelectedTagType("");
     }
   };
 
@@ -127,7 +136,17 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     setNewTagValue("");
     setAddingTagToItem(null);
     setSelectedTagType("");
+    setTagSearchQuery("");
+    setTagSearchOpen(false);
   };
+  
+  // Reset search when closing or changing tag type
+  useEffect(() => {
+    if (!addingTagToItem) {
+      setTagSearchQuery("");
+      setTagSearchOpen(false);
+    }
+  }, [addingTagToItem]);
 
   // Determine if this is a parent question with children
   const hasChildren = item.children && item.children.length > 0;
@@ -277,24 +296,57 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                       ))}
                       {isAdding ? (
                         <div className="flex items-center gap-1">
-                          
-                          <Select
-                            value={newTagValue}
-                            onValueChange={setNewTagValue}
-                          >
-                            <SelectTrigger className="h-6 text-xs w-32">
-                              <SelectValue placeholder="Select value" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {getTagTypeValues(tagType.name)
-                                .filter(value => !tagsOfType.some((t: Tag) => t.value === value))
-                                .map(value => (
-                                  <SelectItem key={value} value={value}>
-                                    {value}
-                                  </SelectItem>
-                                ))}
-                            </SelectContent>
-                          </Select>
+                          <Popover open={tagSearchOpen} onOpenChange={setTagSearchOpen}>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-6 text-xs w-32 justify-between"
+                                onClick={() => setTagSearchOpen(true)}
+                              >
+                                <span className="truncate">
+                                  {newTagValue || `Select ${tagType.name.toLowerCase()}...`}
+                                </span>
+                                <ChevronDown className="h-3 w-3 ml-1 shrink-0 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="p-0 w-[200px]" align="start">
+                              <Command>
+                                <CommandInput
+                                  placeholder={`Search ${tagType.name.toLowerCase()}...`}
+                                  value={tagSearchQuery}
+                                  onValueChange={setTagSearchQuery}
+                                />
+                                <CommandList>
+                                  <CommandEmpty>No {tagType.name.toLowerCase()} found.</CommandEmpty>
+                                  <CommandGroup>
+                                    {getTagTypeValues(tagType.name)
+                                      .filter(value => {
+                                        // Filter out already selected tags
+                                        const notSelected = !tagsOfType.some((t: Tag) => t.value === value);
+                                        // Filter by search query
+                                        const matchesSearch = !tagSearchQuery || 
+                                          value.toLowerCase().includes(tagSearchQuery.toLowerCase());
+                                        return notSelected && matchesSearch;
+                                      })
+                                      .map(value => (
+                                        <CommandItem
+                                          key={value}
+                                          value={value}
+                                          onSelect={() => {
+                                            setNewTagValue(value);
+                                            setTagSearchOpen(false);
+                                            setTagSearchQuery("");
+                                          }}
+                                        >
+                                          {value}
+                                        </CommandItem>
+                                      ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
                           <button 
                             className="h-6 w-6 flex items-center justify-center border border-sidebar-primary bg-background hover:bg-sidebar-primary rounded text-sidebar-primary hover:text-sidebar-primary-foreground hover:border-sidebar-primary/70 transition-colors" 
                             onClick={() => handleNewTagSave(item.id, tagType.name)}
@@ -316,6 +368,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                           onClick={() => {
                             setAddingTagToItem({ itemId: item.id, tagTypeName: tagType.name });
                             setSelectedTagType(tagType.name);
+                            setTagSearchOpen(true);
+                            setTagSearchQuery("");
                           }}
                         >
                           + Add {tagType.name}
