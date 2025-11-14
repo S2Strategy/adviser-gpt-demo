@@ -1,5 +1,5 @@
 import React from 'react';
-import { Send, Paperclip, Type, ChevronDown, X } from 'lucide-react';
+import { Send, CornerRightUp, Paperclip, Type, ChevronDown, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -155,7 +155,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             disabled={!value.trim() || disabled}
             className="h-9 w-11 bg-sidebar-primary hover:text-foreground"
           >
-            <Send className="h-5 w-5 text-sidebar-primary-foreground" />
+            <CornerRightUp className="h-5 w-5 text-sidebar-primary-foreground" />
           </Button>
         </div>
       </div>
