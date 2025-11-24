@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { VaultState, VaultFilters } from '@/types/vault';
 
 // LocalStorage keys
@@ -42,34 +42,34 @@ export function useVaultState() {
   }, []);
 
   // Update query
-  const setQuery = (query: string) => {
+  const setQuery = useCallback((query: string) => {
     setState(prev => ({ ...prev, query }));
     localStorage.setItem(STORAGE_KEYS.query, query);
-  };
+  }, []);
 
   // Update filters
-  const setFilters = (filters: VaultFilters) => {
+  const setFilters = useCallback((filters: VaultFilters) => {
     setState(prev => ({ ...prev, filters }));
     localStorage.setItem(STORAGE_KEYS.filters, JSON.stringify(filters));
-  };
+  }, []);
 
   // Update active view
-  const setActiveView = (activeView: VaultState['activeView']) => {
+  const setActiveView = useCallback((activeView: VaultState['activeView']) => {
     setState(prev => ({ ...prev, activeView }));
     localStorage.setItem(STORAGE_KEYS.activeView, activeView);
-  };
+  }, []);
 
   // Update sort
-  const setSort = (sort: string) => {
+  const setSort = useCallback((sort: string) => {
     setState(prev => ({ ...prev, sort }));
     localStorage.setItem(STORAGE_KEYS.sort, sort);
-  };
+  }, []);
 
   // Update show archived
-  const setShowArchived = (showArchived: boolean) => {
+  const setShowArchived = useCallback((showArchived: boolean) => {
     setState(prev => ({ ...prev, showArchived }));
     localStorage.setItem(STORAGE_KEYS.showArchived, showArchived.toString());
-  };
+  }, []);
 
   // Clear all state
   const clearState = () => {

@@ -17,6 +17,8 @@ import { FirmSettings } from "./pages/FirmSettings";
 import { RIAOutreach } from "./pages/RIAOutreach";
 import { Commentary } from "./pages/Commentary";
 import { Insights } from "./pages/Insights";
+import { AddContent } from "./pages/AddContent";
+import FileUpload from "./pages/FileUpload";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -48,6 +50,8 @@ const App = () => (
               <Route path="/outreach" element={<ProtectedRoute><RIAOutreach /></ProtectedRoute>} />
               <Route path="/commentary" element={<ProtectedRoute><Commentary /></ProtectedRoute>} />
               <Route path="/insights" element={<ProtectedRoute><Insights /></ProtectedRoute>} />
+              <Route path="/vault/add-content" element={<ProtectedRoute><AddContent /></ProtectedRoute>} />
+              <Route path="/file-upload" element={<ProtectedRoute><FileUpload /></ProtectedRoute>} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

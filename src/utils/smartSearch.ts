@@ -178,14 +178,24 @@ function calculateRelevanceScore(item: QuestionItem, query: string): number {
   let termCount = 0;
   
   // Get all searchable text from the item
+  // Handle tags - can be strings (old format) or objects with type/value (new format)
+  const tagTexts = (item.tags || []).map(tag => {
+    if (typeof tag === 'string') {
+      return tag;
+    } else if (tag && typeof tag === 'object' && 'value' in tag) {
+      return tag.value;
+    }
+    return '';
+  }).filter(Boolean);
+  
   const searchableText = [
     (item as any).documentTitle || '',
     item.question || '',
     item.answer || '',
     item.body || '',
-    ...item.tags,
-    Array.isArray(item.strategy) ? item.strategy.join(' ') : item.strategy,
-    item.type
+    ...tagTexts,
+    Array.isArray(item.strategy) ? item.strategy.join(' ') : item.strategy || '',
+    item.type || ''
   ].join(' ').toLowerCase();
   
   keyTerms.forEach(term => {
@@ -203,7 +213,10 @@ function calculateRelevanceScore(item: QuestionItem, query: string): number {
       if (item.answer?.toLowerCase().includes(variation)) {
         termScore = Math.max(termScore, 0.8); // Answer matches get good weight
       }
-      if (item.tags.some(tag => tag.toLowerCase().includes(variation))) {
+      if (item.tags.some(tag => {
+        const tagValue = typeof tag === 'string' ? tag : (tag && typeof tag === 'object' && 'value' in tag ? tag.value : '');
+        return tagValue.toLowerCase().includes(variation);
+      })) {
         termScore = Math.max(termScore, 0.7); // Tag matches get decent weight
       }
       const strategyText = Array.isArray(item.strategy) ? item.strategy.join(' ') : item.strategy;

@@ -64,14 +64,16 @@ export function VaultHomepage() {
   // Search and filter state
   const [searchInput, setSearchInput] = useState(urlQuery || state.query);
   
-  // Sync state.query with URL query parameter
+  // Sync state.query with URL query parameter (only when URL changes, not when state changes)
   useEffect(() => {
     if (urlQuery !== state.query) {
       setQuery(urlQuery);
     }
+    // Only depend on urlQuery, not state.query, to avoid circular updates
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlQuery, setQuery]);
 
-  // Sync filter states with URL parameters
+  // Sync filter states with URL parameters (only when URL changes)
   useEffect(() => {
     const urlStrategy = searchParams.get('strategy')?.split(',').filter(Boolean) || [];
     const urlType = searchParams.get('type')?.split(',').filter(Boolean) || [];
@@ -102,11 +104,13 @@ export function VaultHomepage() {
     setSelectedStatus(urlStatus);
     setSearchInput(urlQuery);
     
-    // Sync showArchived with URL parameter
+    // Sync showArchived with URL parameter (only if different to avoid loops)
     if (urlShowArchived !== state.showArchived) {
       setShowArchived(urlShowArchived);
     }
-  }, [searchParams, urlQuery]);
+    // Only depend on searchParams and urlQuery, not state, to avoid circular updates
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, urlQuery, setShowArchived]);
   // New tag filter structure
   const [selectedTagFilters, setSelectedTagFilters] = useState<Record<string, string[]>>({});
   // Legacy state for backward compatibility (will be removed)
@@ -149,7 +153,7 @@ export function VaultHomepage() {
   const [deleteAllConfirmOpen, setDeleteAllConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<QuestionItem | null>(null);
 
-  // Load saved tab state from localStorage
+  // Load saved tab state from localStorage (only on mount)
   useEffect(() => {
     const savedTab = localStorage.getItem('vault-homepage-active-tab');
     if (savedTab && (savedTab === "recent" || savedTab === "documents")) {
@@ -161,13 +165,13 @@ export function VaultHomepage() {
     if (savedDocumentsTab && ["files", "type", "strategy", "data"].includes(savedDocumentsTab)) {
       setActiveView(savedDocumentsTab as "files" | "type" | "strategy" | "data");
     }
-  }, []);
+  }, [setActiveView]);
 
   // Initialize state from URL parameters
   useEffect(() => {
     setSearchInput(urlQuery);
     // Legacy URL params are handled in the other useEffect
-  }, [urlQuery, searchParams]);
+  }, [urlQuery]);
 
   // Save tab state to localStorage when it changes
   const handleTabChange = (tab: "recent" | "documents") => {
@@ -257,7 +261,7 @@ export function VaultHomepage() {
       const firstTag = tags[0];
       // If tags are in old format (strings), migrate them
       if (typeof firstTag === 'string') {
-        const migrated = migrateQuestionItem({ ...item, tags: tags as any });
+        const migrated = migrateQuestionItem({ ...item, tags: tags as string[] });
         tags = migrated.tags;
       }
     } else {
@@ -515,14 +519,6 @@ export function VaultHomepage() {
                        (selectedDateRange && selectedDateRange.type !== 'any');
     
     if (hasSearchText || hasFilters) {
-      setQuery(searchInput);
-      setFilters({
-        strategy: selectedStrategy.length > 0 ? selectedStrategy[0] : undefined,
-        contentType: selectedType.length > 0 ? selectedType[0] : undefined,
-        tags: selectedTags.length > 0 ? selectedTags : undefined,
-        status: selectedStatus.length > 0 ? selectedStatus[0] : undefined
-      });
-      
       // Add to search history
       addToHistory(searchInput, {
         strategies: selectedStrategy,
@@ -531,7 +527,7 @@ export function VaultHomepage() {
         statuses: selectedStatus
       }, currentSort);
       
-      // Update URL parameters without navigating away from homepage
+      // Update URL parameters - let the useEffect sync state from URL
       const params = new URLSearchParams();
       // Only set query param if there's actual search text
       if (hasSearchText) {
@@ -544,6 +540,7 @@ export function VaultHomepage() {
       // Note: documents, dateRange, and priorSamples can be added to URL params later if needed
       
       // Update URL using React Router navigation
+      // The useEffect will sync state from URL, avoiding circular updates
       const newUrl = `/vault?${params.toString()}`;
       navigate(newUrl);
     }
@@ -621,7 +618,7 @@ export function VaultHomepage() {
       // Mark all as deleted
       const deleteEdits = archivedItems.map(item => {
         const currentEdit = getEdit(item.id) || {};
-        return [item.id, { ...currentEdit, deleted: true }] as [string, any];
+        return [item.id, { ...currentEdit, deleted: true }] as [string, Record<string, unknown>];
       });
       
       saveManyEdits(deleteEdits);
@@ -670,10 +667,10 @@ export function VaultHomepage() {
       
       const exportItems = filteredItems.map(item => ({
         id: item.id,
-        title: (item as any).documentTitle || 'Unknown Document',
+        title: item.documentTitle || 'Unknown Document',
         answer: item.answer || '',
         question: item.question || '',
-        fileName: (item as any).documentTitle || 'Unknown Document',
+        fileName: item.documentTitle || 'Unknown Document',
         lastEdited: formatFullDate(item.updatedAt),
         lastEditor: item.updatedBy,
         tags: getDisplayData(item).tags,
@@ -860,7 +857,7 @@ export function VaultHomepage() {
     const diffYearsMonths = (from: Date, to: Date) => {
       let years = to.getUTCFullYear() - from.getUTCFullYear();
       let months = to.getUTCMonth() - from.getUTCMonth();
-      let days = to.getUTCDate() - from.getUTCDate();
+      const days = to.getUTCDate() - from.getUTCDate();
 
       if (days < 0) {
         months -= 1;
@@ -959,7 +956,7 @@ export function VaultHomepage() {
     setEditingItem(item);
   };
 
-  const handleSave = (itemId: string, editData: any) => {
+  const handleSave = (itemId: string, editData: string) => {
     saveEdit(itemId, editData);
     setEditingItem(null);
   };
@@ -1006,6 +1003,13 @@ export function VaultHomepage() {
                     
                     <div className="flex items-center gap-3">
                     <Button
+                    variant="default"
+                    onClick={() => navigate('/vault/add-content')}
+                    className="text-sm"
+                    >
+                      + Add Content
+                    </Button>
+                    <Button
                       variant="ghost"
                       onClick={() => navigate('/vault/suggested-updates')}
                       className="text-sm"
@@ -1026,13 +1030,13 @@ export function VaultHomepage() {
                       <Building2 className="h-4 w-4 mr-2 text-foreground/70" />
                       Firm updates
                     </Button>
-                    <Button 
+                    {/* <Button 
                       onClick={() => setShowSmartUploadSheet(true)}
                       className="flex h-10 px-4 py-2 pl-3 justify-center items-center rounded-md border border-foreground/20 bg-background text-foreground text-sm font-medium leading-tight tracking-tight hover:border-foreground/20 hover:bg-sidebar-background transition-colors capitalize"
                     >
                       <MessagesSquare className="h-4 w-4 mr-2 text-foreground/70" />
                       Add QA Pair
-                    </Button>
+                    </Button> */}
                   </div>
                 </div>
 
