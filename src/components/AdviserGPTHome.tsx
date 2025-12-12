@@ -68,6 +68,11 @@ interface UploadedFile {
   file: File;
 }
 
+// Extended Source type that includes strategies array for UI management
+type SourceWithStrategies = Source & {
+  strategies?: string[];
+};
+
 export function AdviserGPTHome() {
   const { toast } = useToast();
   const { addRecentSearch, getLastMode, setLastMode } = useRecentSearches();
@@ -102,7 +107,7 @@ export function AdviserGPTHome() {
     size: number;
     uploadedAt: Date;
   }>>([]);
-  const [availableSources, setAvailableSources] = useState<Source[]>(getAvailableSources());
+  const [availableSources, setAvailableSources] = useState<SourceWithStrategies[]>(getAvailableSources());
 
   // Get current example questions based on mode
   const exampleQuestions = getExampleQuestions(selectedMode);
@@ -1034,12 +1039,16 @@ export function AdviserGPTHome() {
           // Update current answer sources (if present)
           setCurrentAnswer(prev => {
             if (!prev) return prev;
-            const nextSources = prev.sources.map(s => s.id === sourceId ? { ...s, strategies } as any : s);
+            const nextSources: SourceWithStrategies[] = prev.sources.map(s => 
+              s.id === sourceId ? { ...s, strategies } : s
+            );
             return { ...prev, sources: nextSources };
           });
 
           // Update available sources list for consistency in UI
-          setAvailableSources(prev => prev.map(s => s.id === sourceId ? { ...s, strategies } as any : s));
+          setAvailableSources(prev => prev.map(s => 
+            s.id === sourceId ? { ...s, strategies } : s
+          ));
         }}
         knownStrategies={[
           'Firm-Wide (Not Strategy Specific)',

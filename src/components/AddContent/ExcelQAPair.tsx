@@ -215,9 +215,9 @@ export function ExcelQAPair() {
     <div className="space-y-6">
 
       <div className="space-y-4">
-        <div className="space-y-2">
+        {/* <div className="space-y-2">
           <Label htmlFor="strategy">
-            Strategy <span className="text-destructive">*</span>
+            Strategy
           </Label>
           <Select value={strategy} onValueChange={setStrategy}>
             <SelectTrigger id="strategy">
@@ -231,7 +231,7 @@ export function ExcelQAPair() {
               ))}
             </SelectContent>
           </Select>
-        </div>
+        </div> */}
 
         {!uploadedFile ? (
           <div

@@ -20,9 +20,7 @@ interface Answer {
     size: number;
   }>;
   filters?: {
-    tags: string[];
-    strategies: string[];
-    types?: string[];
+    tagFilters?: Record<string, string[]>; // New format
     documents: string[];
     dateRange?: DateRange | null;
     priorSamples: Array<{
@@ -30,6 +28,10 @@ interface Answer {
       name: string;
       type: string;
     }>;
+    // Legacy fields for backward compatibility
+    tags?: string[];
+    strategies?: string[];
+    types?: string[];
   };
 }
 

@@ -20,7 +20,7 @@ export interface TagTypeConfig {
 
 export interface QuestionItem {
   id: string;
-  type: "Commentary" | "Policy" | "Policies" | "Quantitative" | "Questionnaire" | "Questionnaires" | "Data Files" | "Insights";
+  type: "Commentary" | "Policy" | "Policies" | "Quantitative" | "Questionnaire" | "Questionnaires" | "Data Files" | "Drafts";
   // Legacy field - kept for backward compatibility during migration
   // In new system, strategies are stored as tags with type "Strategy"
   strategy?: string | string[];

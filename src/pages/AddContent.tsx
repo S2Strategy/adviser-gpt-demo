@@ -5,7 +5,7 @@ import { VaultSidebar } from "@/components/VaultSidebar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CompletedQuestionnaire } from "@/components/AddContent/CompletedQuestionnaire";
 import { SingleQAPair } from "@/components/AddContent/SingleQAPair";
-import { ExcelQAPair } from "@/components/AddContent/ExcelQAPair";
+import { ImportFlow } from "@/components/Import/ImportFlow";
 import { DataUpdates } from "@/components/AddContent/DataUpdates";
 import { PolicyDocs } from "@/components/AddContent/PolicyDocs";
 
@@ -60,7 +60,7 @@ export function AddContent() {
       case "single-qa":
         return <SingleQAPair />;
       case "excel-qa":
-        return <ExcelQAPair />;
+        return <ImportFlow />;
       case "data-updates":
         return <DataUpdates />;
       case "policy-docs":

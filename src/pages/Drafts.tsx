@@ -2,21 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { ChevronRight, Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { VaultSidebar } from '@/components/VaultSidebar';
-import { InsightsEditor } from '@/components/InsightsEditor';
-import { InsightsAssistant, UploadedFile } from '@/components/InsightsAssistant';
+import { DraftEditor } from '@/components/DraftsEditor';
+import { DraftsAssistant, UploadedFile } from '@/components/DraftsAssistant';
 import { useToast } from '@/hooks/use-toast';
 import { useVaultEdits } from '@/hooks/useVaultState';
 import { QuestionItem } from '@/types/vault';
 import {
-  generateInsight,
-  updateInsight,
-  streamInsightGeneration,
-  streamInsightUpdate,
-  GenerateInsightParams,
-  UpdateInsightParams,
-} from '@/utils/insightsLLM';
+  generateDraft,
+  updateDraft,
+  streamDraftGeneration,
+  streamDraftUpdate,
+  GenerateDraftParams,
+  UpdateDraftParams,
+} from '@/utils/draftsLLM';
 
-export function Insights() {
+export function Drafts() {
   const { toast } = useToast();
   const { saveEdit } = useVaultEdits();
 
@@ -77,7 +77,7 @@ export function Insights() {
     setInformationalFiles(prev => prev.filter(f => f.id !== fileId));
   };
 
-  // Generate new insight
+  // Generate new draft
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
 
@@ -87,7 +87,7 @@ export function Insights() {
     setUpdatedContent(null);
 
     try {
-      const params: GenerateInsightParams = {
+      const params: GenerateDraftParams = {
         prompt: prompt.trim(),
         sampleFile: sampleFile || undefined,
         informationalFiles: informationalFiles.length > 0 ? informationalFiles : undefined,
@@ -96,7 +96,7 @@ export function Insights() {
 
       // Stream the response
       let finalContent = '';
-      for await (const text of streamInsightGeneration(params)) {
+      for await (const text of streamDraftGeneration(params)) {
         setStreamingText(text);
         setContent(text);
         finalContent = text;
@@ -105,14 +105,14 @@ export function Insights() {
       setOriginalContent(finalContent);
       setPrompt('');
       toast({
-        title: "Insight generated ✓",
-        description: "Your insight has been generated successfully.",
+        title: "Draft generated ✓",
+        description: "Your draft has been generated successfully.",
       });
     } catch (error) {
-      console.error('Error generating insight:', error);
+      console.error('Error generating draft:', error);
       toast({
-        title: "Error generating insight",
-        description: "There was an error generating your insight. Please try again.",
+        title: "Error generating draft",
+        description: "There was an error generating your draft. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -121,18 +121,20 @@ export function Insights() {
     }
   };
 
-  // Update existing insight
+  // Update existing draft
   const handleUpdate = async () => {
     if (!prompt.trim() || !content.trim()) return;
     if (hasPendingDiffs) return;
 
     setIsLoading(true);
     setStreamingText('');
-    setOriginalContent(content);
+    // Use current content as the baseline (which may have been manually edited)
+    const baselineContent = content;
+    setOriginalContent(baselineContent);
 
     try {
-      const params: UpdateInsightParams = {
-        originalText: content,
+      const params: UpdateDraftParams = {
+        originalText: baselineContent,
         prompt: prompt.trim(),
         sampleFile: sampleFile || undefined,
         informationalFiles: informationalFiles.length > 0 ? informationalFiles : undefined,
@@ -141,23 +143,25 @@ export function Insights() {
 
       // Stream the response
       let newContent = '';
-      for await (const text of streamInsightUpdate(params)) {
+      for await (const text of streamDraftUpdate(params)) {
         setStreamingText(text);
         newContent = text;
       }
 
       setUpdatedContent(newContent);
+      // Set content to newContent so user sees the updated text with redlines
+      setContent(newContent);
       setHasPendingDiffs(true);
       setPrompt('');
       toast({
-        title: "Insight updated ✓",
+        title: "Draft updated ✓",
         description: "Review the changes and accept or reject them.",
       });
     } catch (error) {
-      console.error('Error updating insight:', error);
+      console.error('Error updating draft:', error);
       toast({
-        title: "Error updating insight",
-        description: "There was an error updating your insight. Please try again.",
+        title: "Error updating draft",
+        description: "There was an error updating your draft. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -175,27 +179,31 @@ export function Insights() {
     }
   };
 
-  // Accept diff
+  // Accept diff - use current content (which may include manual edits)
   const handleAcceptDiff = () => {
     if (updatedContent) {
-      setContent(updatedContent);
-      setOriginalContent(updatedContent);
+      // Use current content (may have manual edits) or fall back to updatedContent
+      const finalContent = content.trim() || updatedContent;
+      setContent(finalContent);
+      setOriginalContent(finalContent);
       setUpdatedContent(null);
       setHasPendingDiffs(false);
       toast({
         title: "Changes accepted ✓",
-        description: "The updated insight has been applied.",
+        description: "The updated draft has been applied.",
       });
     }
   };
 
-  // Reject diff
+  // Reject diff - revert to original content
   const handleRejectDiff = () => {
+    // Revert to original content
+    setContent(originalContent);
     setUpdatedContent(null);
     setHasPendingDiffs(false);
     toast({
       title: "Changes rejected",
-      description: "The insight has been reverted to the previous version.",
+      description: "The draft has been reverted to the previous version.",
     });
   };
 
@@ -209,45 +217,48 @@ export function Insights() {
     if (!content.trim()) {
       toast({
         title: "Nothing to save",
-        description: "Please generate or enter an insight first.",
+        description: "Please generate or enter an draft first.",
         variant: "destructive",
       });
       return;
     }
 
     const newItem: QuestionItem = {
-      id: `insight-${Date.now()}`,
-      type: "Insights",
+      id: `draft-${Date.now()}`,
+      type: "Drafts",
       tags: [],
       body: content,
       answer: content,
       updatedAt: new Date().toISOString(),
       updatedBy: "Current User", // TODO: Get from auth context
-      documentTitle: "Insights",
+      documentTitle: "Drafts",
     };
 
     // Save to vault edits (similar to how other items are saved)
     saveEdit(newItem.id, {
       ...newItem,
-      question: "Insight",
+      question: "Draft",
     });
 
     toast({
       title: "Saved to Vault ✓",
-      description: "Your insight has been saved to the Vault.",
+      description: "Your draft has been saved to the Vault.",
     });
   };
 
   // Edit AI tools
   const handleEdit = async (type: 'grammar' | 'shorter' | 'longer' | 'tone') => {
     if (!content.trim()) return;
+    if (hasPendingDiffs) return; // Prevent editing while diffs are pending
 
     setIsLoading(true);
-    setOriginalContent(content);
+    // Use current content as baseline (which may have been manually edited)
+    const baselineContent = content;
+    setOriginalContent(baselineContent);
 
     try {
-      const params: UpdateInsightParams = {
-        originalText: content,
+      const params: UpdateDraftParams = {
+        originalText: baselineContent,
         prompt: `Apply ${type} edit`,
         editType: type,
         sampleFile: sampleFile || undefined,
@@ -255,13 +266,15 @@ export function Insights() {
         includeWebSources,
       };
 
-      const updated = await updateInsight(params);
+      const updated = await updateDraft(params);
       setUpdatedContent(updated);
+      // Set content to updated so user sees the changes with redlines
+      setContent(updated);
       setHasPendingDiffs(true);
     } catch (error) {
-      console.error('Error editing insight:', error);
+      console.error('Error editing draft:', error);
       toast({
-        title: "Error editing insight",
+        title: "Error editing draft",
         description: "There was an error applying the edit. Please try again.",
         variant: "destructive",
       });
@@ -295,23 +308,23 @@ export function Insights() {
                 <Home className="h-4 w-4" />
               </Link>
               <ChevronRight className="h-4 w-4 text-foreground/70" />
-              <span className="text-foreground font-medium">Insights</span>
+              <span className="text-foreground font-medium">Drafts</span>
             </div>
 
             {/* Main Title */}
             <div className="flex items-center justify-between px-6 pb-6 max-w-[100rem] mx-auto">
               <div>
-                <h1 className="text-2xl font-semibold">Insights</h1>
-                <p className="text-foreground/70">Generate and manage insights</p>
+                <h1 className="text-2xl font-semibold">Drafts</h1>
+                <p className="text-foreground/70">Generate and manage drafts</p>
               </div>
             </div>
           </div>
 
           {/* Split Screen Content */}
           <div className="flex-1 flex overflow-hidden">
-            {/* Left: Insights Editor */}
+            {/* Left: Drafts Editor */}
             <div className="flex-1 overflow-hidden">
-              <InsightsEditor
+              <DraftEditor
                 content={content}
                 onContentChange={setContent}
                 originalContent={originalContent}
@@ -326,9 +339,9 @@ export function Insights() {
               />
             </div>
 
-            {/* Right: Insights Assistant */}
+            {/* Right: Drafts Assistant */}
             <div className="w-[400px] flex-shrink-0 overflow-hidden">
-              <InsightsAssistant
+              <DraftsAssistant
                 hasContent={hasContent}
                 hasPendingDiffs={hasPendingDiffs}
                 sampleFile={sampleFile}

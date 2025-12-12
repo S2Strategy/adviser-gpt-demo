@@ -7,12 +7,12 @@ interface DiffSegment {
   removed?: boolean;
 }
 
-interface InsightDiffViewerProps {
+interface DraftDiffViewerProps {
   originalText: string;
   updatedText: string;
 }
 
-export function InsightDiffViewer({ originalText, updatedText }: InsightDiffViewerProps) {
+export function DraftDiffViewer({ originalText, updatedText }: DraftDiffViewerProps) {
   // Calculate word-level diff
   const diff = diffWords(originalText, updatedText);
   

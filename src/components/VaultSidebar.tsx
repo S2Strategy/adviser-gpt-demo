@@ -487,18 +487,18 @@ export function VaultSidebar() {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Link
-                      to="#"
+                      to="/drafts"
                       className={`h-10 px-2 rounded-md flex items-center justify-center transition active:scale-[0.98] text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent
                       `}
                     >
                       <Sparkles className="w-4 h-4" />
                     </Link>
                   </TooltipTrigger>
-                  <TooltipContent side="right">Insights</TooltipContent>
+                  <TooltipContent side="right">Drafts</TooltipContent>
                 </Tooltip>
               ) : (
                 <Link
-                  to="/insights"
+                  to="/drafts"
                   className={`h-10 px-2 rounded-md flex items-center gap-2 transition active:scale-[0.98] text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent
                   `}
                 >
@@ -510,7 +510,7 @@ export function VaultSidebar() {
                       letterSpacing: "-0.3px"
                     }}
                   >
-                    Insights
+                    Drafts
                   </span>
                   <Badge variant="secondary" className="text-xs px-1 py-0 h-4 text-[10px]">
                     BETA

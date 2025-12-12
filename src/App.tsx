@@ -16,7 +16,7 @@ import { ProfilePage } from "./components/ProfilePage";
 import { FirmSettings } from "./pages/FirmSettings";
 import { RIAOutreach } from "./pages/RIAOutreach";
 import { Commentary } from "./pages/Commentary";
-import { Insights } from "./pages/Insights";
+import { Drafts } from "./pages/Drafts";
 import { AddContent } from "./pages/AddContent";
 import FileUpload from "./pages/FileUpload";
 import Auth from "./pages/Auth";
@@ -49,7 +49,7 @@ const App = () => (
               <Route path="/firm-settings" element={<ProtectedRoute><FirmSettings /></ProtectedRoute>} />
               <Route path="/outreach" element={<ProtectedRoute><RIAOutreach /></ProtectedRoute>} />
               <Route path="/commentary" element={<ProtectedRoute><Commentary /></ProtectedRoute>} />
-              <Route path="/insights" element={<ProtectedRoute><Insights /></ProtectedRoute>} />
+              <Route path="/drafts" element={<ProtectedRoute><Drafts /></ProtectedRoute>} />
               <Route path="/vault/add-content" element={<ProtectedRoute><AddContent /></ProtectedRoute>} />
               <Route path="/file-upload" element={<ProtectedRoute><FileUpload /></ProtectedRoute>} />
               

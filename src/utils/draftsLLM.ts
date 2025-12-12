@@ -1,4 +1,4 @@
-// Mock LLM service for Insights generation and updates
+// Mock LLM service for Drafts generation and updates
 
 export interface UploadedFile {
   id: string;
@@ -8,14 +8,14 @@ export interface UploadedFile {
   file: File;
 }
 
-export interface GenerateInsightParams {
+export interface GenerateDraftParams {
   prompt: string;
   sampleFile?: UploadedFile;
   informationalFiles?: UploadedFile[];
   includeWebSources?: boolean;
 }
 
-export interface UpdateInsightParams {
+export interface UpdateDraftParams {
   originalText: string;
   prompt: string;
   sampleFile?: UploadedFile;
@@ -24,50 +24,50 @@ export interface UpdateInsightParams {
   editType?: 'grammar' | 'shorter' | 'longer' | 'tone';
 }
 
-// Mock insight generation
-export async function generateInsight(
-  params: GenerateInsightParams
+// Mock draft generation
+export async function generateDraft(
+  params: GenerateDraftParams
 ): Promise<string> {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 1500));
 
   const { prompt, sampleFile, informationalFiles, includeWebSources } = params;
 
-  let insight = `Based on your request: "${prompt}"\n\n`;
+  let draft = `Based on your request: "${prompt}"\n\n`;
 
   if (sampleFile) {
-    insight += `[Note: Using style and tone from ${sampleFile.name}]\n\n`;
+    draft += `[Note: Using style and tone from ${sampleFile.name}]\n\n`;
   }
 
   if (informationalFiles && informationalFiles.length > 0) {
     const fileNames = informationalFiles.map(f => f.name).join(', ');
-    insight += `[Note: Incorporating data from ${fileNames}]\n\n`;
+    draft += `[Note: Incorporating data from ${fileNames}]\n\n`;
   }
 
   if (includeWebSources) {
-    insight += `[Note: Including information from web sources]\n\n`;
+    draft += `[Note: Including information from web sources]\n\n`;
   }
 
-  // Generate mock insight content
-  insight += `This is a generated insight that addresses your prompt. The insight provides comprehensive analysis and recommendations based on the available information sources. `;
+  // Generate mock draft content
+  draft += `This is a generated draft that addresses your prompt. The draft provides comprehensive analysis and recommendations based on the available information sources. `;
   
   if (informationalFiles && informationalFiles.length > 0) {
-    insight += `Key data points from the attached files have been integrated to support the conclusions. `;
+    draft += `Key data points from the attached files have been integrated to support the conclusions. `;
   }
   
   if (sampleFile) {
-    insight += `The writing style and structure follow the format of the provided sample. `;
+    draft += `The writing style and structure follow the format of the provided sample. `;
   }
 
-  insight += `\n\nThe insight covers multiple aspects of the topic, providing both strategic overview and actionable recommendations. `;
-  insight += `It synthesizes information from various sources to create a cohesive narrative that addresses the core question or objective.`;
+  draft += `\n\nThe draft covers multiple aspects of the topic, providing both strategic overview and actionable recommendations. `;
+  draft += `It synthesizes information from various sources to create a cohesive narrative that addresses the core question or objective.`;
 
-  return insight;
+  return draft;
 }
 
-// Mock insight update
-export async function updateInsight(
-  params: UpdateInsightParams
+// Mock draft update
+export async function updateDraft(
+  params: UpdateDraftParams
 ): Promise<string> {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 1500));
@@ -89,7 +89,7 @@ export async function updateInsight(
     updatedText = sentences.slice(0, Math.max(1, Math.floor(sentences.length * 0.7))).join('. ') + '.';
   } else if (editType === 'longer') {
     // Simulate lengthening by adding content
-    updatedText = originalText + ' This additional context provides more depth and detail to the insight. Further analysis reveals additional considerations that enhance the overall understanding.';
+    updatedText = originalText + ' This additional context provides more depth and detail to the draft. Further analysis reveals additional considerations that enhance the overall understanding.';
   } else if (editType === 'tone') {
     // Simulate tone change
     updatedText = originalText.replace(/\./g, '!').replace(/\bcan\b/g, 'will');
@@ -101,7 +101,7 @@ export async function updateInsight(
       const sentences = originalText.split(/[.!?]+/).filter(s => s.trim());
       updatedText = sentences.slice(0, -1).join('. ') + '.';
     } else if (prompt.toLowerCase().includes('change') || prompt.toLowerCase().includes('update')) {
-      updatedText = originalText.replace(/insight/g, 'analysis').replace(/recommendation/g, 'suggestion');
+      updatedText = originalText.replace(/draft/g, 'analysis').replace(/recommendation/g, 'suggestion');
     } else {
       // Default: add content at the end
       updatedText = originalText + `\n\n[Updated based on: "${prompt}"]`;
@@ -125,11 +125,11 @@ export async function updateInsight(
 }
 
 // Streaming version for real-time updates
-export async function* streamInsightGeneration(
-  params: GenerateInsightParams
+export async function* streamDraftGeneration(
+  params: GenerateDraftParams
 ): AsyncGenerator<string, void, unknown> {
-  const fullInsight = await generateInsight(params);
-  const words = fullInsight.split(' ');
+  const fullDraft = await generateDraft(params);
+  const words = fullDraft.split(' ');
   
   for (let i = 0; i < words.length; i++) {
     yield words.slice(0, i + 1).join(' ');
@@ -137,10 +137,10 @@ export async function* streamInsightGeneration(
   }
 }
 
-export async function* streamInsightUpdate(
-  params: UpdateInsightParams
+export async function* streamDraftUpdate(
+  params: UpdateDraftParams
 ): AsyncGenerator<string, void, unknown> {
-  const fullUpdate = await updateInsight(params);
+  const fullUpdate = await updateDraft(params);
   const words = fullUpdate.split(' ');
   
   for (let i = 0; i < words.length; i++) {

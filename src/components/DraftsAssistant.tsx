@@ -56,7 +56,7 @@ const FileCard: React.FC<FileCardProps> = ({ file, onRemove }) => {
   );
 };
 
-interface InsightsAssistantProps {
+interface DraftsAssistantProps {
   // Editor state
   hasContent: boolean;
   hasPendingDiffs: boolean;
@@ -82,7 +82,7 @@ interface InsightsAssistantProps {
   isLoading?: boolean;
 }
 
-export function InsightsAssistant({
+export function DraftsAssistant({
   hasContent,
   hasPendingDiffs,
   sampleFile,
@@ -97,7 +97,7 @@ export function InsightsAssistant({
   onPromptChange,
   onGenerate,
   isLoading = false,
-}: InsightsAssistantProps) {
+}: DraftsAssistantProps) {
   const sampleFileInputRef = useRef<HTMLInputElement>(null);
   const informationalFilesInputRef = useRef<HTMLInputElement>(null);
 
@@ -123,7 +123,7 @@ export function InsightsAssistant({
     }
   };
 
-  const buttonText = hasContent ? 'Update Insight' : 'Generate Insight';
+  const buttonText = hasContent ? 'Update Draft' : 'Generate Draft';
   const placeholderText = hasContent ? 'What should I update?' : 'What should I write?';
   const isButtonDisabled = !prompt.trim() || isLoading || (hasContent && hasPendingDiffs);
 
@@ -131,7 +131,7 @@ export function InsightsAssistant({
     <div className="h-full flex flex-col bg-sidebar-background border-l border-foreground/10">
       <div className="p-6 space-y-8 flex-1 overflow-y-auto">
         <div>
-          <h2 className="text-lg font-semibold mb-4">Insights Assistant</h2>
+          <h2 className="text-lg font-semibold mb-4">Drafts Assistant</h2>
         </div>
 
         {/* Add Sample Section */}
@@ -166,7 +166,7 @@ export function InsightsAssistant({
         <div className="space-y-1">
           <Label className="text-sm font-medium">Informational Inputs</Label>
           <p className="text-xs text-foreground/70">
-            Add files with data to use for insight generation.
+            Add files with data to use for draft generation.
           </p>
           <input
             ref={informationalFilesInputRef}
@@ -205,7 +205,7 @@ export function InsightsAssistant({
                 Include Web Sources
               </Label>
               <p className="text-xs text-foreground/70">
-                Use web data when generating or updating insight.
+                Use web data when generating or updating draft.
               </p>
             </div>
             <Switch
@@ -249,7 +249,7 @@ export function InsightsAssistant({
           </TooltipTrigger>
           {hasPendingDiffs && (
             <TooltipContent>
-              <p>Accept or reject changes before updating the insight again.</p>
+              <p>Accept or reject changes before updating the draft again.</p>
             </TooltipContent>
           )}
         </Tooltip>
