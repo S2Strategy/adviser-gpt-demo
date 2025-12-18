@@ -539,7 +539,7 @@ export function TagMappingDetailTable({
       </div>
 
       {/* Actions */}
-      <div className="flex justify-end gap-2">
+      <div className="sticky bottom-0 bg-[#F9F8F5] py-4 flex justify-center gap-2">
         <Button variant="outline" onClick={onCancel}>
           Cancel review
         </Button>
