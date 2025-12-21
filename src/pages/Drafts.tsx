@@ -300,19 +300,10 @@ export function Drafts() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden bg-background mt-4 rounded-tl-2xl vault-scroll">
         <div className="flex-1 overflow-hidden flex flex-col">
-          {/* Header with Breadcrumbs */}
+          {/* Header */}
           <div className="border-b border-foreground/10 bg-background flex-shrink-0">
-            {/* Breadcrumbs */}
-            <div className="flex items-center gap-2 text-sm mb-6 px-6 pt-6 max-w-[100rem] mx-auto">
-              <Link to="/" className="text-foreground/70 hover:text-foreground">
-                <Home className="h-4 w-4" />
-              </Link>
-              <ChevronRight className="h-4 w-4 text-foreground/70" />
-              <span className="text-foreground font-medium">Drafts</span>
-            </div>
-
             {/* Main Title */}
-            <div className="flex items-center justify-between px-6 pb-6 max-w-[100rem] mx-auto">
+            <div className="flex items-center justify-between px-6 py-6 max-w-[100rem] mx-auto">
               <div>
                 <h1 className="text-2xl font-semibold">Drafts</h1>
                 <p className="text-foreground/70">Generate and manage drafts</p>
