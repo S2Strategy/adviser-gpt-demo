@@ -1077,13 +1077,6 @@ export function VaultHomepage() {
                       <Building2 className="h-4 w-4 mr-2 text-foreground/70" />
                       Firm updates
                     </Button>
-                    {/* <Button 
-                      onClick={() => setShowSmartUploadSheet(true)}
-                      className="flex h-10 px-4 py-2 pl-3 justify-center items-center rounded-md border border-foreground/20 bg-background text-foreground text-sm font-medium leading-tight tracking-tight hover:border-foreground/20 hover:bg-sidebar-background transition-colors capitalize"
-                    >
-                      <MessagesSquare className="h-4 w-4 mr-2 text-foreground/70" />
-                      Add QA Pair
-                    </Button> */}
                   </div>
                 </div>
 
