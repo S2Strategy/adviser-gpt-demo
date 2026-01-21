@@ -1,11 +1,14 @@
-import React, { useRef } from 'react';
-import { Upload, X, Globe } from 'lucide-react';
+import React, { useRef, useState, useMemo } from 'react';
+import { Upload, X, Globe, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MOCK_CONTENT_ITEMS } from '@/data/mockVaultData';
+import { migrateQuestionItems } from '@/utils/tagMigration';
 
 export interface UploadedFile {
   id: string;
@@ -100,6 +103,60 @@ export function DraftsAssistant({
 }: DraftsAssistantProps) {
   const sampleFileInputRef = useRef<HTMLInputElement>(null);
   const informationalFilesInputRef = useRef<HTMLInputElement>(null);
+  const [selectedCommentaryDoc, setSelectedCommentaryDoc] = useState<string>("");
+  const [selectedDataFile, setSelectedDataFile] = useState<string>("");
+
+  // Get available Commentary documents
+  const commentaryDocuments = useMemo(() => {
+    const allItems = migrateQuestionItems(MOCK_CONTENT_ITEMS.flatMap(doc => doc.items));
+    const commentaryItems = allItems.filter(item => item.type === "Commentary");
+    const uniqueDocs = new Map<string, { id: string; name: string; uploadedAt: string; uploadedBy: string }>();
+    
+    commentaryItems.forEach(item => {
+      if (item.documentTitle && !uniqueDocs.has(item.documentTitle)) {
+        uniqueDocs.set(item.documentTitle, {
+          id: item.documentId || item.id,
+          name: item.documentTitle,
+          uploadedAt: item.updatedAt,
+          uploadedBy: item.updatedBy
+        });
+      }
+    });
+    
+    return Array.from(uniqueDocs.values());
+  }, []);
+
+  // Get available Data Files
+  const dataFiles = useMemo(() => {
+    const allItems = migrateQuestionItems(MOCK_CONTENT_ITEMS.flatMap(doc => doc.items));
+    const dataFileItems = allItems.filter(item => item.type === "Data Files" || item.type === "Quantitative");
+    const uniqueDocs = new Map<string, { id: string; name: string; uploadedAt: string; uploadedBy: string }>();
+    
+    dataFileItems.forEach(item => {
+      if (item.documentTitle && !uniqueDocs.has(item.documentTitle)) {
+        uniqueDocs.set(item.documentTitle, {
+          id: item.documentId || item.id,
+          name: item.documentTitle,
+          uploadedAt: item.updatedAt,
+          uploadedBy: item.updatedBy
+        });
+      }
+    });
+    
+    return Array.from(uniqueDocs.values());
+  }, []);
+
+  const handleCommentaryDocSelect = (docId: string) => {
+    setSelectedCommentaryDoc(docId);
+    // TODO: Load document and convert to File for onSampleFileAdd
+    // For now, just track selection
+  };
+
+  const handleDataFileSelect = (docId: string) => {
+    setSelectedDataFile(docId);
+    // TODO: Load document and convert to File for onInformationalFilesAdd
+    // For now, just track selection
+  };
 
   const handleSampleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -138,6 +195,25 @@ export function DraftsAssistant({
         <div className="space-y-1">
           <Label className="text-sm font-medium">Writing Sample</Label>
           <p className="text-xs text-foreground/70">Add a sample to guide the style, structure, and tone only.</p>
+          
+          {/* Commentary Documents Dropdown */}
+          {commentaryDocuments.length > 0 && (
+            <div className="mb-2">
+              <Select value={selectedCommentaryDoc} onValueChange={handleCommentaryDocSelect}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select Commentary document..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {commentaryDocuments.map((doc) => (
+                    <SelectItem key={doc.id} value={doc.id}>
+                      {doc.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <input
             ref={sampleFileInputRef}
             type="file"
@@ -154,7 +230,7 @@ export function DraftsAssistant({
               variant="outline"
               onClick={() => sampleFileInputRef.current?.click()}
               className="w-full"
-              disabled={!!sampleFile}
+              disabled={!!sampleFile || !!selectedCommentaryDoc}
             >
               <Upload className="h-4 w-4 mr-2" />
               Add Sample
@@ -168,6 +244,25 @@ export function DraftsAssistant({
           <p className="text-xs text-foreground/70">
             Add files with data to use for draft generation.
           </p>
+          
+          {/* Data Files Dropdown */}
+          {dataFiles.length > 0 && (
+            <div className="mb-2">
+              <Select value={selectedDataFile} onValueChange={handleDataFileSelect}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select Data File..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {dataFiles.map((file) => (
+                    <SelectItem key={file.id} value={file.id}>
+                      {file.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <input
             ref={informationalFilesInputRef}
             type="file"

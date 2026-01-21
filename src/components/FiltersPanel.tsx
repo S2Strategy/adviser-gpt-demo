@@ -323,6 +323,11 @@ export function FiltersPanel({
         {/* Content */}
         <ScrollArea className="flex-1 p-4">
           <div className="space-y-5">
+            {/* Filter by label */}
+            <div>
+              <h3 className="text-sm font-medium mb-3">Filter by:</h3>
+            </div>
+            
             {/* Dynamic Tag Type Filters */}
             {tagTypes.map((tagType) => {
               const availableValues = getTagTypeValues(tagType.name);

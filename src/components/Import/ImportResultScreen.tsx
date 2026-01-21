@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ImportSession, ImportSummary } from "@/types/import";
-import { CheckCircle2, Undo2, ArrowRight, Loader2 } from "lucide-react";
+import { CheckCircle2, Undo2, ArrowRight, Loader2, FolderOpen } from "lucide-react";
 import { rollbackImport } from "@/utils/importExecution";
 import { useVaultEdits } from "@/hooks/useVaultState";
 import { deleteImportSession } from "@/utils/importStorage";
@@ -114,10 +114,10 @@ export function ImportResultScreen({
   };
 
   const handleGoToVault = () => {
-    // Navigate to vault with filters for this strategy
-    const strategy = session.strategy;
-    if (strategy) {
-      navigate(`/vault?strategy=${encodeURIComponent(strategy)}`);
+    // Navigate to vault filtered by document
+    const documentTitle = session.fileMetadata.filename;
+    if (documentTitle) {
+      navigate(`/vault?fileName=${encodeURIComponent(documentTitle)}`);
     } else {
       navigate('/vault');
     }
@@ -130,7 +130,7 @@ export function ImportResultScreen({
         <CheckCircle2 className="h-16 w-16 text-green-600 mb-4" />
         <h2 className="text-2xl font-semibold mb-2">Import Complete</h2>
         <p className="text-foreground/70 text-center max-w-md">
-          Successfully imported {summary.rowsImported} Q&A pair{summary.rowsImported !== 1 ? 's' : ''}{session.strategy ? ` for ${session.strategy}` : ''}.
+          Successfully imported {summary.rowsImported} Q&A pair{summary.rowsImported !== 1 ? 's' : ''}.
         </p>
       </div>
 
@@ -184,8 +184,8 @@ export function ImportResultScreen({
           className="bg-sidebar-primary hover:bg-sidebar-primary/80 w-full"
           size="lg"
         >
-          Go to Vault with these filters
-          <ArrowRight className="h-4 w-4 ml-2" />
+          See in Vault
+          <FolderOpen className="h-4 w-4 ml-2" />
         </Button>
         
         <Button

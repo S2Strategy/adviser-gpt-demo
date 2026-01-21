@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ChevronRight, Home, FileText, MessageSquare, FileSpreadsheet, Database, FileCheck } from "lucide-react";
+import { ChevronRight, Home, FileText, MessageSquare, FileSpreadsheet, Database, FileCheck, Megaphone } from "lucide-react";
 import { VaultSidebar } from "@/components/VaultSidebar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CompletedQuestionnaire } from "@/components/AddContent/CompletedQuestionnaire";
@@ -8,8 +8,9 @@ import { SingleQAPair } from "@/components/AddContent/SingleQAPair";
 import { ExcelQAPair } from "@/components/AddContent/ExcelQAPair";
 import { DataUpdates } from "@/components/AddContent/DataUpdates";
 import { PolicyDocs } from "@/components/AddContent/PolicyDocs";
+import { CommentaryDocs } from "@/components/AddContent/CommentaryDocs";
 
-type UploadType = "questionnaire" | "single-qa" | "excel-qa" | "data-updates" | "policy-docs" | null;
+type UploadType = "questionnaire" | "single-qa" | "excel-qa" | "data-updates" | "policy-docs" | "commentary" | null;
 
 export function AddContent() {
   const navigate = useNavigate();
@@ -51,6 +52,13 @@ export function AddContent() {
       icon: FileText,
       helpText: "Upload regulatory documents, guidelines, or compliance-related materials",
     },
+    {
+      id: "commentary" as UploadType,
+      title: "Commentary",
+      description: "Upload market commentary, insights, or promotional materials.",
+      icon: Megaphone,
+      helpText: "Upload market commentary, insights, or promotional materials.",
+    },
   ];
 
   const renderContent = () => {
@@ -65,6 +73,8 @@ export function AddContent() {
         return <DataUpdates />;
       case "policy-docs":
         return <PolicyDocs />;
+      case "commentary":
+        return <CommentaryDocs />;
       default:
         return null;
     }
