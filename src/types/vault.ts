@@ -39,6 +39,7 @@ export interface QuestionItem {
   archived?: boolean; // Track if item is archived
   documentTitle?: string; // Title of the document this item belongs to
   documentId?: string; // ID of the document this item belongs to
+  quarter?: string; // Quarter assignment in format "YYYY-QN" (e.g., "2024-Q1")
   // Nested QA support
   parentId?: string; // ID of parent question if this is a nested question
   children?: QuestionItem[]; // Child questions if this is a parent
@@ -118,3 +119,46 @@ export const TAGS_INFO: TagInfo[] = [
   { name: "Portfolio Management", status: "Approved", usage: 244 },
   { name: "Risk Management", status: "Approved", usage: 280 },
 ];
+
+// Quarter helper functions
+export function getCurrentQuarter(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth(); // 0-11
+  const quarter = Math.floor(month / 3) + 1; // 1-4
+  return `${year}-Q${quarter}`;
+}
+
+export function getQuarterFromString(quarterStr: string): { year: number; quarter: number } | null {
+  const match = quarterStr.match(/^(\d{4})-Q([1-4])$/);
+  if (!match) return null;
+  return {
+    year: parseInt(match[1], 10),
+    quarter: parseInt(match[2], 10),
+  };
+}
+
+export function formatQuarter(quarterStr: string): string {
+  const parsed = getQuarterFromString(quarterStr);
+  if (!parsed) return quarterStr;
+  return `Q${parsed.quarter} ${parsed.year}`;
+}
+
+export function getQuarterOptions(): string[] {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const lastYear = currentYear - 1;
+  const options: string[] = [];
+  
+  // Current year quarters
+  for (let q = 1; q <= 4; q++) {
+    options.push(`${currentYear}-Q${q}`);
+  }
+  
+  // Last year quarters
+  for (let q = 1; q <= 4; q++) {
+    options.push(`${lastYear}-Q${q}`);
+  }
+  
+  return options;
+}

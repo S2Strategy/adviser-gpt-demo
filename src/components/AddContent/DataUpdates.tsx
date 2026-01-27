@@ -1,6 +1,9 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { getQuarterOptions, formatQuarter } from "@/types/vault";
 import { Upload, X, File } from "lucide-react";
 
 interface UploadedFile {
@@ -12,6 +15,7 @@ export function DataUpdates() {
   const { toast } = useToast();
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [selectedQuarter, setSelectedQuarter] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const acceptedTypes = ['.csv', '.xlsx', '.xls'];
@@ -104,6 +108,23 @@ export function DataUpdates() {
           className="hidden"
           onChange={(e) => handleFileSelect(e.target.files)}
         />
+      </div>
+
+      {/* Quarter Selection */}
+      <div className="space-y-2">
+        <Label htmlFor="quarter">Quarter</Label>
+        <Select value={selectedQuarter} onValueChange={setSelectedQuarter}>
+          <SelectTrigger id="quarter" className="w-full">
+            <SelectValue placeholder="Select quarter (optional)" />
+          </SelectTrigger>
+          <SelectContent>
+            {getQuarterOptions().map((quarter) => (
+              <SelectItem key={quarter} value={quarter}>
+                {formatQuarter(quarter)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {uploadedFiles.length > 0 && (

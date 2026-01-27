@@ -12,6 +12,7 @@ All colors MUST be HSL.
     --new-palette-foreground: 45 40% 11%;
     --new-palette-background-darker: 40 19% 95%;
     --new-palette-foreground-darker: 45 50% 12%;
+    --new-palette-background-darkest: 40 19% 92%;
     --new-palette-primary: 60 21% 32%;
     --new-palette-primary-foreground: 45 10% 98%;
     --new-palette-secondary: 321 23% 49%;
@@ -48,6 +49,8 @@ All colors MUST be HSL.
     --ring: 222.2 84% 4.9%;
 
     --radius: 0.5rem;
+
+    --item-hover-background: var(--new-palette-background-darkest);
 
     /* Vault-specific design tokens - refined */
     --vault-header: 0 0% 98%;

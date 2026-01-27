@@ -1,13 +1,13 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { VaultSidebar } from "./VaultSidebar";
 import { QuestionCard } from "./QuestionCard";
-import { VaultEditSheet } from "./VaultEditSheet";
 import { FirmUpdatesModal } from "./FirmUpdatesModal";
 import { FindDuplicatesModal } from "./FindDuplicatesModal";
 import { SmartUploadSheet } from "./SmartUploadSheet";
 import { SaveSearchPrompt } from "./SaveSearchPrompt";
 import { ChangeHistoryModal } from "./ChangeHistoryModal";
+import { QADetailModal } from "./QADetailModal";
 import { SortAndArchiveControls, SortColumn, SortDirection } from "./SortAndArchiveControls";
 import { 
   Search, 
@@ -49,6 +49,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -60,7 +61,7 @@ import { useSearchHistory } from "@/hooks/useSearchHistory";
 import { useToast } from "@/hooks/use-toast";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { MOCK_CONTENT_ITEMS } from "@/data/mockVaultData";
-import { STRATEGIES, CONTENT_TYPES, STATUS_OPTIONS, TAGS_INFO, QuestionItem, Tag } from "@/types/vault";
+import { STRATEGIES, CONTENT_TYPES, STATUS_OPTIONS, TAGS_INFO, QuestionItem, Tag, getQuarterOptions, formatQuarter, getQuarterFromString, getCurrentQuarter } from "@/types/vault";
 import { FiltersPanel, DateRange } from "./FiltersPanel";
 import { migrateQuestionItem, migrateQuestionItems } from "@/utils/tagMigration";
 import { smartSearch, getSemanticVariations, getSearchSuggestions } from "@/utils/smartSearch";
@@ -161,7 +162,8 @@ export function VaultHomepage() {
   
   // Q&A Pairs list state
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
-  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [qaSortColumn, setQaSortColumn] = useState<'question' | 'answer' | 'document' | 'lastUpdated' | null>('lastUpdated');
+  const [qaSortDirection, setQaSortDirection] = useState<"asc" | "desc">("desc");
   const [lastUpdatedSortDirection, setLastUpdatedSortDirection] = useState<"asc" | "desc">("desc");
   const [qaViewMode, setQaViewMode] = useState<"table" | "list" | "grid">(() => {
     const saved = localStorage.getItem('vault-qa-view-mode');
@@ -174,11 +176,13 @@ export function VaultHomepage() {
   // UI state
   const [expandedAnswers, setExpandedAnswers] = useState<Set<string>>(new Set());
   const [nestedExpanded, setNestedExpanded] = useState<Set<string>>(new Set());
-  const [editingItem, setEditingItem] = useState<QuestionItem | null>(null);
-  const [editingOriginalItem, setEditingOriginalItem] = useState<QuestionItem | null>(null);
-  const [editingCell, setEditingCell] = useState<{ itemId: string; field: 'question' | 'answer' } | null>(null);
-  const [editingCellValue, setEditingCellValue] = useState<string>('');
+  // Unified QA Modal state
+  const [qaModalOpen, setQaModalOpen] = useState(false);
+  const [qaModalItem, setQaModalItem] = useState<QuestionItem | null>(null);
+  const [qaModalMode, setQaModalMode] = useState<'view' | 'edit'>('view');
   const [activeTab, setActiveTab] = useState<"documents" | "documents-list">("documents");
+  const [selectedDocumentIds, setSelectedDocumentIds] = useState<Set<string>>(new Set());
+  const [quarterFilter, setQuarterFilter] = useState<string>("all");
   
   // Update Q&A content bounds for floating bar positioning
   useEffect(() => {
@@ -215,6 +219,7 @@ export function VaultHomepage() {
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [historyModalQuestion, setHistoryModalQuestion] = useState<string>('');
   const [historyModalAnswer, setHistoryModalAnswer] = useState<string>('');
+  
 
   // Load saved tab state from localStorage (only on mount)
   useEffect(() => {
@@ -277,7 +282,7 @@ export function VaultHomepage() {
       const newSet = new Set(prev);
       if (newSet.has(itemId)) {
         newSet.delete(itemId);
-      } else {
+    } else {
         newSet.add(itemId);
       }
       return newSet;
@@ -293,18 +298,7 @@ export function VaultHomepage() {
     }
   };
   
-  // Handle row expand/collapse
-  const handleRowExpandToggle = (itemId: string) => {
-    setExpandedRows(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(itemId)) {
-        newSet.delete(itemId);
-      } else {
-        newSet.add(itemId);
-      }
-      return newSet;
-    });
-  };
+  // Handle showing answer detail in modal
 
   // Flatten the nested data structure for processing and migrate to new tag format
   const flattenItems = (): QuestionItem[] => {
@@ -581,15 +575,55 @@ export function VaultHomepage() {
     return matchesAllTagFilters && matchesDocument && matchesDateRange;
   });
 
+  // Handle column sort for Q&A Pairs table
+  const handleColumnSort = (column: 'question' | 'answer' | 'document' | 'lastUpdated') => {
+    if (qaSortColumn === column) {
+      // Toggle direction if same column
+      setQaSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      // New column, start with ascending
+      setQaSortColumn(column);
+      setQaSortDirection('asc');
+    }
+  };
+
   // Sort filtered items
-  const sortItems = (items: QuestionItem[], sortBy: string) => {
+  const sortItems = (items: QuestionItem[], sortBy: string | null, direction: "asc" | "desc") => {
+    if (!sortBy) return items;
+    
     switch (sortBy) {
       case 'lastUpdated':
       case 'lastEdited':
         return [...items].sort((a, b) => {
           const aTime = new Date(a.updatedAt).getTime();
           const bTime = new Date(b.updatedAt).getTime();
-          return lastUpdatedSortDirection === "desc" ? bTime - aTime : aTime - bTime;
+          return direction === "desc" ? bTime - aTime : aTime - bTime;
+        });
+      case 'question':
+        return [...items].sort((a, b) => {
+          const aQuestion = (a.question || '').toLowerCase();
+          const bQuestion = (b.question || '').toLowerCase();
+          return direction === "desc" 
+            ? bQuestion.localeCompare(aQuestion)
+            : aQuestion.localeCompare(bQuestion);
+        });
+      case 'answer':
+        return [...items].sort((a, b) => {
+          const displayDataA = getDisplayData(a);
+          const displayDataB = getDisplayData(b);
+          const aAnswer = (displayDataA.answer || '').toLowerCase();
+          const bAnswer = (displayDataB.answer || '').toLowerCase();
+          return direction === "desc"
+            ? bAnswer.localeCompare(aAnswer)
+            : aAnswer.localeCompare(bAnswer);
+        });
+      case 'document':
+        return [...items].sort((a, b) => {
+          const aDoc = (a.documentTitle || '').toLowerCase();
+          const bDoc = (b.documentTitle || '').toLowerCase();
+          return direction === "desc"
+            ? bDoc.localeCompare(aDoc)
+            : aDoc.localeCompare(bDoc);
         });
       case 'lastEditor':
         return [...items].sort((a, b) => a.updatedBy.localeCompare(b.updatedBy));
@@ -599,7 +633,7 @@ export function VaultHomepage() {
     }
   };
 
-  const sortedAndFilteredItems = sortItems(filteredItems, currentSort);
+  const sortedAndFilteredItems = sortItems(filteredItems, qaSortColumn, qaSortDirection);
 
   const totalFiltersCount = Object.values(selectedTagFilters).reduce((sum, values) => sum + values.length, 0) +
                            selectedDocuments.length + selectedPriorSamples.length +
@@ -1041,50 +1075,25 @@ export function VaultHomepage() {
     return undefined;
   };
 
+  const handleOpenQAModal = (item: QuestionItem, mode: 'view' | 'edit' = 'view') => {
+    setQaModalItem(item);
+    setQaModalMode(mode);
+    setQaModalOpen(true);
+  };
+
   const handleEdit = (item: QuestionItem) => {
-    // Find the original item (without edits) for comparison
-    const originalItem = findOriginalItem(item.id);
-    setEditingItem(item); // Store the display item (with edits)
-    setEditingOriginalItem(originalItem || null); // Store the original item for comparison
+    handleOpenQAModal(item, 'edit');
   };
 
-  const handleSave = (itemId: string, editData: Partial<QuestionItem>) => {
-    // Use the original item we stored when editing started
-    const originalItem = editingOriginalItem;
-    if (!originalItem) {
-      console.warn('handleSave: editingOriginalItem is null, itemId:', itemId);
-    }
-    saveEdit(itemId, editData, originalItem);
-    setEditingItem(null);
-    setEditingOriginalItem(null);
+  const handleQAModalSave = (editData: Partial<QuestionItem>) => {
+    if (!qaModalItem) return;
+    const originalItem = findOriginalItem(qaModalItem.id);
+    saveEdit(qaModalItem.id, editData, originalItem || undefined);
+    // Modal will switch back to view mode internally
   };
 
-  const handleCellClick = (itemId: string, field: 'question' | 'answer', currentValue: string) => {
-    setEditingCell({ itemId, field });
-    setEditingCellValue(currentValue);
-  };
-
-  const handleCellSave = () => {
-    if (!editingCell) return;
-    
-    const item = sortedAndFilteredItems.find(i => i.id === editingCell.itemId);
-    if (!item) return;
-
-    const originalItem = findOriginalItem(editingCell.itemId);
-    const editData: Partial<QuestionItem> = {
-      [editingCell.field]: editingCellValue,
-      updatedAt: new Date().toISOString(),
-      updatedBy: profile?.fullName || 'Unknown User'
-    };
-    
-    saveEdit(editingCell.itemId, editData, originalItem || undefined);
-    setEditingCell(null);
-    setEditingCellValue('');
-  };
-
-  const handleCellCancel = () => {
-    setEditingCell(null);
-    setEditingCellValue('');
+  const handleQAModalModeChange = (mode: 'view' | 'edit') => {
+    setQaModalMode(mode);
   };
 
   const handleViewHistory = (itemId: string, question: string, answer: string) => {
@@ -1147,6 +1156,42 @@ export function VaultHomepage() {
       });
       setSelectedItems(new Set());
     }
+  };
+
+  const handleBulkArchive = () => {
+    if (selectedItems.size === 0) return;
+    
+    const edits: Array<[string, Partial<QuestionItem>]> = Array.from(selectedItems).map(itemId => {
+      const currentEdit = getEdit(itemId) || {};
+      return [itemId, { ...currentEdit, archived: true }];
+    });
+    
+    saveManyEdits(edits);
+    setSelectedItems(new Set());
+    
+    toast({
+      title: "Items archived",
+      description: `${edits.length} item(s) have been archived.`,
+      duration: 3000,
+    });
+  };
+
+  const handleBulkRestore = () => {
+    if (selectedItems.size === 0) return;
+    
+    const edits: Array<[string, Partial<QuestionItem>]> = Array.from(selectedItems).map(itemId => {
+      const currentEdit = getEdit(itemId) || {};
+      return [itemId, { ...currentEdit, archived: false }];
+    });
+    
+    saveManyEdits(edits);
+    setSelectedItems(new Set());
+    
+    toast({
+      title: "Items restored",
+      description: `${edits.length} item(s) have been restored from archive.`,
+      duration: 3000,
+    });
   };
 
   const handleBulkTagRemove = (tag: { type: string; value: string }) => {
@@ -1635,15 +1680,15 @@ export function VaultHomepage() {
                             size="sm"
                             onClick={() => {
                               const newShowArchived = !state.showArchived;
-                              setShowArchived(newShowArchived);
-                              const newParams = new URLSearchParams(searchParams);
-                              if (newShowArchived) {
-                                newParams.set('showArchived', 'true');
-                              } else {
-                                newParams.delete('showArchived');
-                              }
-                              navigate(`/vault?${newParams.toString()}`, { replace: true });
-                            }}
+                          setShowArchived(newShowArchived);
+                          const newParams = new URLSearchParams(searchParams);
+                          if (newShowArchived) {
+                            newParams.set('showArchived', 'true');
+                          } else {
+                            newParams.delete('showArchived');
+                          }
+                          navigate(`/vault?${newParams.toString()}`, { replace: true });
+                        }}
                           >
                             <Archive className="h-4 w-4 mr-2" />
                             {state.showArchived ? "Hide archived" : "Show archived"}
@@ -1669,40 +1714,65 @@ export function VaultHomepage() {
                         <div className="border border-foreground/10 rounded-lg overflow-hidden">
                           {(() => {
                             const tagTypes = getAllTagTypes();
-                            // Calculate grid template columns: [checkbox] [Question] [Answer] [Document] [Tag columns...] [Actions]
-                            const tagColumnWidths = tagTypes.map(() => '150px').join(' ');
-                            const gridTemplateColumns = `auto 1fr 1fr 200px ${tagColumnWidths} 50px`;
+                            // Calculate grid template columns: [checkbox] [Question] [Answer] [Document] [Last Updated] [Actions]
+                            const gridTemplateColumns = `auto 3fr 3fr 2fr 1fr auto`;
                             
                             return (
-                              <div className={tagTypes.length > 2 ? "overflow-x-auto" : ""}>
+                              <div className="relative">
                                 {/* Table Header */}
                                 <div 
-                                  className="grid gap-4 px-4 py-3 bg-sidebar-background border-b border-foreground/10 items-start min-w-fit"
+                                  className="grid sticky top-0 bg-sidebar-background border-b border-foreground/10 items-start"
                                   style={{ gridTemplateColumns }}
                                 >
-                                  <div className="flex items-start pt-1">
-                                    <Checkbox
-                                      checked={selectedItems.size > 0 && selectedItems.size === sortedAndFilteredItems.length}
-                                      onCheckedChange={handleSelectAll}
-                                    />
-                                  </div>
-                                  <div className="font-medium text-sm">Question</div>
-                                  <div className="font-medium text-sm">Answer</div>
-                                  <div className="font-medium text-sm">Document</div>
-                                  {/* Dynamic Tag Type Columns */}
-                                  {tagTypes.map((tagType) => (
-                                    <div key={tagType.id} className="font-medium text-sm min-w-[150px]">
-                                      {tagType.name} (tag)
+                                    <div className="flex items-start pr-4 pl-2 py-3">
+                                      <Checkbox
+                                        checked={selectedItems.size > 0 && selectedItems.size === sortedAndFilteredItems.length}
+                                        onCheckedChange={handleSelectAll}
+                                      />
                                     </div>
-                                  ))}
-                                  <div className="font-medium text-sm">Actions</div>
-                                </div>
+                                    <button
+                                      onClick={() => handleColumnSort('question')}
+                                      className="font-medium text-sm px-4 py-3 flex items-center gap-1 hover:text-foreground transition-colors text-left"
+                                    >
+                                      Question
+                                      {qaSortColumn === 'question' && (
+                                        qaSortDirection === 'desc' ? <ArrowDown className="h-4 w-4" /> : <ArrowUp className="h-4 w-4" />
+                                      )}
+                                    </button>
+                                    <button
+                                      onClick={() => handleColumnSort('answer')}
+                                      className="font-medium text-sm px-4 py-3 flex items-center gap-1 hover:text-foreground transition-colors text-left"
+                                    >
+                                      Answer
+                                      {qaSortColumn === 'answer' && (
+                                        qaSortDirection === 'desc' ? <ArrowDown className="h-4 w-4" /> : <ArrowUp className="h-4 w-4" />
+                                      )}
+                                    </button>
+                                    <button
+                                      onClick={() => handleColumnSort('document')}
+                                      className="font-medium text-sm flex items-center px-4 py-3 gap-1 hover:text-foreground transition-colors text-left"
+                                    >
+                                      Document
+                                      {qaSortColumn === 'document' && (
+                                        qaSortDirection === 'desc' ? <ArrowDown className="h-4 w-4" /> : <ArrowUp className="h-4 w-4" />
+                                      )}
+                                    </button>
+                                    <button
+                                      onClick={() => handleColumnSort('lastUpdated')}
+                                      className="font-medium text-sm flex items-center px-4 py-3 gap-1 hover:text-foreground transition-colors text-left whitespace-nowrap"
+                                    >
+                                      Last Updated
+                                      {qaSortColumn === 'lastUpdated' && (
+                                        qaSortDirection === 'desc' ? <ArrowDown className="h-4 w-4" /> : <ArrowUp className="h-4 w-4" />
+                                      )}
+                                    </button>
+                                    <div className="font-medium px-4 py-3 text-sm">Actions</div>
+                                  </div>
 
                                 {/* Table Rows */}
                                 <div className="divide-y divide-foreground/10">
                                   {sortedAndFilteredItems.map((item, index) => {
                                     const displayData = getDisplayData(item);
-                                    const isExpanded = expandedRows.has(item.id);
                                     const isSelected = selectedItems.has(item.id);
                                     const question = displayData.question || '';
                                     const answer = displayData.answer || '';
@@ -1711,223 +1781,193 @@ export function VaultHomepage() {
                                       acc[tagType.name] = (displayData.tags || []).filter((tag: { type: string; value: string }) => tag.type === tagType.name);
                                       return acc;
                                     }, {} as Record<string, Array<{ type: string; value: string }>>);
-                                    
-                                    const isEditingQuestion = editingCell?.itemId === item.id && editingCell?.field === 'question';
-                                    const isEditingAnswer = editingCell?.itemId === item.id && editingCell?.field === 'answer';
+                                    const tags = displayData.tags || [];
                                     const isEvenRow = index % 2 === 0;
-                                    // Calculate column span: Answer (1) + Document (1) + Tag columns (tagTypes.length)
-                                    const answerColumnSpan = isExpanded ? 1 + 1 + tagTypes.length : 1;
                                     
                                     return (
-                                      <div
-                                        key={item.id}
-                                        className={`group grid gap-4 px-4 py-3 hover:bg-sidebar-background transition-colors items-start min-w-fit ${
-                                          isSelected ? 'bg-sidebar-background/50' : ''
-                                        } ${
-                                          displayData.archived 
-                                            ? 'opacity-60 bg-muted/20 border-l-2 border-muted' 
-                                            : ''
-                                        } ${
-                                          isEvenRow && !isSelected && !displayData.archived ? 'bg-sidebar-background/40' : ''
-                                        } ${
-                                          !isExpanded ? '' : ''
-                                        }`}
-                                        style={{ gridTemplateColumns }}
-                                      >
-                                        <div className="flex items-start pt-1">
-                                          <Checkbox
-                                            checked={isSelected}
-                                            onCheckedChange={() => handleItemSelect(item.id)}
-                                          />
-                                        </div>
-                                        
-                                        {/* Question Cell - Clickable to Edit */}
-                                        <div className="min-w-0">
-                                          {isEditingQuestion ? (
-                                            <textarea
-                                              value={editingCellValue}
-                                              onChange={(e) => setEditingCellValue(e.target.value)}
-                                              onBlur={handleCellSave}
-                                              onKeyDown={(e) => {
-                                                if (e.key === 'Enter' && !e.shiftKey) {
-                                                  e.preventDefault();
-                                                  handleCellSave();
-                                                } else if (e.key === 'Escape') {
-                                                  handleCellCancel();
-                                                }
-                                              }}
-                                              className="w-full text-sm font-medium text-foreground border border-sidebar-primary rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-sidebar-primary resize-none max-h-32 overflow-y-auto"
-                                              autoFocus
-                                              rows={1}
-                                              style={{ minHeight: '8.5rem' }}
+                                      <React.Fragment key={item.id}>
+                                        {/* Main Row */}
+                                        <div
+                                          className={`group grid bg-background hover:bg-itemHoverBackground transition-all items-start ${
+                                            isSelected ? 'bg-itemHoverBackground' : ''
+                                          } ${
+                                            displayData.archived 
+                                              ? 'opacity-60 bg-muted/20 border-l-2 border-muted' 
+                                              : ''
+                                          } ${
+                                            isEvenRow && !isSelected && !displayData.archived ? 'bg-sidebar-background' : ''
+                                          }`}
+                                          style={{ gridTemplateColumns }}
+                                        >
+                                          <div className="flex items-start pr-4 pl-2 py-3">
+                                            <Checkbox
+                                              checked={isSelected}
+                                              onCheckedChange={() => handleItemSelect(item.id)}
                                             />
-                                          ) : (
-                                            <div
-                                              className="text-sm font-medium text-foreground cursor-text hover:bg-sidebar-background/50 rounded px-1 py-0.5 -mx-1 -my-0.5"
-                                              onClick={() => handleCellClick(item.id, 'question', question)}
-                                            >
+                                          </div>
+                                          
+                                          {/* Question Cell */}
+                                          <div className="min-w-0 px-4 py-3">
+                                            <div className="text-sm font-medium text-foreground">
                                               {question}
                                             </div>
-                                          )}
-                                        </div>
-                                        
-                                        {/* Answer Cell - Clickable to Edit */}
-                                        <div 
-                                          className="min-w-0"
-                                          style={isExpanded ? { gridColumn: `span ${answerColumnSpan}` } : {}}
-                                        >
-                                          {isEditingAnswer ? (
-                                            <textarea
-                                              value={editingCellValue}
-                                              onChange={(e) => setEditingCellValue(e.target.value)}
-                                              onBlur={handleCellSave}
-                                              onKeyDown={(e) => {
-                                                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                                                  e.preventDefault();
-                                                  handleCellSave();
-                                                } else if (e.key === 'Escape') {
-                                                  handleCellCancel();
-                                                }
-                                              }}
-                                              className={`w-full text-sm text-foreground/70 border border-sidebar-primary rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-sidebar-primary resize-none ${
-                                                isExpanded ? '' : ''
-                                              } overflow-y-auto`}
-                                              autoFocus
-                                              rows={isExpanded ? 12 : 8}
-                                            />
-                                          ) : (
-                                            <div
-                                              className={`text-sm text-foreground/70 cursor-text hover:bg-sidebar-background/50 rounded px-1 py-0.5 -mx-1 -my-0.5 ${
-                                                isExpanded 
-                                                  ? 'whitespace-pre-wrap overflow-y-auto' 
-                                                  : 'line-clamp-3'
-                                              }`}
-                                              onClick={() => handleCellClick(item.id, 'answer', answer)}
-                                            >
-                                              {isExpanded ? answer : answerPreview}
-                                            </div>
-                                          )}
-                                          {!isEditingAnswer && answer.length > 200 && (
-                                            <button
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleRowExpandToggle(item.id);
-                                              }}
-                                              className="text-xs text-sidebar-primary hover:underline mt-1"
-                                            >
-                                              {isExpanded ? 'Show less' : 'Show more'}
-                                            </button>
-                                          )}
-                                        </div>
-                                        
-                                        {/* Document Column */}
-                                        {!isExpanded && (
-                                          <div className="text-sm text-foreground/70 grid break-all items-start gap-1 pt-1">
-                                            <span>{item.documentTitle ? `${item.documentTitle}` : ''}</span>
-                                            <span className="text-xs">Last updated: {displayData.updatedAt ? `${formatRelativeTime(displayData.updatedAt)}` : ''}</span>
                                           </div>
-                                        )}
-                                        
-                                        {/* Dynamic Tag Type Columns */}
-                                        {!isExpanded && tagTypes.map((tagType) => {
-                                          const tagsOfType = tagsByType[tagType.name] || [];
-                                          const tagValues = tagsOfType.map((tag: { type: string; value: string }) => tag.value).join(', ');
-                                          return (
-                                            <div key={tagType.id} className="text-sm text-foreground/70 min-w-[150px] flex items-start pt-1">
-                                              {tagValues || '-'}
+                                          
+                                          {/* Answer Cell */}
+                                          <div className="min-w-0 px-4 py-3">
+                                            <div className="text-sm text-foreground/70 line-clamp-3">
+                                              {answerPreview}
                                             </div>
-                                          );
-                                        })}
-                                        
-                                        {/* Actions Column - Hover Revealed */}
-                                        <div className="grid items-start justify-center pt-1 gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                          <Tooltip>
-                                            <TooltipTrigger asChild>
-                                              <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="h-7 w-7 p-0"
-                                                onClick={() => handleCopyAnswer(answer)}
-                                              >
-                                                <Copy className="h-4 w-4" />
-                                              </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent side="left">
-                                              <p>Copy Answer</p>
-                                            </TooltipContent>
-                                          </Tooltip>
-                                          <Tooltip>
-                                            <TooltipTrigger asChild>
-                                              <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="h-7 w-7 p-0"
-                                                onClick={() => handleEdit(item)}
-                                              >
-                                                <Edit className="h-4 w-4" />
-                                              </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent side="left">
-                                              <p>Edit</p>
-                                            </TooltipContent>
-                                          </Tooltip>
-                                          <Tooltip>
-                                            <TooltipTrigger asChild>
-                                              <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="h-7 w-7 p-0"
-                                                onClick={() => handleArchive(item.id)}
-                                              >
-                                                {displayData.archived ? (
-                                                  <ArchiveRestore className="h-4 w-4" />
-                                                ) : (
-                                                  <Archive className="h-4 w-4" />
-                                                )}
-                                              </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent side="left">
-                                              <p>{displayData.archived ? 'Restore' : 'Archive'}</p>
-                                            </TooltipContent>
-                                          </Tooltip>
-                                          <Tooltip>
-                                            <TooltipTrigger asChild>
-                                              <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="h-7 w-7 p-0"
-                                                onClick={() => handleViewHistory(item.id, question, answer)}
-                                              >
-                                                <Clock className="h-4 w-4" />
-                                              </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent side="left">
-                                              <p>View History</p>
-                                            </TooltipContent>
-                                          </Tooltip>
-                                          <Tooltip>
-                                            <TooltipTrigger asChild>
-                                              <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                                                onClick={() => {
-                                                  setItemToDelete(item);
-                                                  setDeleteConfirmOpen(true);
+                                            {answer.length > 200 && (
+                                              <button
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleOpenQAModal(item, 'view');
                                                 }}
+                                                className="text-xs text-sidebar-primary hover:underline mt-1"
                                               >
-                                                <Trash2 className="h-4 w-4" />
-                                              </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent side="left">
-                                              <p>Delete</p>
-                                            </TooltipContent>
-                                          </Tooltip>
+                                                Show more
+                                              </button>
+                                            )}
+                                          </div>
+                                          
+                                          {/* Document Column */}
+                                          <div className="text-sm text-foreground/70 break-all flex items-start px-4 py-3">
+                                            {item.documentTitle || '-'}
+                                          </div>
+                                          
+                                          {/* Last Updated Column */}
+                                          <div className="text-sm text-foreground/70 flex items-start px-4 py-3">
+                                            {displayData.updatedAt ? formatRelativeTime(displayData.updatedAt) : '-'}
+                                          </div>
+                                          
+                                          {/* Actions Column - Hover Revealed */}
+                                          <div className="grid items-start justify-center px-4 py-3 gap-1">
+                                            <div className="opacity-0 grid items-start gap-1 justify-center group-hover:opacity-100 transition-opacity">
+                                              <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                  <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-7 w-7 p-0"
+                                                    onClick={() => handleCopyAnswer(answer)}
+                                                  >
+                                                    <Copy className="h-4 w-4" />
+                                                  </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="left">
+                                                  <p>Copy Answer</p>
+                                                </TooltipContent>
+                                              </Tooltip>
+                                              <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                  <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-7 w-7 p-0"
+                                                    onClick={() => handleEdit(item)}
+                                                  >
+                                                    <Edit className="h-4 w-4" />
+                                                  </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="left">
+                                                  <p>Edit</p>
+                                                </TooltipContent>
+                                              </Tooltip>
+                                              <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                  <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-7 w-7 p-0"
+                                                    onClick={() => handleArchive(item.id)}
+                                                  >
+                                                    {displayData.archived ? (
+                                                      <ArchiveRestore className="h-4 w-4" />
+                                                    ) : (
+                                                      <Archive className="h-4 w-4" />
+                                                    )}
+                                                  </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="left">
+                                                  <p>{displayData.archived ? 'Restore' : 'Archive'}</p>
+                                                </TooltipContent>
+                                              </Tooltip>
+                                              <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                  <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-7 w-7 p-0"
+                                                    onClick={() => handleViewHistory(item.id, question, answer)}
+                                                  >
+                                                    <Clock className="h-4 w-4" />
+                                                  </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="left">
+                                                  <p>View History</p>
+                                                </TooltipContent>
+                                              </Tooltip>
+                                              <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                  <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                                                    onClick={() => {
+                                                      setItemToDelete(item);
+                                                      setDeleteConfirmOpen(true);
+                                                    }}
+                                                  >
+                                                    <Trash2 className="h-4 w-4" />
+                                                  </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="left">
+                                                  <p>Delete</p>
+                                                </TooltipContent>
+                                              </Tooltip>
+                                            </div>
+                                          </div>
                                         </div>
-                                      </div>
+                                        
+                                        {/* Tags Row */}
+                                        <div
+                                          className={`grid bg-background hover:bg-itemHoverBackground transition-all items-start border-t border-foreground/5 ${
+                                            isSelected ? 'bg-itemHoverBackground' : ''
+                                          } ${
+                                            displayData.archived 
+                                              ? 'opacity-60 bg-muted/20' 
+                                              : ''
+                                          } ${
+                                            isEvenRow && !isSelected && !displayData.archived ? 'bg-sidebar-background' : ''
+                                          }`}
+                                          style={{ gridTemplateColumns }}
+                                        >
+                                          <div></div> {/* Empty checkbox cell */}
+                                          <div className="col-span-4 px-4 py-2 flex flex-wrap gap-2">
+                                            {tags.length > 0 ? (
+                                              Object.entries(tagsByType).map(([typeName, typeTags]) =>
+                                                typeTags.map((tag: { type: string; value: string }) => (
+                                                  <Badge
+                                                    key={`${tag.type}-${tag.value}`}
+                                                    variant="outline"
+                                                    className="text-xs"
+                                                  >
+                                                    {typeName}: {tag.value}
+                                                  </Badge>
+                                                ))
+                                              )
+                                            ) : (
+                                              <span className="text-xs text-foreground/50">No tags</span>
+                                            )}
+                                          </div>
+                                          <div></div> {/* Empty actions cell */}
+                                        </div>
+                                      </React.Fragment>
                                     );
                                   })}
                                 </div>
+                                
                               </div>
                             );
                           })()}
@@ -1936,14 +1976,14 @@ export function VaultHomepage() {
 
                       {/* List View - Commented out, keeping only table view */}
                       {/* ) : qaViewMode === "list" ? (
-                        <div className="space-y-4">
+                      <div className="space-y-4">
                           {sortedAndFilteredItems.map((item) => {
-                            const hasEdits = !!getEdit(item.id);
-                            const isExpanded = expandedAnswers.has(item.id);
-                            const displayData = getDisplayData(item);
+                          const hasEdits = !!getEdit(item.id);
+                          const isExpanded = expandedAnswers.has(item.id);
+                          const displayData = getDisplayData(item);
                             const isSelected = selectedItems.has(item.id);
-                            
-                            return (
+                          
+                          return (
                               <div key={item.id} className="relative">
                                 <div className="absolute left-6 top-6 z-10 flex items-center">
                                   <Checkbox
@@ -1952,42 +1992,42 @@ export function VaultHomepage() {
                                   />
                                 </div>
                                 <div className={`pl-12 ${isSelected ? 'ring-2 ring-sidebar-primary rounded-lg' : ''}`}>
-                                  <QuestionCard
+                            <QuestionCard
                                     item={{
                                       ...item,
                                       ...displayData,
                                       isExpanded: nestedExpanded.has(item.id)
                                     }}
                                     query={searchInput}
-                                    hasEdits={hasEdits}
-                                    isExpanded={isExpanded}
+                              hasEdits={hasEdits}
+                              isExpanded={isExpanded}
                                     showBestAnswerTag={true}
-                                    onToggleExpansion={toggleAnswerExpansion}
-                                    onEdit={handleEdit}
-                                    onCopyAnswer={handleCopyAnswer}
-                                    onTagRemove={handleTagRemove}
-                                    onTagAdd={handleTagAdd}
-                                    onArchive={handleArchive}
-                                    onDelete={handleDelete}
-                                    onViewHistory={handleViewHistory}
-                                    highlightSearchTerms={highlightSearchTerms}
-                                    formatRelativeTime={formatRelativeTime}
-                                    formatFullDate={formatFullDate}
-                                  />
+                              onToggleExpansion={toggleAnswerExpansion}
+                              onEdit={handleEdit}
+                              onCopyAnswer={handleCopyAnswer}
+                              onTagRemove={handleTagRemove}
+                              onTagAdd={handleTagAdd}
+                              onArchive={handleArchive}
+                              onDelete={handleDelete}
+                              onViewHistory={handleViewHistory}
+                              highlightSearchTerms={highlightSearchTerms}
+                              formatRelativeTime={formatRelativeTime}
+                              formatFullDate={formatFullDate}
+                            />
                                 </div>
                               </div>
-                            );
-                          })}
-                        </div>
+                          );
+                        })}
+                          </div>
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                           {sortedAndFilteredItems.map((item) => {
                             const displayData = getDisplayData(item);
-                            const isExpanded = expandedRows.has(item.id);
                             const isSelected = selectedItems.has(item.id);
                             const question = item.question || '';
                             const answer = displayData.answer || '';
                             const answerPreview = answer.length > 200 ? answer.substring(0, 200) + '...' : answer;
+                            const tags = displayData.tags || [];
                             const tagTypes = getAllTagTypes();
                             const tagsByType = tagTypes.reduce((acc, tagType) => {
                               acc[tagType.name] = (displayData.tags || []).filter((tag: { type: string; value: string }) => tag.type === tagType.name);
@@ -2010,8 +2050,8 @@ export function VaultHomepage() {
                                     />
                                     <div className="text-xs text-foreground/60">
                                       <span>{formatRelativeTime(item.updatedAt)}</span>
-                                    </div>
-                                  </div>
+                      </div>
+                    </div>
                                   <div className="flex items-center gap-1">
                                     <Tooltip>
                                       <TooltipTrigger asChild>
@@ -2078,7 +2118,7 @@ export function VaultHomepage() {
                                           View History
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
-                                          onClick={() => {
+                                onClick={() => {
                                             setItemToDelete(item);
                                             setDeleteConfirmOpen(true);
                                           }}
@@ -2089,24 +2129,24 @@ export function VaultHomepage() {
                                         </DropdownMenuItem>
                                       </DropdownMenuContent>
                                     </DropdownMenu>
-                                  </div>
-                                </div>
+                                        </div>
+                                    </div>
                                 
                                 <div className="text-sm font-medium text-foreground">
                                   {question}
-                                </div>
+                                      </div>
                                 
                                 <div className="space-y-1">
-                                  <div className={`text-xs text-foreground/70 ${isExpanded ? 'whitespace-pre-wrap' : 'line-clamp-3'}`}>
-                                    {isExpanded ? answer : answerPreview}
-                                  </div>
+                                  <div className="text-xs text-foreground/70 line-clamp-3">
+                                    {answerPreview}
+                                      </div>
                                   {answer.length > 200 && (
-                                    <button
-                                      onClick={() => handleRowExpandToggle(item.id)}
+                                  <button
+                                      onClick={() => handleOpenQAModal(item, 'view')}
                                       className="text-xs text-sidebar-primary hover:underline"
                                     >
-                                      {isExpanded ? 'Show less' : 'Show more'}
-                                    </button>
+                                      Show more
+                                  </button>
                                   )}
                                 </div>
                                 
@@ -2127,21 +2167,21 @@ export function VaultHomepage() {
                                     <Badge variant="outline" className="text-xs">
                                       +{(displayData.tags || []).length - 3}
                                     </Badge>
-                                  )}
-                                </div>
+                                      )}
+                                    </div>
                                 
                                 {item.documentTitle && (
                                   <div className="flex items-center gap-2 text-xs text-foreground/60 pt-2 border-t border-foreground/10">
                                     <FileText className="h-4 w-4 flex-shrink-0 text-foreground/60" />
                                     <span className="truncate">{item.documentTitle}</span>
-                                  </div>
+                                    </div>
                                 )}
-                              </div>
+                                  </div>
                             );
                           })}
-                        </div>
+                                </div>
                       ) */}
-                    </div>
+                                </div>
                   )}
 
                   {/* Documents List Content */}
@@ -2151,8 +2191,30 @@ export function VaultHomepage() {
                         <div>
                           <h2 className="text-2xl font-bold">Documents</h2>
                           <p className="text-foreground/70">Source materials and uploaded documents</p>
+                              </div>
+                        <div className="flex items-center gap-2">
+                          <Select value={quarterFilter} onValueChange={setQuarterFilter}>
+                            <SelectTrigger className="w-[200px]">
+                              <SelectValue placeholder="Filter by quarter" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Time</SelectItem>
+                              <SelectItem value="ytd">YTD (Current Year)</SelectItem>
+                              <SelectItem value="last-year">Last Year</SelectItem>
+                              {getQuarterOptions().slice(0, 4).map((quarter) => (
+                                <SelectItem key={quarter} value={quarter}>
+                                  {formatQuarter(quarter)}
+                                </SelectItem>
+                              ))}
+                              {getQuarterOptions().slice(4).map((quarter) => (
+                                <SelectItem key={quarter} value={quarter}>
+                                  {formatQuarter(quarter)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          </div>
                         </div>
-                      </div>
 
                       {/* Group documents by type */}
                       {(() => {
@@ -2179,6 +2241,7 @@ export function VaultHomepage() {
                           uploadedAt: string;
                           uploadedBy: string;
                           documentId?: string;
+                          quarter?: string;
                         }>();
 
                         allItems.forEach(item => {
@@ -2200,129 +2263,182 @@ export function VaultHomepage() {
                                 type: docType,
                                 uploadedAt: item.updatedAt,
                                 uploadedBy: item.updatedBy,
-                                documentId: item.documentId
+                                documentId: item.documentId,
+                                quarter: item.quarter
                               });
                             }
                           }
                         });
 
-                        // Group by type
-                        documentMap.forEach(doc => {
-                          if (documentsByType[doc.type]) {
-                            documentsByType[doc.type].push(doc);
+                        // Filter by quarter
+                        const now = new Date();
+                        const currentYear = now.getFullYear();
+                        const filteredDocs = Array.from(documentMap.values()).filter(doc => {
+                          if (quarterFilter === "all") return true;
+                          if (quarterFilter === "ytd") {
+                            if (!doc.quarter) return false;
+                            const parsed = getQuarterFromString(doc.quarter);
+                            return parsed && parsed.year === currentYear;
                           }
+                          if (quarterFilter === "last-year") {
+                            if (!doc.quarter) return false;
+                            const parsed = getQuarterFromString(doc.quarter);
+                            return parsed && parsed.year === currentYear - 1;
+                          }
+                          return doc.quarter === quarterFilter;
                         });
+
+                        // Group by quarter for display
+                        type DocType = {
+                          id: string;
+                          name: string;
+                          type: string;
+                          uploadedAt: string;
+                          uploadedBy: string;
+                          documentId?: string;
+                          quarter?: string;
+                        };
+                        const docsByQuarter = new Map<string, DocType[]>();
+                        filteredDocs.forEach(doc => {
+                          const quarter = doc.quarter || "Unassigned";
+                          if (!docsByQuarter.has(quarter)) {
+                            docsByQuarter.set(quarter, []);
+                          }
+                          docsByQuarter.get(quarter)!.push(doc);
+                        });
+
+                        const sortedQuarters: Array<[string, DocType[]]> = Array.from(docsByQuarter.entries()).sort(([a], [b]) => {
+                          if (a === "Unassigned") return 1;
+                          if (b === "Unassigned") return -1;
+                          return b.localeCompare(a);
+                        }) as Array<[string, DocType[]]>;
 
                         return (
                           <div className="space-y-6">
-                            {Object.entries(documentsByType).map(([typeName, docs]) => {
-                              if (docs.length === 0) return null;
-                              
-                              return (
-                                <div key={typeName} className="space-y-3">
-                                  <h3 className="text-lg font-semibold">{typeName}</h3>
-                                  <div className="space-y-2">
-                                    {docs.map((doc) => (
-                                      <div
-                                        key={doc.id}
-                                        className="group flex items-center justify-between p-4 border border-foreground/10 rounded-lg hover:bg-sidebar-background transition"
-                                      >
-                                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                                          <FileText className="h-5 w-5 text-foreground/70 flex-shrink-0" />
-                                          <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2">
-                                              <h4 className="font-medium truncate">{doc.name}</h4>
-                                            </div>
-                                            <div className="flex items-center gap-2 mt-1 text-sm text-foreground/70">
-                                              <span>Uploaded {formatRelativeTime(doc.uploadedAt)}</span>
-                                              <span>•</span>
-                                              <span>{doc.type}</span>
-                                              <span>•</span>
-                                              <span>by {doc.uploadedBy}</span>
-                                            </div>
-                                          </div>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => {
-                                              // TODO: Implement view document in browser
-                                              toast({
-                                                title: "View Document",
-                                                description: "Document viewing will be implemented.",
-                                              });
-                                            }}
-                                            className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                          >
-                                            <ExternalLink className="h-4 w-4 mr-1" />
-                                            View Document
-                                          </Button>
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => {
-                                              // TODO: Implement download
-                                              toast({
-                                                title: "Download Document",
-                                                description: "Document download will be implemented.",
-                                              });
-                                            }}
-                                            className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                          >
-                                            <Download className="h-4 w-4 mr-1" />
-                                            Download
-                                          </Button>
-                                          {doc.type === "Data Files" && (
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              onClick={() => {
-                                                // Navigate to vault filtered by this document
-                                                navigate(`/vault?fileName=${encodeURIComponent(doc.name)}`);
-                                              }}
-                                              className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                            >
-                                              <Database className="h-4 w-4 mr-1" />
-                                              View Data
-                                            </Button>
-                                          )}
-                                          <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                              <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            {(sortedQuarters as Array<[string, DocType[]]>).map(([quarter, quarterDocs]) => {
+                                // Group by type within quarter
+                                const byType: Record<string, DocType[]> = {};
+                                quarterDocs.forEach(doc => {
+                                  if (!byType[doc.type]) byType[doc.type] = [];
+                                  byType[doc.type].push(doc);
+                                });
+
+                                return (
+                                  <div key={quarter} className="space-y-4">
+                                    <h3 className="text-lg font-semibold">
+                                      {quarter === "Unassigned" ? "Unassigned" : formatQuarter(quarter)}
+                                    </h3>
+                                    {Object.entries(byType).map(([typeName, docs]) => {
+                                      if (docs.length === 0) return null;
+                                      
+                                      return (
+                                        <div key={typeName} className="space-y-3 ml-4">
+                                          <h4 className="text-md font-medium text-foreground/70">{typeName}</h4>
+                                          <div className="space-y-2">
+                                            {docs.map((doc) => (
+                                              <div
+                                                key={doc.id}
+                                                className="group flex items-center justify-between p-4 border border-foreground/10 rounded-lg hover:bg-sidebar-background transition"
                                               >
-                                                <MoreHorizontal className="h-4 w-4" />
-                                              </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                              <DropdownMenuItem
-                                                className="text-destructive"
-                                                onClick={() => {
-                                                  setItemToDelete(null);
-                                                  // TODO: Implement document deletion
-                                                  toast({
-                                                    title: "Delete Document",
-                                                    description: "Document deletion will be implemented.",
-                                                    variant: "destructive",
-                                                  });
-                                                }}
-                                              >
-                                                <Trash2 className="h-4 w-4 mr-2" />
-                                                Delete
-                                              </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                          </DropdownMenu>
+                                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                  <FileText className="h-5 w-5 text-foreground/70 flex-shrink-0" />
+                                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                                      <h4 className="font-medium truncate">{doc.name}</h4>
                                         </div>
-                                      </div>
-                                    ))}
+                                                    <div className="flex items-center gap-2 mt-1 text-sm text-foreground/70">
+                                                      <span>Uploaded {formatRelativeTime(doc.uploadedAt)}</span>
+                                                      <span>•</span>
+                                                      <span>{doc.type}</span>
+                                                      <span>•</span>
+                                                      <span>by {doc.uploadedBy}</span>
+                                    </div>
+                                    </div>
                                   </div>
+                                                <div className="flex items-center gap-2">
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                      // TODO: Implement view document in browser
+                                                      toast({
+                                                        title: "View Document",
+                                                        description: "Document viewing will be implemented.",
+                                                      });
+                                                    }}
+                                                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                                  >
+                                                    <ExternalLink className="h-4 w-4 mr-1" />
+                                                    View Document
+                                                  </Button>
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                      // TODO: Implement download
+                                                      toast({
+                                                        title: "Download Document",
+                                                        description: "Document download will be implemented.",
+                                                      });
+                                                    }}
+                                                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                                  >
+                                                    <Download className="h-4 w-4 mr-1" />
+                                                    Download
+                                                  </Button>
+                                                  {doc.type === "Data Files" && (
+                                                    <Button
+                                                      variant="ghost"
+                                                      size="sm"
+                                                      onClick={() => {
+                                                        // Navigate to vault filtered by this document
+                                                        navigate(`/vault?fileName=${encodeURIComponent(doc.name)}`);
+                                                      }}
+                                                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    >
+                                                      <Database className="h-4 w-4 mr-1" />
+                                                      View Data
+                                                    </Button>
+                                                  )}
+                                                  <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                      <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                                      >
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                      </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                      <DropdownMenuItem
+                                                        className="text-destructive"
+                                                        onClick={() => {
+                                                          setItemToDelete(null);
+                                                          // TODO: Implement document deletion
+                                                          toast({
+                                                            title: "Delete Document",
+                                                            description: "Document deletion will be implemented.",
+                                                            variant: "destructive",
+                                                          });
+                                                        }}
+                                                      >
+                                                        <Trash2 className="h-4 w-4 mr-2" />
+                                                        Delete
+                                                      </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                  </DropdownMenu>
                                 </div>
-                              );
-                            })}
-                            {Object.values(documentsByType).every(docs => docs.length === 0) && (
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                );
+                              })}
+                            {filteredDocs.length === 0 && (
                               <div className="text-center py-12">
                                 <p className="text-lg text-foreground/70 mb-4">
                                   No documents found.
@@ -2330,11 +2446,11 @@ export function VaultHomepage() {
                                 <Button variant="outline" onClick={() => navigate('/vault/add-content')}>
                                   Upload Documents
                                 </Button>
-                              </div>
-                            )}
+                    </div>
+                  )}
                           </div>
                         );
-                      })()}
+                      })() as React.ReactElement}
                     </div>
                   )}
                   </div>
@@ -2345,16 +2461,6 @@ export function VaultHomepage() {
         </div>
       </div>
 
-      {/* Edit Sheet */}
-      {editingItem && (
-        <VaultEditSheet
-          item={editingItem}
-          open={!!editingItem}
-          onClose={() => setEditingItem(null)}
-          onSave={(editData) => handleSave(editingItem.id, editData)}
-          existingEdit={getEdit(editingItem.id)}
-        />
-      )}
 
       {/* Modals */}
       <FirmUpdatesModal
@@ -2526,6 +2632,17 @@ export function VaultHomepage() {
                     </Command>
                   </PopoverContent>
                 </Popover>
+                {!state.showArchived ? (
+                  <Button variant="outline" size="sm" onClick={handleBulkArchive}>
+                    <Archive className="h-4 w-4 mr-2" />
+                    Archive
+                  </Button>
+                ) : (
+                  <Button variant="outline" size="sm" onClick={handleBulkRestore}>
+                    <ArchiveRestore className="h-4 w-4 mr-2" />
+                    Restore
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"
@@ -2546,6 +2663,22 @@ export function VaultHomepage() {
         currentQuestion={historyModalQuestion}
         currentAnswer={historyModalAnswer}
       />
+
+      {/* Unified QA Detail Modal */}
+      {qaModalItem && (
+        <QADetailModal
+          open={qaModalOpen}
+          onClose={() => {
+            setQaModalOpen(false);
+            setQaModalItem(null);
+          }}
+          item={qaModalItem}
+          mode={qaModalMode}
+          onModeChange={handleQAModalModeChange}
+          onSave={handleQAModalSave}
+          existingEdit={getEdit(qaModalItem.id)}
+        />
+      )}
     </div>
   );
 }

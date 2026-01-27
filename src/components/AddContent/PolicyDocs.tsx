@@ -2,11 +2,12 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useTagTypes } from "@/hooks/useTagTypes";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useVaultEdits } from "@/hooks/useVaultState";
-import { Tag, QuestionItem } from "@/types/vault";
+import { Tag, QuestionItem, getQuarterOptions, formatQuarter } from "@/types/vault";
 import { ImportSession, ImportSummary } from "@/types/import";
 import { createImportSession } from "@/utils/importStorage";
 import { MultiSelectFilter } from "@/components/MultiSelectFilter";
@@ -28,6 +29,7 @@ export function PolicyDocs() {
   const [isDragging, setIsDragging] = useState(false);
   const [autoCreateQA, setAutoCreateQA] = useState<boolean>(false);
   const [selectedTagsByType, setSelectedTagsByType] = useState<Record<string, string[]>>({});
+  const [selectedQuarter, setSelectedQuarter] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
   const [showResultScreen, setShowResultScreen] = useState(false);
   const [importSession, setImportSession] = useState<ImportSession | null>(null);
@@ -155,6 +157,7 @@ export function PolicyDocs() {
               updatedBy: profile.fullName || "Current User",
               documentTitle: file.name,
               documentId: session.id,
+              quarter: selectedQuarter || undefined,
             };
             entries.push([itemId, newItem]);
             importedItemIds.push(itemId);
@@ -189,6 +192,7 @@ export function PolicyDocs() {
       if (!autoCreateQA) {
         setUploadedFiles([]);
         setSelectedTagsByType({});
+        setSelectedQuarter("");
       }
     } catch (error) {
       console.error('Upload error:', error);
@@ -208,6 +212,7 @@ export function PolicyDocs() {
     setImportSummary(null);
     setUploadedFiles([]);
     setSelectedTagsByType({});
+    setSelectedQuarter("");
     setAutoCreateQA(false);
   };
 
@@ -252,6 +257,23 @@ export function PolicyDocs() {
             className="hidden"
             onChange={(e) => handleFileSelect(e.target.files)}
           />
+        </div>
+
+        {/* Quarter Selection */}
+        <div className="space-y-2">
+          <Label htmlFor="quarter">Quarter</Label>
+          <Select value={selectedQuarter} onValueChange={setSelectedQuarter}>
+            <SelectTrigger id="quarter" className="w-full">
+              <SelectValue placeholder="Select quarter (optional)" />
+            </SelectTrigger>
+            <SelectContent>
+              {getQuarterOptions().map((quarter) => (
+                <SelectItem key={quarter} value={quarter}>
+                  {formatQuarter(quarter)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Auto-create QA checkbox */}
