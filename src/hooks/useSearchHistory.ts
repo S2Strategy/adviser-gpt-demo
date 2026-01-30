@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 
 const SEARCH_HISTORY_KEY = 'vault-search-history';
 const HISTORY_EVENT = 'ag:vault:history-updated';
@@ -40,16 +40,18 @@ const write = (next: SearchHistoryItem[]) => {
     // ignore quota or serialization errors
   }
   // notify other hook instances in the same tab
-  try {
-    window.dispatchEvent(new Event(HISTORY_EVENT));
-  } catch {
-    // older browsers may not support Event constructor; fall back if needed
-    const ev = document.createEvent?.('Event');
-    if (ev) {
-      ev.initEvent(HISTORY_EVENT, false, false);
-      window.dispatchEvent(ev);
+  queueMicrotask(() => {
+    try {
+      window.dispatchEvent(new Event(HISTORY_EVENT));
+    } catch {
+      // older browsers may not support Event constructor; fall back if needed
+      const ev = document.createEvent?.('Event');
+      if (ev) {
+        ev.initEvent(HISTORY_EVENT, false, false);
+        window.dispatchEvent(ev);
+      }
     }
-  }
+  });
 };
 
 /** Generate a compact, human-friendly label for sidebar/history lists. */
@@ -70,9 +72,9 @@ const makeDisplayName = (
 };
 
 /** Create a stable ID (works without crypto.randomUUID in older envs). */
-const makeId = () => {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-    return (crypto as any).randomUUID();
+const makeId = (): string => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
   }
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
@@ -80,6 +82,15 @@ const makeId = () => {
 export function useSearchHistory() {
   // Local state mirrors localStorage and stays live via events
   const [history, setHistory] = useState<SearchHistoryItem[]>(() => read());
+  const didMountRef = useRef(false);
+
+  useEffect(() => {
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      return;
+    }
+    write(history);
+  }, [history]);
 
   // Keep all hook instances in sync:
   // 1) cross-tab via native 'storage' event
@@ -90,7 +101,10 @@ export function useSearchHistory() {
     const onStorage = (e: StorageEvent) => {
       if (e.key === SEARCH_HISTORY_KEY) setHistory(read());
     };
-    const onLocalEvent = () => setHistory(read());
+    const onLocalEvent = () => {
+      const next = read();
+      setHistory(prev => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
+    };
 
     window.addEventListener('storage', onStorage);
     window.addEventListener(HISTORY_EVENT, onLocalEvent);
@@ -129,31 +143,21 @@ export function useSearchHistory() {
           head.sort === nextItem.sort &&
           JSON.stringify(head.filters) === JSON.stringify(nextItem.filters)
         ) {
-          const bumped = { ...head, timestamp: Date.now() };
-          const next = [bumped, ...rest];
-          write(next);
+          const next = [{ ...head, timestamp: Date.now() }, ...rest];
           return next;
         }
 
         const next = [nextItem, ...prev];
-        write(next);
         return next;
       });
-    },
-    []
-  );
+    },[]);
 
   const removeFromHistory = useCallback((id: string) => {
-    setHistory(prev => {
-      const next = prev.filter(item => item.id !== id);
-      write(next);
-      return next;
-    });
+    setHistory(prev => prev.filter(item => item.id !== id));
   }, []);
 
   const clearHistory = useCallback(() => {
     setHistory([]);
-    write([]);
   }, []);
 
   const recentSearches = useMemo(() => history.slice(0, MAX_HISTORY_ITEMS), [history]);

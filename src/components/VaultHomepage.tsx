@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { VaultSidebar } from "./VaultSidebar";
 import { QuestionCard } from "./QuestionCard";
 import { FirmUpdatesModal } from "./FirmUpdatesModal";
@@ -78,25 +78,47 @@ export function VaultHomepage() {
   const { profile } = useUserProfile();
   
   // Extract URL parameters
-  const urlQuery = searchParams.get('query') || '';
+  const location = useLocation();
+  const effectiveQuery = (new URLSearchParams(location.search).get("query") || "").trim();
   const fileName = searchParams.get('fileName');
   const fileCount = parseInt(searchParams.get('count') || '0');
-  const isFileMode = fileName && !urlQuery;
+  const isFileMode = !!fileName && effectiveQuery.length === 0;
 
   // Search and filter state
-  const [searchInput, setSearchInput] = useState(urlQuery || state.query);
+  const [searchInput, setSearchInput] = useState(effectiveQuery);
   
-  // Sync state.query with URL query parameter (only when URL changes, not when state changes)
+  const allowClearFromUrlRef = useRef(false);
+  
+  // Sync state.query with URL query parameter (only when URL changes, not when state changes).
+  // When urlQuery is '' but the browser URL has ?query=..., use window.location as fallback.
+  // Refuse to clear state when urlQuery is '' unless we explicitly requested it (Back to Documents,
+  // X, or Clear search) so we avoid overwriting from spurious navigations to /vault.
   useEffect(() => {
-    if (urlQuery !== state.query) {
-      setQuery(urlQuery);
+    const queryFromUrl = (new URLSearchParams(location.search).get("query") || "").trim();
+  
+    // Don’t clear state.query unless we explicitly allowed it (Back to Docs, X, Clear search)
+    if (
+      queryFromUrl === "" &&
+      (state.query || "").trim().length > 0 &&
+      !allowClearFromUrlRef.current
+    ) {
+      return;
     }
-    // Only depend on urlQuery, not state.query, to avoid circular updates
+  
+    if (queryFromUrl !== (state.query || "")) {
+      if (queryFromUrl === "" && allowClearFromUrlRef.current) {
+        allowClearFromUrlRef.current = false;
+      }
+      setQuery(queryFromUrl);
+    }
+  
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [urlQuery, setQuery]);
+  }, [location.search, setQuery]);
+  
 
   // Sync filter states with URL parameters (only when URL changes)
   useEffect(() => {
+    const queryFromUrl = (new URLSearchParams(location.search).get("query") || "").trim();
     const urlStrategy = searchParams.get('strategy')?.split(',').filter(Boolean) || [];
     const urlType = searchParams.get('type')?.split(',').filter(Boolean) || [];
     const urlTags = searchParams.get('tags')?.split(',').filter(Boolean) || [];
@@ -124,7 +146,7 @@ export function VaultHomepage() {
     setSelectedType(urlType);
     setSelectedTags(urlTags);
     setSelectedStatus(urlStatus);
-    setSearchInput(urlQuery);
+    setSearchInput(prev => (prev === queryFromUrl ? prev : queryFromUrl));
     
     // Sync showArchived with URL parameter (only if different to avoid loops)
     if (urlShowArchived !== state.showArchived) {
@@ -132,7 +154,7 @@ export function VaultHomepage() {
     }
     // Only depend on searchParams and urlQuery, not state, to avoid circular updates
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, urlQuery, setShowArchived]);
+  }, [location.search, setShowArchived]);
   // New tag filter structure
   const [selectedTagFilters, setSelectedTagFilters] = useState<Record<string, string[]>>({});
   // Legacy state for backward compatibility (will be removed)
@@ -171,6 +193,8 @@ export function VaultHomepage() {
   });
   
   const qaContentRef = useRef<HTMLDivElement>(null);
+  const searchResultsRef = useRef<HTMLDivElement>(null);
+  
   const [qaContentBounds, setQaContentBounds] = useState<{ left: number; width: number } | null>(null);
   
   // UI state
@@ -180,20 +204,45 @@ export function VaultHomepage() {
   const [qaModalOpen, setQaModalOpen] = useState(false);
   const [qaModalItem, setQaModalItem] = useState<QuestionItem | null>(null);
   const [qaModalMode, setQaModalMode] = useState<'view' | 'edit'>('view');
-  const [activeTab, setActiveTab] = useState<"documents" | "documents-list">("documents");
+  type VaultTab = "documents" | "documents-list";
+  const ACTIVE_TAB_KEY = "vault-homepage-active-tab";
+  const [activeTab, setActiveTab] = useState<VaultTab>(() => {
+    if (typeof window === "undefined") return "documents";
+    const saved = window.localStorage.getItem(ACTIVE_TAB_KEY);
+    return saved === "documents" || saved === "documents-list" ? (saved as VaultTab) : "documents";
+  });
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<Set<string>>(new Set());
   const [quarterFilter, setQuarterFilter] = useState<string>("all");
+  
+  // Calculate hasActiveFilters and hasActiveSearch early for use in multiple places
+  const hasActiveFilters = Object.values(selectedTagFilters).some(values => values.length > 0) ||
+                           selectedDocuments.length > 0 || selectedPriorSamples.length > 0 || 
+                           (selectedDateRange && selectedDateRange.type !== 'any');
+  const hasActiveSearch = effectiveQuery.length > 0 || hasActiveFilters;
   
   // Update Q&A content bounds for floating bar positioning
   useEffect(() => {
     const updateBounds = () => {
+      // Check for documents tab first
       if (qaContentRef.current && activeTab === "documents") {
         const rect = qaContentRef.current.getBoundingClientRect();
         setQaContentBounds({
           left: rect.left,
           width: rect.width,
         });
-      } else {
+      } 
+      // Check for search results view - calculate hasActiveSearch inline
+      else if (searchResultsRef.current && (effectiveQuery.length > 0 || isFileMode || 
+        Object.values(selectedTagFilters).some(values => values.length > 0) ||
+        selectedDocuments.length > 0 || selectedPriorSamples.length > 0 || 
+        (selectedDateRange && selectedDateRange.type !== 'any'))) {
+        const rect = searchResultsRef.current.getBoundingClientRect();
+        setQaContentBounds({
+          left: rect.left,
+          width: rect.width,
+        });
+      } 
+      else {
         setQaContentBounds(null);
       }
     };
@@ -208,7 +257,7 @@ export function VaultHomepage() {
       window.removeEventListener('resize', updateBounds);
       window.removeEventListener('scroll', updateBounds);
     };
-  }, [activeTab, qaViewMode]);
+  }, [activeTab, qaViewMode, effectiveQuery, isFileMode, selectedTagFilters, selectedDocuments, selectedPriorSamples, selectedDateRange]);
   const [showFirmUpdatesModal, setShowFirmUpdatesModal] = useState(false);
   const [showFindDuplicatesModal, setShowFindDuplicatesModal] = useState(false);
   const [showSmartUploadSheet, setShowSmartUploadSheet] = useState(false);
@@ -223,11 +272,6 @@ export function VaultHomepage() {
 
   // Load saved tab state from localStorage (only on mount)
   useEffect(() => {
-    const savedTab = localStorage.getItem('vault-homepage-active-tab');
-    if (savedTab && (savedTab === "documents" || savedTab === "documents-list")) {
-      setActiveTab(savedTab as "documents" | "documents-list");
-    }
-    
     // Load saved documents sub-tab state
     const savedDocumentsTab = localStorage.getItem('vault-homepage-documents-tab');
     if (savedDocumentsTab && ["files", "type", "strategy", "data"].includes(savedDocumentsTab)) {
@@ -240,16 +284,17 @@ export function VaultHomepage() {
     localStorage.setItem('vault-qa-view-mode', qaViewMode);
   }, [qaViewMode]);
 
-  // Initialize state from URL parameters
-  useEffect(() => {
-    setSearchInput(urlQuery);
-    // Legacy URL params are handled in the other useEffect
-  }, [urlQuery]);
+  // // Initialize state from URL parameters
+  // useEffect(() => {
+  //   setSearchInput(urlQuery);
+  //   // Legacy URL params are handled in the other useEffect
+  // }, [urlQuery]);
 
   // Save tab state to localStorage when it changes
   const handleTabChange = (tab: "documents" | "documents-list") => {
+    if (hasActiveSearch || isFileMode) return;
     setActiveTab(tab);
-    localStorage.setItem('vault-homepage-active-tab', tab);
+    localStorage.setItem(ACTIVE_TAB_KEY, tab);
   };
 
   // Save documents sub-tab state to localStorage when it changes
@@ -372,6 +417,26 @@ export function VaultHomepage() {
 
     return result;
   };
+
+
+  const renderCount = useRef(0);
+  renderCount.current += 1;
+
+  useEffect(() => {
+    console.log("VaultHomepage mount");
+    return () => console.log("VaultHomepage unmount");
+  }, []);
+
+  useEffect(() => {
+    console.log("Render#", renderCount.current, {
+      locationSearch: location.search,
+      effectiveQuery,
+      hasActiveSearch,
+      activeTab,
+      savedActiveTab: typeof window !== "undefined" ? localStorage.getItem("vault-homepage-active-tab") : null,
+    });
+  });
+
 
   // Helper function to check if all items in a file are archived
   const isFileArchived = (fileName: string) => {
@@ -509,9 +574,8 @@ export function VaultHomepage() {
         return null;
     }
   };
-
   // Only perform search when explicitly triggered (not on every keystroke)
-  const smartSearchResults = state.query ? smartSearch(allItems, state.query) : allItems;
+  const smartSearchResults = effectiveQuery ? smartSearch(allItems, effectiveQuery) : allItems;
   
   // Apply additional filters to smart search results
   const filteredItems = smartSearchResults.filter(item => {
@@ -639,47 +703,60 @@ export function VaultHomepage() {
                            selectedDocuments.length + selectedPriorSamples.length +
                            (selectedDateRange && selectedDateRange.type !== 'any' ? 1 : 0);
   
-  const hasActiveFilters = Object.values(selectedTagFilters).some(values => values.length > 0) ||
-                           selectedDocuments.length > 0 || selectedPriorSamples.length > 0 || 
-                           (selectedDateRange && selectedDateRange.type !== 'any');
-  const hasActiveSearch = (state.query && state.query.trim()) || hasActiveFilters;
-  
+  // Treat URL as source of truth so we show Search Results when the URL has a query even if
+  // state.query hasn't synced yet or was wrongly cleared. Fallback to window.location when
+  // useSearchParams is stale (e.g. after navigate before Router has propagated).
+
   // Check if there are any parent questions with children
   const hasNestedQuestions = allItems.some(item => item.children && item.children.length > 0);
 
-  const handleSearch = () => {
-    // Check if there's search text or any filters selected
-    const hasSearchText = searchInput.trim();
-    const hasFilters = Object.values(selectedTagFilters).some(values => values.length > 0) ||
-                       selectedDocuments.length > 0 || selectedPriorSamples.length > 0 || 
-                       (selectedDateRange && selectedDateRange.type !== 'any');
+  const handleSearch = (e?: React.FormEvent) => {
+    e?.preventDefault();
+
+    const nextQuery = searchInput.trim();
+
+    const hasFilters =
+      Object.values(selectedTagFilters).some(values => values.length > 0) ||
+      selectedDocuments.length > 0 ||
+      selectedPriorSamples.length > 0 || 
+      (selectedDateRange && selectedDateRange.type !== 'any');
+
+    if (!nextQuery && !hasFilters) return;
+
+    // 1) Sync state immediately
+    setQuery(nextQuery);
     
-    if (hasSearchText || hasFilters) {
-      // Add to search history
-      addToHistory(searchInput, {
-        strategies: selectedStrategy,
+    // 2) History should use the same canonical query value
+    addToHistory(
+      nextQuery,
+      { strategies: selectedStrategy,
         types: selectedType,
         tags: selectedTags,
-        statuses: selectedStatus
-      }, currentSort);
-      
-      // Update URL parameters - let the useEffect sync state from URL
-      const params = new URLSearchParams();
-      // Only set query param if there's actual search text
-      if (hasSearchText) {
-        params.set('query', searchInput);
-      }
-      if (selectedStrategy.length > 0) params.set('strategy', selectedStrategy.join(','));
-      if (selectedType.length > 0) params.set('type', selectedType.join(','));
-      if (selectedTags.length > 0) params.set('tags', selectedTags.join(','));
-      if (selectedStatus.length > 0) params.set('status', selectedStatus.join(','));
-      // Note: documents, dateRange, and priorSamples can be added to URL params later if needed
-      
-      // Update URL using React Router navigation
-      // The useEffect will sync state from URL, avoiding circular updates
-      const newUrl = `/vault?${params.toString()}`;
-      navigate(newUrl);
-    }
+        statuses: selectedStatus,
+      },
+      currentSort
+    );
+
+    // 3) Build params in a way that preserves what we want to keep
+    const params = new URLSearchParams(searchParams);
+
+    // Clear any stale search/filter params first
+    params.delete('query');
+    params.delete('strategy');
+    params.delete('type');
+    params.delete('tags');
+    params.delete('status');
+    params.delete('fileName');
+    params.delete('count');
+
+    // Now set the new search payload
+    if (nextQuery) params.set('query', nextQuery);
+    if (selectedStrategy.length) params.set('strategy', selectedStrategy.join(','));
+    if (selectedType.length) params.set('type', selectedType.join(','));
+    if (selectedTags.length) params.set('tags', selectedTags.join(','));
+    if (selectedStatus.length) params.set('status', selectedStatus.join(','));
+  
+    navigate(`/vault?${params.toString()}`);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -779,7 +856,7 @@ export function VaultHomepage() {
     }
     
     // Preserve existing parameters
-    if (state.query) params.set('query', state.query);
+    if (effectiveQuery) params.set('query', effectiveQuery);
     if (selectedStrategy.length > 0) params.set('strategy', selectedStrategy.join(','));
     if (selectedType.length > 0) params.set('type', selectedType.join(','));
     if (selectedTags.length > 0) params.set('tags', selectedTags.join(','));
@@ -1085,7 +1162,7 @@ export function VaultHomepage() {
     handleOpenQAModal(item, 'edit');
   };
 
-  const handleQAModalSave = (editData: Partial<QuestionItem>) => {
+  const handleQAModalSave = (editData: { question: string; answer: string; tags: Tag[]; updatedAt: string; updatedBy: string }) => {
     if (!qaModalItem) return;
     const originalItem = findOriginalItem(qaModalItem.id);
     saveEdit(qaModalItem.id, editData, originalItem || undefined);
@@ -1289,7 +1366,7 @@ export function VaultHomepage() {
                         <button
                           onClick={() => {
                             setSearchInput('');
-                            setQuery('');
+                            allowClearFromUrlRef.current = true;
                             navigate('/vault');
                           }}
                           className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-foreground/70 hover:text-foreground transition-colors"
@@ -1404,14 +1481,15 @@ export function VaultHomepage() {
               <div id="page-content" className="flex-1">
                 {hasActiveSearch || isFileMode ? (
                   /* Search Results */
-                  <div className="h-full p-6 space-y-6 max-w-[100rem] mx-auto">
+                  <div ref={searchResultsRef} className="h-full p-6 space-y-6 max-w-[100rem] mx-auto">
                     {/* Back Button */}
                     <div className="flex items-center">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          // Clear the file mode and navigate back to documents tab
+                          allowClearFromUrlRef.current = true;
+                          setQuery("");
                           navigate('/vault');
                         }}
                         className="flex items-center gap-2 text-foreground/70 hover:text-foreground"
@@ -1427,7 +1505,7 @@ export function VaultHomepage() {
                         <h2 className="text-2xl font-bold">
                           {sortedAndFilteredItems.length} {sortedAndFilteredItems.length === 1 ? 'Result' : 'Results'}
                           {isFileMode && fileName && ` from "${fileName}"`}
-                          {state.query && !isFileMode && ` for "${state.query}"`}
+                          {effectiveQuery && !isFileMode && ` for "${effectiveQuery}"`}
                         </h2>
                         {hasActiveFilters && (
                           <p className="text-foreground/70 mt-1">
@@ -1544,7 +1622,7 @@ export function VaultHomepage() {
                           </Button>
                           <Button variant="outline" onClick={() => {
                             setSearchInput('');
-                            setQuery('');
+                            allowClearFromUrlRef.current = true;
                             navigate('/vault');
                           }}>
                             Clear search
@@ -1552,38 +1630,268 @@ export function VaultHomepage() {
                         </div>
                       </div>
                     ) : (
-                      sortedAndFilteredItems.map((item, index) => {
-                        const hasEdits = !!getEdit(item.id);
-                        const isExpanded = expandedAnswers.has(item.id);
-                        const displayData = getDisplayData(item);
-                        
-                        return (
-                          <QuestionCard
-                            key={item.id}
-                            item={{
-                              ...item, 
-                              ...displayData,
-                              isExpanded: nestedExpanded.has(item.id)
-                            }}
-                            query={searchInput}
-                            fileName={fileName}
-                            hasEdits={hasEdits}
-                            isExpanded={isExpanded}
-                            showBestAnswerTag={true}
-                            onToggleExpansion={toggleNestedExpansion}
-                            onEdit={handleEdit}
-                            onCopyAnswer={handleCopyAnswer}
-                            onTagRemove={handleTagRemove}
-                            onTagAdd={handleTagAdd}
-                            onArchive={handleArchive}
-                            onDelete={handleDelete}
-                            onViewHistory={handleViewHistory}
-                            highlightSearchTerms={highlightSearchTerms}
-                            formatRelativeTime={formatRelativeTime}
-                            formatFullDate={formatFullDate}
-                          />
-                        );
-                      })
+                      /* Table View - Same format as Documents tab */
+                      <div className="border border-foreground/10 rounded-lg overflow-hidden">
+                        {(() => {
+                          const tagTypes = getAllTagTypes();
+                          // Calculate grid template columns: [checkbox] [Question] [Answer] [Document] [Last Updated] [Actions]
+                          const gridTemplateColumns = `auto 3fr 3fr 2fr 1fr auto`;
+                          
+                          return (
+                            <div className="relative">
+                              {/* Table Header */}
+                              <div 
+                                className="grid sticky top-0 bg-sidebar-background border-b border-foreground/10 items-start"
+                                style={{ gridTemplateColumns }}
+                              >
+                                <div className="flex items-start pr-4 pl-2 py-3">
+                                  <Checkbox
+                                    checked={selectedItems.size > 0 && selectedItems.size === sortedAndFilteredItems.length}
+                                    onCheckedChange={handleSelectAll}
+                                  />
+                                </div>
+                                <button
+                                  onClick={() => handleColumnSort('question')}
+                                  className="font-medium text-sm px-4 py-3 flex items-center gap-1 hover:text-foreground transition-colors text-left"
+                                >
+                                  Question
+                                  {qaSortColumn === 'question' && (
+                                    qaSortDirection === 'desc' ? <ArrowDown className="h-4 w-4" /> : <ArrowUp className="h-4 w-4" />
+                                  )}
+                                </button>
+                                <button
+                                  onClick={() => handleColumnSort('answer')}
+                                  className="font-medium text-sm px-4 py-3 flex items-center gap-1 hover:text-foreground transition-colors text-left"
+                                >
+                                  Answer
+                                  {qaSortColumn === 'answer' && (
+                                    qaSortDirection === 'desc' ? <ArrowDown className="h-4 w-4" /> : <ArrowUp className="h-4 w-4" />
+                                  )}
+                                </button>
+                                <button
+                                  onClick={() => handleColumnSort('document')}
+                                  className="font-medium text-sm flex items-center px-4 py-3 gap-1 hover:text-foreground transition-colors text-left"
+                                >
+                                  Document
+                                  {qaSortColumn === 'document' && (
+                                    qaSortDirection === 'desc' ? <ArrowDown className="h-4 w-4" /> : <ArrowUp className="h-4 w-4" />
+                                  )}
+                                </button>
+                                <button
+                                  onClick={() => handleColumnSort('lastUpdated')}
+                                  className="font-medium text-sm flex items-center px-4 py-3 gap-1 hover:text-foreground transition-colors text-left whitespace-nowrap"
+                                >
+                                  Last Updated
+                                  {qaSortColumn === 'lastUpdated' && (
+                                    qaSortDirection === 'desc' ? <ArrowDown className="h-4 w-4" /> : <ArrowUp className="h-4 w-4" />
+                                  )}
+                                </button>
+                                <div className="font-medium px-4 py-3 text-sm">Actions</div>
+                              </div>
+
+                              {/* Table Rows */}
+                              <div className="divide-y divide-foreground/10">
+                                {sortedAndFilteredItems.map((item, index) => {
+                                  const displayData = getDisplayData(item);
+                                  const isSelected = selectedItems.has(item.id);
+                                  const question = displayData.question || '';
+                                  const answer = displayData.answer || '';
+                                  const answerPreview = answer.length > 200 ? answer.substring(0, 200) + '...' : answer;
+                                  const tagsByType = tagTypes.reduce((acc, tagType) => {
+                                    acc[tagType.name] = (displayData.tags || []).filter((tag: { type: string; value: string }) => tag.type === tagType.name);
+                                    return acc;
+                                  }, {} as Record<string, Array<{ type: string; value: string }>>);
+                                  const tags = displayData.tags || [];
+                                  const isEvenRow = index % 2 === 0;
+                                  
+                                  return (
+                                    <React.Fragment key={item.id}>
+                                      {/* Main Row */}
+                                      <div
+                                        className={`group grid bg-background hover:bg-itemHoverBackground transition-all items-start ${
+                                          isSelected ? 'bg-itemHoverBackground' : ''
+                                        } ${
+                                          displayData.archived 
+                                            ? 'opacity-60 bg-muted/20 border-l-2 border-muted' 
+                                            : ''
+                                        } ${
+                                          isEvenRow && !isSelected && !displayData.archived ? 'bg-sidebar-background' : ''
+                                        }`}
+                                        style={{ gridTemplateColumns }}
+                                      >
+                                        <div className="flex items-start pr-4 pl-2 py-3">
+                                          <Checkbox
+                                            checked={isSelected}
+                                            onCheckedChange={() => handleItemSelect(item.id)}
+                                          />
+                                        </div>
+                                        
+                                        {/* Question Cell */}
+                                        <div className="min-w-0 px-4 py-3">
+                                          <div className="text-sm font-medium text-foreground">
+                                            {question}
+                                          </div>
+                                        </div>
+                                        
+                                        {/* Answer Cell */}
+                                        <div className="min-w-0 px-4 py-3">
+                                          <div className="text-sm text-foreground/70 line-clamp-3">
+                                            {answerPreview}
+                                          </div>
+                                          {answer.length > 200 && (
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleOpenQAModal(item, 'view');
+                                              }}
+                                              className="text-xs text-sidebar-primary hover:underline mt-1"
+                                            >
+                                              Show more
+                                            </button>
+                                          )}
+                                        </div>
+                                        
+                                        {/* Document Column */}
+                                        <div className="text-sm text-foreground/70 break-all flex items-start px-4 py-3">
+                                          {item.documentTitle || '-'}
+                                        </div>
+                                        
+                                        {/* Last Updated Column */}
+                                        <div className="text-sm text-foreground/70 flex items-start px-4 py-3">
+                                          {displayData.updatedAt ? formatRelativeTime(displayData.updatedAt) : '-'}
+                                        </div>
+                                        
+                                        {/* Actions Column - Hover Revealed */}
+                                        <div className="grid items-start justify-center px-4 py-3 gap-1">
+                                          <div className="opacity-0 grid items-start gap-1 justify-center group-hover:opacity-100 transition-opacity">
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <Button
+                                                  variant="outline"
+                                                  size="sm"
+                                                  className="h-7 w-7 p-0"
+                                                  onClick={() => handleCopyAnswer(answer)}
+                                                >
+                                                  <Copy className="h-4 w-4" />
+                                                </Button>
+                                              </TooltipTrigger>
+                                              <TooltipContent side="left">
+                                                <p>Copy Answer</p>
+                                              </TooltipContent>
+                                            </Tooltip>
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <Button
+                                                  variant="outline"
+                                                  size="sm"
+                                                  className="h-7 w-7 p-0"
+                                                  onClick={() => handleEdit(item)}
+                                                >
+                                                  <Edit className="h-4 w-4" />
+                                                </Button>
+                                              </TooltipTrigger>
+                                              <TooltipContent side="left">
+                                                <p>Edit</p>
+                                              </TooltipContent>
+                                            </Tooltip>
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <Button
+                                                  variant="outline"
+                                                  size="sm"
+                                                  className="h-7 w-7 p-0"
+                                                  onClick={() => handleArchive(item.id)}
+                                                >
+                                                  {displayData.archived ? (
+                                                    <ArchiveRestore className="h-4 w-4" />
+                                                  ) : (
+                                                    <Archive className="h-4 w-4" />
+                                                  )}
+                                                </Button>
+                                              </TooltipTrigger>
+                                              <TooltipContent side="left">
+                                                <p>{displayData.archived ? 'Restore' : 'Archive'}</p>
+                                              </TooltipContent>
+                                            </Tooltip>
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <Button
+                                                  variant="outline"
+                                                  size="sm"
+                                                  className="h-7 w-7 p-0"
+                                                  onClick={() => handleViewHistory(item.id, question, answer)}
+                                                >
+                                                  <Clock className="h-4 w-4" />
+                                                </Button>
+                                              </TooltipTrigger>
+                                              <TooltipContent side="left">
+                                                <p>View History</p>
+                                              </TooltipContent>
+                                            </Tooltip>
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <Button
+                                                  variant="outline"
+                                                  size="sm"
+                                                  className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                                                  onClick={() => {
+                                                    setItemToDelete(item);
+                                                    setDeleteConfirmOpen(true);
+                                                  }}
+                                                >
+                                                  <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                              </TooltipTrigger>
+                                              <TooltipContent side="left">
+                                                <p>Delete</p>
+                                              </TooltipContent>
+                                            </Tooltip>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Tags Row */}
+                                      <div
+                                        className={`grid bg-background hover:bg-itemHoverBackground transition-all items-start border-t border-foreground/5 ${
+                                          isSelected ? 'bg-itemHoverBackground' : ''
+                                        } ${
+                                          displayData.archived 
+                                            ? 'opacity-60 bg-muted/20' 
+                                            : ''
+                                        } ${
+                                          isEvenRow && !isSelected && !displayData.archived ? 'bg-sidebar-background' : ''
+                                        }`}
+                                        style={{ gridTemplateColumns }}
+                                      >
+                                        <div></div> {/* Empty checkbox cell */}
+                                        <div className="col-span-4 px-4 py-2 flex flex-wrap gap-2">
+                                          {tags.length > 0 ? (
+                                            Object.entries(tagsByType).map(([typeName, typeTags]) =>
+                                              typeTags.map((tag: { type: string; value: string }) => (
+                                                <Badge
+                                                  key={`${tag.type}-${tag.value}`}
+                                                  variant="outline"
+                                                  className="text-xs"
+                                                >
+                                                  {typeName}: {tag.value}
+                                                </Badge>
+                                              ))
+                                            )
+                                          ) : (
+                                            <span className="text-xs text-foreground/50">No tags</span>
+                                          )}
+                                        </div>
+                                        <div></div> {/* Empty actions cell */}
+                                      </div>
+                                    </React.Fragment>
+                                  );
+                                })}
+                              </div>
+                              
+                            </div>
+                          );
+                        })()}
+                      </div>
                     )}
                   </div>
                 ) : (

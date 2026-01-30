@@ -13,14 +13,26 @@ import { useTagTypes } from '@/hooks/useTagTypes';
 import { migrateQuestionItem } from '@/utils/tagMigration';
 import { useUserProfile } from '@/hooks/useUserProfile';
 
+type QAModalEditData = Pick<QuestionItem, "question" | "answer"> & {
+  tags: Tag[];
+  updatedAt: string;
+  updatedBy: string;
+};
+
+type QAModalExistingEdit = Partial<Pick<QuestionItem ,"question" | "answer" | "updatedAt" | "updatedBy">> & {
+  tags?: Tag[];
+}
+
+type ItemWithDocumentTitle = QuestionItem & { documentTitle?: string };
+
 interface QADetailModalProps {
   open: boolean;
   onClose: () => void;
   item: QuestionItem;
   mode: 'view' | 'edit';
   onModeChange?: (mode: 'view' | 'edit') => void;
-  onSave: (editData: any) => void;
-  existingEdit?: any;
+  onSave: (editData: QAModalEditData) => void;
+  existingEdit?: QAModalExistingEdit;
 }
 
 export function QADetailModal({
@@ -37,6 +49,8 @@ export function QADetailModal({
   const { toast } = useToast();
   const { profile } = useUserProfile();
   const [mode, setMode] = useState<'view' | 'edit'>(initialMode);
+
+  const documentTitle = (item as ItemWithDocumentTitle).documentTitle ?? 'Unknown Document';
 
   // Migrate item to new format if needed
   const migratedItem = useMemo(() => migrateQuestionItem(item), [item]);
@@ -196,7 +210,7 @@ export function QADetailModal({
   };
 
   const handleSave = () => {
-    const editData = {
+    const editData:QAModalEditData = {
       question,
       answer,
       tags,
@@ -243,7 +257,7 @@ export function QADetailModal({
               <h2 className="text-lg font-semibold">
                 {mode === 'view' ? 'Q&A Details' : 'Edit Q&A'}
               </h2>
-              <p className="text-sm text-foreground/70 mt-1">{(item as any).documentTitle || 'Unknown Document'}</p>
+              <p className="text-sm text-foreground/70 mt-1">{documentTitle}</p>
             </div>
             <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="h-4 w-4" />
@@ -272,7 +286,7 @@ export function QADetailModal({
                 </div>
                 
                 {/* Tags Section */}
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <Label>Tags</Label>
                   {displayTags.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
@@ -292,7 +306,7 @@ export function QADetailModal({
                   ) : (
                     <div className="text-sm text-foreground/50">No tags</div>
                   )}
-                </div>
+                </div> */}
               </>
             ) : (
               // Edit Mode

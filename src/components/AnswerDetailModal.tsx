@@ -63,7 +63,7 @@ export function AnswerDetailModal({
           </div>
           
           {/* Tags Section */}
-          {tags.length > 0 && (
+          {/* {tags.length > 0 && (
             <div className="flex-shrink-0">
               <div className="text-xs font-bold mb-2 text-foreground/70">
                 Tags:
@@ -82,7 +82,7 @@ export function AnswerDetailModal({
                 )}
               </div>
             </div>
-          )}
+          )} */}
         </div>
       </DialogContent>
     </Dialog>
