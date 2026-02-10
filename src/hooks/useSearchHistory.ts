@@ -20,6 +20,18 @@ export interface SearchHistoryItem {
   displayName?: string;
 }
 
+const dispatchHistoryEvent = () => {
+  try {
+    window.dispatchEvent(new Event(HISTORY_EVENT));
+  } catch {
+    // Fallback for very old browsers/environments
+    if (typeof window.CustomEvent === 'function') {
+      window.dispatchEvent(new CustomEvent(HISTORY_EVENT));
+    }
+    // else: do nothing
+  }
+};
+
 /** Safely read from localStorage (SSR/first paint safe). */
 const read = (): SearchHistoryItem[] => {
   if (typeof window === 'undefined') return [];
@@ -39,19 +51,6 @@ const write = (next: SearchHistoryItem[]) => {
   } catch {
     // ignore quota or serialization errors
   }
-  // notify other hook instances in the same tab
-  queueMicrotask(() => {
-    try {
-      window.dispatchEvent(new Event(HISTORY_EVENT));
-    } catch {
-      // older browsers may not support Event constructor; fall back if needed
-      const ev = document.createEvent?.('Event');
-      if (ev) {
-        ev.initEvent(HISTORY_EVENT, false, false);
-        window.dispatchEvent(ev);
-      }
-    }
-  });
 };
 
 /** Generate a compact, human-friendly label for sidebar/history lists. */
@@ -90,6 +89,11 @@ export function useSearchHistory() {
       return;
     }
     write(history);
+
+    // notify other hook instances in the same tab
+    queueMicrotask(() => {
+      dispatchHistoryEvent();
+    });
   }, [history]);
 
   // Keep all hook instances in sync:
@@ -99,8 +103,11 @@ export function useSearchHistory() {
     if (typeof window === 'undefined') return;
 
     const onStorage = (e: StorageEvent) => {
-      if (e.key === SEARCH_HISTORY_KEY) setHistory(read());
+      if (e.key !== SEARCH_HISTORY_KEY) return;
+      const next = read();
+      setHistory(prev => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
     };
+
     const onLocalEvent = () => {
       const next = read();
       setHistory(prev => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next));

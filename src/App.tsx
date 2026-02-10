@@ -19,6 +19,7 @@ import { Commentary } from "./pages/Commentary";
 import { Drafts } from "./pages/Drafts";
 import { AddContent } from "./pages/AddContent";
 import FileUpload from "./pages/FileUpload";
+import SearchResults from "./pages/SearchResults";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -41,6 +42,7 @@ const App = () => (
               {/* Protected routes - authentication required */}
               <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
               <Route path="/vault" element={<ProtectedRoute><Vault /></ProtectedRoute>} />
+              <Route path="/search" element={<ProtectedRoute><SearchResults /></ProtectedRoute>} />
               <Route path="/vault/saved-searches" element={<ProtectedRoute><SavedSearchesPage /></ProtectedRoute>} />
               <Route path="/vault/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
               <Route path="/vault/suggested-updates" element={<ProtectedRoute><SuggestedUpdates /></ProtectedRoute>} />

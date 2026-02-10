@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { VaultSidebar } from "./VaultSidebar";
 import { QuestionCard } from "./QuestionCard";
@@ -77,9 +77,12 @@ export function VaultHomepage() {
   const { getAllTagTypes, getTagTypeValues } = useTagTypes();
   const { profile } = useUserProfile();
   
-  // Extract URL parameters
+  // Extract URL parameters (fallback to window.location when router is stale after navigate())
   const location = useLocation();
-  const effectiveQuery = (new URLSearchParams(location.search).get("query") || "").trim();
+  const sp = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const fromRouter = (sp.get("query") || "").trim();
+  const fromWindow = typeof window !== "undefined" ? (new URLSearchParams(window.location.search).get("query") || "").trim() : "";
+  const effectiveQuery = fromRouter || fromWindow;
   const fileName = searchParams.get('fileName');
   const fileCount = parseInt(searchParams.get('count') || '0');
   const isFileMode = !!fileName && effectiveQuery.length === 0;
@@ -193,8 +196,6 @@ export function VaultHomepage() {
   });
   
   const qaContentRef = useRef<HTMLDivElement>(null);
-  const searchResultsRef = useRef<HTMLDivElement>(null);
-  
   const [qaContentBounds, setQaContentBounds] = useState<{ left: number; width: number } | null>(null);
   
   // UI state
@@ -215,40 +216,35 @@ export function VaultHomepage() {
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<Set<string>>(new Set());
   const [quarterFilter, setQuarterFilter] = useState<string>("all");
   
-  // Calculate hasActiveFilters and hasActiveSearch early for use in multiple places
   const hasActiveFilters = Object.values(selectedTagFilters).some(values => values.length > 0) ||
                            selectedDocuments.length > 0 || selectedPriorSamples.length > 0 || 
                            (selectedDateRange && selectedDateRange.type !== 'any');
-  const hasActiveSearch = effectiveQuery.length > 0 || hasActiveFilters;
-  
-  // Update Q&A content bounds for floating bar positioning
+
+  // Redirect /vault?query=... (or any search params) to /search so search results live on dedicated route
+  useEffect(() => {
+    if (location.pathname !== '/vault') return;
+    const params = new URLSearchParams(location.search);
+    const hasSearchParams = (params.get('query') || '').trim() !== '' ||
+      params.has('strategy') || params.has('type') || params.has('tags') || params.has('status') ||
+      params.has('showArchived') || params.has('sort');
+    if (hasSearchParams) {
+      navigate(`/search?${location.search}`, { replace: true });
+    }
+  }, [location.pathname, location.search, navigate]);
+
+  // Update Q&A content bounds for floating bar positioning (Q&A Pairs tab only)
   useEffect(() => {
     const updateBounds = () => {
-      // Check for documents tab first
       if (qaContentRef.current && activeTab === "documents") {
         const rect = qaContentRef.current.getBoundingClientRect();
         setQaContentBounds({
           left: rect.left,
           width: rect.width,
         });
-      } 
-      // Check for search results view - calculate hasActiveSearch inline
-      else if (searchResultsRef.current && (effectiveQuery.length > 0 || isFileMode || 
-        Object.values(selectedTagFilters).some(values => values.length > 0) ||
-        selectedDocuments.length > 0 || selectedPriorSamples.length > 0 || 
-        (selectedDateRange && selectedDateRange.type !== 'any'))) {
-        const rect = searchResultsRef.current.getBoundingClientRect();
-        setQaContentBounds({
-          left: rect.left,
-          width: rect.width,
-        });
-      } 
-      else {
+      } else {
         setQaContentBounds(null);
       }
     };
-    
-    // Use a small delay to ensure DOM is ready
     const timeoutId = setTimeout(updateBounds, 0);
     window.addEventListener('resize', updateBounds);
     window.addEventListener('scroll', updateBounds);
@@ -258,7 +254,7 @@ export function VaultHomepage() {
       window.removeEventListener('resize', updateBounds);
       window.removeEventListener('scroll', updateBounds);
     };
-  }, [activeTab, qaViewMode, effectiveQuery, isFileMode, selectedTagFilters, selectedDocuments, selectedPriorSamples, selectedDateRange]);
+  }, [activeTab]);
   const [showFirmUpdatesModal, setShowFirmUpdatesModal] = useState(false);
   const [showFindDuplicatesModal, setShowFindDuplicatesModal] = useState(false);
   const [showSmartUploadSheet, setShowSmartUploadSheet] = useState(false);
@@ -273,6 +269,7 @@ export function VaultHomepage() {
 
   // Load saved tab state from localStorage (only on mount)
   useEffect(() => {
+
     // Load saved documents sub-tab state
     const savedDocumentsTab = localStorage.getItem('vault-homepage-documents-tab');
     if (savedDocumentsTab && ["files", "type", "strategy", "data"].includes(savedDocumentsTab)) {
@@ -293,7 +290,6 @@ export function VaultHomepage() {
 
   // Save tab state to localStorage when it changes
   const handleTabChange = (tab: "documents" | "documents-list") => {
-    if (hasActiveSearch || isFileMode) return;
     setActiveTab(tab);
     localStorage.setItem(ACTIVE_TAB_KEY, tab);
   };
@@ -418,25 +414,6 @@ export function VaultHomepage() {
 
     return result;
   };
-
-
-  const renderCount = useRef(0);
-  renderCount.current += 1;
-
-  useEffect(() => {
-    console.log("VaultHomepage mount");
-    return () => console.log("VaultHomepage unmount");
-  }, []);
-
-  useEffect(() => {
-    console.log("Render#", renderCount.current, {
-      locationSearch: location.search,
-      effectiveQuery,
-      hasActiveSearch,
-      activeTab,
-      savedActiveTab: typeof window !== "undefined" ? localStorage.getItem("vault-homepage-active-tab") : null,
-    });
-  });
 
 
   // Helper function to check if all items in a file are archived
@@ -575,8 +552,10 @@ export function VaultHomepage() {
         return null;
     }
   };
+
+  const queryForSearch = effectiveQuery;
   // Only perform search when explicitly triggered (not on every keystroke)
-  const smartSearchResults = effectiveQuery ? smartSearch(allItems, effectiveQuery) : allItems;
+  const smartSearchResults = queryForSearch ? smartSearch(allItems, queryForSearch) : allItems;
   
   // Apply additional filters to smart search results
   const filteredItems = smartSearchResults.filter(item => {
@@ -711,9 +690,7 @@ export function VaultHomepage() {
   // Check if there are any parent questions with children
   const hasNestedQuestions = allItems.some(item => item.children && item.children.length > 0);
 
-  const handleSearch = (e?: React.FormEvent) => {
-    e?.preventDefault();
-
+  const handleSearch = () => {
     const nextQuery = searchInput.trim();
 
     const hasFilters =
@@ -739,7 +716,7 @@ export function VaultHomepage() {
     );
 
     // 3) Build params in a way that preserves what we want to keep
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(location.search);
 
     // Clear any stale search/filter params first
     params.delete('query');
@@ -757,11 +734,12 @@ export function VaultHomepage() {
     if (selectedTags.length) params.set('tags', selectedTags.join(','));
     if (selectedStatus.length) params.set('status', selectedStatus.join(','));
   
-    navigate(`/vault?${params.toString()}`);
+    navigate(`/search?${params.toString()}`);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
+      e.preventDefault();
       handleSearch();
     }
   };
@@ -1352,555 +1330,9 @@ export function VaultHomepage() {
                   </div>
                 </div>
 
-                {/* Search Section */}
-                <div id="search-section" className="bg-sidebar-background/50">
-                  <div className="p-6 flex items-center gap-3 max-w-[100rem] mx-auto">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-foreground/70" />
-                      <Input
-                        value={searchInput}
-                        onChange={(e) => setSearchInput(e.target.value)}
-                        onKeyPress={handleKeyPress}
-                        placeholder="Search or filter my Vault..."
-                        className="pl-10 pr-10 h-12"
-                      />
-                      {searchInput && (
-                        <button
-                          onClick={() => {
-                            setSearchInput('');
-                            allowClearFromUrlRef.current = true;
-                            navigate('/vault');
-                          }}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-foreground/70 hover:text-foreground transition-colors"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
-                    
-                    <Button
-                      variant="outline"
-                      size="xl"
-                      onClick={() => setShowFiltersPanel(true)}
-                      className="flex items-center gap-2 h-12 px-4"
-                    >
-                      <Filter className="h-4 w-4" />
-                      Open Filters
-                      {hasActiveFilters && (
-                        <Badge variant="secondary" className="text-xs">
-                          {totalFiltersCount}
-                        </Badge>
-                      )}
-                    </Button>
-
-                    <Button 
-                      onClick={handleSearch}
-                      className="bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/80 px-6 h-12 min-w-32"
-                    >
-                      Find
-                    </Button>
-                  </div>
-
-                  {/* Active Filters and Controls - Only show when there's an active search */}
-                  {hasActiveSearch && (
-                    <div className="px-6 pb-2 flex items-center justify-between max-w-[100rem] mx-auto">
-                      {/* Active Filters */}
-                      {hasActiveFilters && (
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm text-foreground/70">Active filters:</span>
-                          {Object.entries(selectedTagFilters).map(([tagTypeName, values]) =>
-                            values.map(value => (
-                              <Badge key={`${tagTypeName}-${value}`} variant="secondary" className="gap-1">
-                                {tagTypeName}: {value}
-                                <X 
-                                  className="h-3 w-3 cursor-pointer" 
-                                  onClick={() => {
-                                    const newValues = values.filter(v => v !== value);
-                                    if (newValues.length === 0) {
-                                      const newFilters = { ...selectedTagFilters };
-                                      delete newFilters[tagTypeName];
-                                      setSelectedTagFilters(newFilters);
-                                    } else {
-                                      setSelectedTagFilters({ ...selectedTagFilters, [tagTypeName]: newValues });
-                                    }
-                                  }}
-                                />
-                              </Badge>
-                            ))
-                          )}
-                          {selectedDocuments.map(document => (
-                            <Badge key={document} variant="secondary" className="gap-1">
-                              Document: {document}
-                              <X 
-                                className="h-3 w-3 cursor-pointer" 
-                                onClick={() => {
-                                  setSelectedDocuments(prev => prev.filter(d => d !== document));
-                                }}
-                              />
-                            </Badge>
-                          ))}
-                          {selectedDateRange && selectedDateRange.type !== 'any' && (
-                            <Badge variant="secondary" className="gap-1">
-                              Date: {selectedDateRange.type === 'custom' && selectedDateRange.from && selectedDateRange.to
-                                ? `${format(selectedDateRange.from, 'MMM d')} - ${format(selectedDateRange.to, 'MMM d, yyyy')}`
-                                : selectedDateRange.type === '7d' ? 'Past 7 days'
-                                : selectedDateRange.type === '30d' ? 'Past 30 days'
-                                : selectedDateRange.type === '3mo' ? 'Past 3 months'
-                                : selectedDateRange.type === '6mo' ? 'Past 6 months'
-                                : selectedDateRange.type === '1y' ? 'Past year'
-                                : 'Date range'}
-                              <X 
-                                className="h-3 w-3 cursor-pointer" 
-                                onClick={() => setSelectedDateRange(null)}
-                              />
-                            </Badge>
-                          )}
-                          {selectedPriorSamples.map(sampleId => {
-                            const sample = fileHistory.find(f => f.id === sampleId);
-                            return sample ? (
-                              <Badge key={sampleId} variant="secondary" className="gap-1">
-                                Sample: {sample.name}
-                                <X 
-                                  className="h-3 w-3 cursor-pointer" 
-                                  onClick={() => {
-                                    setSelectedPriorSamples(prev => prev.filter(id => id !== sampleId));
-                                  }}
-                                />
-                              </Badge>
-                            ) : null;
-                          })}
-                          <Button variant="link" size="sm" onClick={clearFilters}>
-                            Clear filters
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Content */}
-              <div id="page-content" className="flex-1">
-                {hasActiveSearch || isFileMode ? (
-                  /* Search Results */
-                  <div ref={searchResultsRef} className="h-full p-6 space-y-6 max-w-[100rem] mx-auto">
-                    {/* Back Button */}
-                    <div className="flex items-center">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          allowClearFromUrlRef.current = true;
-                          setQuery("");
-                          navigate('/vault');
-                        }}
-                        className="flex items-center gap-2 text-foreground/70 hover:text-foreground"
-                      >
-                        <ArrowLeft className="h-4 w-4" />
-                        Back to Documents
-                      </Button>
-                    </div>
-                    
-                    {/* Results Header */}
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h2 className="text-2xl font-bold">
-                          {sortedAndFilteredItems.length} {sortedAndFilteredItems.length === 1 ? 'Result' : 'Results'}
-                          {isFileMode && fileName && ` from "${fileName}"`}
-                          {effectiveQuery && !isFileMode && ` for "${effectiveQuery}"`}
-                        </h2>
-                        {hasActiveFilters && (
-                          <p className="text-foreground/70 mt-1">
-                            Filtered by {totalFiltersCount} criteria
-                          </p>
-                        )}
-                      </div>
-                      
-                      {/* Sort and Show Archived Controls for Content Well */}
-                      <div className="flex items-center gap-2">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <ArrowUpDown className="mr-2 h-4 w-4" />
-                              Sort: {currentSort === 'relevance' ? 'Relevance' : currentSort === 'lastEdited' ? 'Last edited' : 'Last editor'}
-                              <ChevronDown className="ml-2 h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleSortChange('relevance')}>
-                              {currentSort === 'relevance' && <Check className="mr-2 h-4 w-4" />}
-                              {currentSort !== 'relevance' && <div className="mr-6" />}
-                              Relevance
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleSortChange('lastEdited')}>
-                              {currentSort === 'lastEdited' && <Check className="mr-2 h-4 w-4" />}
-                              {currentSort !== 'lastEdited' && <div className="mr-6" />}
-                              Last edited
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleSortChange('lastEditor')}>
-                              {currentSort === 'lastEditor' && <Check className="mr-2 h-4 w-4" />}
-                              {currentSort !== 'lastEditor' && <div className="mr-6" />}
-                              Last editor
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-
-                        {state.showArchived && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleDeleteAllArchived}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete Archived
-                          </Button>
-                        )}
-
-                        <Button
-                          variant={state.showArchived ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => {
-                            const newShowArchived = !state.showArchived;
-                            setShowArchived(newShowArchived);
-                            // Update URL parameters
-                            const newParams = new URLSearchParams(searchParams);
-                            if (newShowArchived) {
-                              newParams.set('showArchived', 'true');
-                            } else {
-                              newParams.delete('showArchived');
-                            }
-                            navigate(`/vault?${newParams.toString()}`, { replace: true });
-                          }}
-                        >
-                          <Archive className="h-4 w-4" />
-                          {state.showArchived ? "Hide archived" : "Show archived"}
-                        </Button>
-
-                        {/* Expand/Collapse All Nested Questions */}
-                        {/* {hasNestedQuestions && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const allExpanded = nestedExpanded.size > 0;
-                              expandCollapseAllNested(!allExpanded);
-                            }}
-                          >
-                            {nestedExpanded.size > 0 ? "Collapse All" : "Expand All"}
-                          </Button>
-                        )} */}
-
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline">
-                              Export Results
-                              <ChevronDown className="ml-2 h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => exportData('pdf')}>
-                              PDF
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => exportData('csv')}>
-                              XLS/CSV
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => exportData('docx')}>
-                              Word (.docx)
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
-
-                    {sortedAndFilteredItems.length === 0 ? (
-                      <div className="text-center py-12">
-                        <p className="text-lg text-foreground/70 mb-4">
-                          No results match your search and filters.
-                        </p>
-                        <div className="flex gap-2 justify-center">
-                          <Button variant="outline" onClick={clearFilters}>
-                            Clear filters
-                          </Button>
-                          <Button variant="outline" onClick={() => {
-                            setSearchInput('');
-                            allowClearFromUrlRef.current = true;
-                            navigate('/vault');
-                          }}>
-                            Clear search
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      /* Table View - Same format as Documents tab */
-                      <div className="border border-foreground/10 rounded-lg overflow-hidden">
-                        {(() => {
-                          const tagTypes = getAllTagTypes();
-                          // Calculate grid template columns: [checkbox] [Question] [Answer] [Document] [Last Updated] [Actions]
-                          const gridTemplateColumns = `auto 3fr 3fr 2fr 1fr auto`;
-                          
-                          return (
-                            <div className="relative">
-                              {/* Table Header */}
-                              <div 
-                                className="grid sticky top-0 bg-sidebar-background border-b border-foreground/10 items-start"
-                                style={{ gridTemplateColumns }}
-                              >
-                                <div className="flex items-start pr-4 pl-2 py-3">
-                                  <Checkbox
-                                    checked={selectedItems.size > 0 && selectedItems.size === sortedAndFilteredItems.length}
-                                    onCheckedChange={handleSelectAll}
-                                  />
-                                </div>
-                                <button
-                                  onClick={() => handleColumnSort('question')}
-                                  className="font-medium text-sm px-4 py-3 flex items-center gap-1 hover:text-foreground transition-colors text-left"
-                                >
-                                  Question
-                                  {qaSortColumn === 'question' && (
-                                    qaSortDirection === 'desc' ? <ArrowDown className="h-4 w-4" /> : <ArrowUp className="h-4 w-4" />
-                                  )}
-                                </button>
-                                <button
-                                  onClick={() => handleColumnSort('answer')}
-                                  className="font-medium text-sm px-4 py-3 flex items-center gap-1 hover:text-foreground transition-colors text-left"
-                                >
-                                  Answer
-                                  {qaSortColumn === 'answer' && (
-                                    qaSortDirection === 'desc' ? <ArrowDown className="h-4 w-4" /> : <ArrowUp className="h-4 w-4" />
-                                  )}
-                                </button>
-                                <button
-                                  onClick={() => handleColumnSort('document')}
-                                  className="font-medium text-sm flex items-center px-4 py-3 gap-1 hover:text-foreground transition-colors text-left"
-                                >
-                                  Document
-                                  {qaSortColumn === 'document' && (
-                                    qaSortDirection === 'desc' ? <ArrowDown className="h-4 w-4" /> : <ArrowUp className="h-4 w-4" />
-                                  )}
-                                </button>
-                                <button
-                                  onClick={() => handleColumnSort('lastUpdated')}
-                                  className="font-medium text-sm flex items-center px-4 py-3 gap-1 hover:text-foreground transition-colors text-left whitespace-nowrap"
-                                >
-                                  Last Updated
-                                  {qaSortColumn === 'lastUpdated' && (
-                                    qaSortDirection === 'desc' ? <ArrowDown className="h-4 w-4" /> : <ArrowUp className="h-4 w-4" />
-                                  )}
-                                </button>
-                                <div className="font-medium px-4 py-3 text-sm">Actions</div>
-                              </div>
-
-                              {/* Table Rows */}
-                              <div className="divide-y divide-foreground/10">
-                                {sortedAndFilteredItems.map((item, index) => {
-                                  const displayData = getDisplayData(item);
-                                  const isSelected = selectedItems.has(item.id);
-                                  const question = displayData.question || '';
-                                  const answer = displayData.answer || '';
-                                  const answerPreview = answer.length > 200 ? answer.substring(0, 200) + '...' : answer;
-                                  const tagsByType = tagTypes.reduce((acc, tagType) => {
-                                    acc[tagType.name] = (displayData.tags || []).filter((tag: { type: string; value: string }) => tag.type === tagType.name);
-                                    return acc;
-                                  }, {} as Record<string, Array<{ type: string; value: string }>>);
-                                  const tags = displayData.tags || [];
-                                  const isEvenRow = index % 2 === 0;
-                                  
-                                  return (
-                                    <React.Fragment key={item.id}>
-                                      {/* Main Row */}
-                                      <div
-                                        className={`group grid bg-background hover:bg-itemHoverBackground transition-all items-start ${
-                                          isSelected ? 'bg-itemHoverBackground' : ''
-                                        } ${
-                                          displayData.archived 
-                                            ? 'opacity-60 bg-muted/20 border-l-2 border-muted' 
-                                            : ''
-                                        } ${
-                                          isEvenRow && !isSelected && !displayData.archived ? 'bg-sidebar-background' : ''
-                                        }`}
-                                        style={{ gridTemplateColumns }}
-                                      >
-                                        <div className="flex items-start pr-4 pl-2 py-3">
-                                          <Checkbox
-                                            checked={isSelected}
-                                            onCheckedChange={() => handleItemSelect(item.id)}
-                                          />
-                                        </div>
-                                        
-                                        {/* Question Cell */}
-                                        <div className="min-w-0 px-4 py-3">
-                                          <div className="text-sm font-medium text-foreground">
-                                            {question}
-                                          </div>
-                                        </div>
-                                        
-                                        {/* Answer Cell */}
-                                        <div className="min-w-0 px-4 py-3">
-                                          <div className="text-sm text-foreground/70 line-clamp-3">
-                                            {answerPreview}
-                                          </div>
-                                          {answer.length > 200 && (
-                                            <button
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleOpenQAModal(item, 'view');
-                                              }}
-                                              className="text-xs text-sidebar-primary hover:underline mt-1"
-                                            >
-                                              Show more
-                                            </button>
-                                          )}
-                                        </div>
-                                        
-                                        {/* Document Column */}
-                                        <div className="text-sm text-foreground/70 break-all flex items-start px-4 py-3">
-                                          {item.documentTitle || '-'}
-                                        </div>
-                                        
-                                        {/* Last Updated Column */}
-                                        <div className="text-sm text-foreground/70 flex items-start px-4 py-3">
-                                          {displayData.updatedAt ? formatRelativeTime(displayData.updatedAt) : '-'}
-                                        </div>
-                                        
-                                        {/* Actions Column - Hover Revealed */}
-                                        <div className="grid items-start justify-center px-4 py-3 gap-1">
-                                          <div className="opacity-0 grid items-start gap-1 justify-center group-hover:opacity-100 transition-opacity">
-                                            <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                <Button
-                                                  variant="outline"
-                                                  size="sm"
-                                                  className="h-7 w-7 p-0"
-                                                  onClick={() => handleCopyAnswer(answer)}
-                                                >
-                                                  <Copy className="h-4 w-4" />
-                                                </Button>
-                                              </TooltipTrigger>
-                                              <TooltipContent side="left">
-                                                <p>Copy Answer</p>
-                                              </TooltipContent>
-                                            </Tooltip>
-                                            <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                <Button
-                                                  variant="outline"
-                                                  size="sm"
-                                                  className="h-7 w-7 p-0"
-                                                  onClick={() => handleEdit(item)}
-                                                >
-                                                  <Edit className="h-4 w-4" />
-                                                </Button>
-                                              </TooltipTrigger>
-                                              <TooltipContent side="left">
-                                                <p>Edit</p>
-                                              </TooltipContent>
-                                            </Tooltip>
-                                            <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                <Button
-                                                  variant="outline"
-                                                  size="sm"
-                                                  className="h-7 w-7 p-0"
-                                                  onClick={() => handleArchive(item.id)}
-                                                >
-                                                  {displayData.archived ? (
-                                                    <ArchiveRestore className="h-4 w-4" />
-                                                  ) : (
-                                                    <Archive className="h-4 w-4" />
-                                                  )}
-                                                </Button>
-                                              </TooltipTrigger>
-                                              <TooltipContent side="left">
-                                                <p>{displayData.archived ? 'Restore' : 'Archive'}</p>
-                                              </TooltipContent>
-                                            </Tooltip>
-                                            <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                <Button
-                                                  variant="outline"
-                                                  size="sm"
-                                                  className="h-7 w-7 p-0"
-                                                  onClick={() => handleViewHistory(item.id, question, answer)}
-                                                >
-                                                  <Clock className="h-4 w-4" />
-                                                </Button>
-                                              </TooltipTrigger>
-                                              <TooltipContent side="left">
-                                                <p>View History</p>
-                                              </TooltipContent>
-                                            </Tooltip>
-                                            <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                <Button
-                                                  variant="outline"
-                                                  size="sm"
-                                                  className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                                                  onClick={() => {
-                                                    setItemToDelete(item);
-                                                    setDeleteConfirmOpen(true);
-                                                  }}
-                                                >
-                                                  <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                              </TooltipTrigger>
-                                              <TooltipContent side="left">
-                                                <p>Delete</p>
-                                              </TooltipContent>
-                                            </Tooltip>
-                                          </div>
-                                        </div>
-                                      </div>
-                                      
-                                      {/* Tags Row */}
-                                      <div
-                                        className={`grid bg-background hover:bg-itemHoverBackground transition-all items-start border-t border-foreground/5 ${
-                                          isSelected ? 'bg-itemHoverBackground' : ''
-                                        } ${
-                                          displayData.archived 
-                                            ? 'opacity-60 bg-muted/20' 
-                                            : ''
-                                        } ${
-                                          isEvenRow && !isSelected && !displayData.archived ? 'bg-sidebar-background' : ''
-                                        }`}
-                                        style={{ gridTemplateColumns }}
-                                      >
-                                        <div></div> {/* Empty checkbox cell */}
-                                        <div className="col-span-4 px-4 py-2 flex flex-wrap gap-2">
-                                          {tags.length > 0 ? (
-                                            Object.entries(tagsByType).map(([typeName, typeTags]) =>
-                                              typeTags.map((tag: { type: string; value: string }) => (
-                                                <Badge
-                                                  key={`${tag.type}-${tag.value}`}
-                                                  variant="outline"
-                                                  className="text-xs"
-                                                >
-                                                  {typeName}: {tag.value}
-                                                </Badge>
-                                              ))
-                                            )
-                                          ) : (
-                                            <span className="text-xs text-foreground/50">No tags</span>
-                                          )}
-                                        </div>
-                                        <div></div> {/* Empty actions cell */}
-                                      </div>
-                                    </React.Fragment>
-                                  );
-                                })}
-                              </div>
-                              
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  /* Main Tabs */
-                  <div id="documents-recent-tabs" className="h-full p-6 max-w-[100rem] mx-auto">
-                  {/* Main Tabs - Custom Styling */}
-                  <div className="flex items-center gap-8 mb-6 border-b border-foreground/10">
+                {/* Tabs - above search */}
+                <div id="documents-recent-tabs" className="px-6 pt-6 max-w-[100rem] mx-auto">
+                  <div className="flex items-center gap-8 border-b border-foreground/10">
                     <button
                       onClick={() => handleTabChange("documents")}
                       className={`flex items-center gap-2 pb-4 text-lg font-medium transition-colors ${
@@ -1924,7 +1356,112 @@ export function VaultHomepage() {
                       Documents
                     </button>
                   </div>
+                </div>
 
+                {/* Search Section - only when Q&A Pairs tab is selected */}
+                {activeTab === "documents" && (
+                  <div id="search-section" className="bg-sidebar-background/50">
+                    <div className="p-6 flex items-center gap-3 max-w-[100rem] mx-auto">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-foreground/70" />
+                        <Input
+                          value={searchInput}
+                          onChange={(e) => setSearchInput(e.target.value)}
+                          onKeyPress={handleKeyPress}
+                          placeholder="Search or filter my Vault..."
+                          className="pl-10 pr-10 h-12"
+                        />
+                        {searchInput && (
+                          <button
+                            onClick={() => {
+                              setSearchInput('');
+                              navigate('/vault');
+                            }}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-foreground/70 hover:text-foreground transition-colors"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="xl"
+                        onClick={() => setShowFiltersPanel(true)}
+                        className="flex items-center gap-2 h-12 px-4"
+                      >
+                        <Filter className="h-4 w-4" />
+                        Open Filters
+                        {hasActiveFilters && (
+                          <Badge variant="secondary" className="text-xs">
+                            {totalFiltersCount}
+                          </Badge>
+                        )}
+                      </Button>
+                      <Button
+                        onClick={handleSearch}
+                        className="bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/80 px-6 h-12 min-w-32"
+                      >
+                        Find
+                      </Button>
+                    </div>
+                    {hasActiveFilters && (
+                      <div className="px-6 pb-2 flex items-center justify-between max-w-[100rem] mx-auto">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm text-foreground/70">Active filters:</span>
+                          {Object.entries(selectedTagFilters).map(([tagTypeName, values]) =>
+                            values.map(value => (
+                              <Badge key={`${tagTypeName}-${value}`} variant="secondary" className="gap-1">
+                                {tagTypeName}: {value}
+                                <X
+                                  className="h-3 w-3 cursor-pointer"
+                                  onClick={() => {
+                                    const newValues = values.filter(v => v !== value);
+                                    if (newValues.length === 0) {
+                                      const newFilters = { ...selectedTagFilters };
+                                      delete newFilters[tagTypeName];
+                                      setSelectedTagFilters(newFilters);
+                                    } else {
+                                      setSelectedTagFilters({ ...selectedTagFilters, [tagTypeName]: newValues });
+                                    }
+                                  }}
+                                />
+                              </Badge>
+                            ))
+                          )}
+                          {selectedDocuments.map(document => (
+                            <Badge key={document} variant="secondary" className="gap-1">
+                              Document: {document}
+                              <X className="h-3 w-3 cursor-pointer" onClick={() => setSelectedDocuments(prev => prev.filter(d => d !== document))} />
+                            </Badge>
+                          ))}
+                          {selectedDateRange && selectedDateRange.type !== 'any' && (
+                            <Badge variant="secondary" className="gap-1">
+                              Date range
+                              <X className="h-3 w-3 cursor-pointer" onClick={() => setSelectedDateRange(null)} />
+                            </Badge>
+                          )}
+                          {selectedPriorSamples.map(sampleId => {
+                            const sample = fileHistory.find(f => f.id === sampleId);
+                            return sample ? (
+                              <Badge key={sampleId} variant="secondary" className="gap-1">
+                                Sample: {sample.name}
+                                <X className="h-3 w-3 cursor-pointer" onClick={() => setSelectedPriorSamples(prev => prev.filter(id => id !== sampleId))} />
+                              </Badge>
+                            ) : null;
+                          })}
+                          <Button variant="link" size="sm" onClick={clearFilters}>
+                            Clear filters
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Content - tab content only (no inline search results) */}
+              <div id="page-content" className="flex-1">
+                <div className="h-full p-6 max-w-[100rem] mx-auto">
                   {/* Q&A Pairs Content */}
                   {activeTab === "documents" && (
                     <div ref={qaContentRef} className="space-y-6">
@@ -2764,7 +2301,6 @@ export function VaultHomepage() {
                     </div>
                   )}
                   </div>
-                )}
               </div>
             </div>
           </div>
