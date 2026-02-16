@@ -1727,7 +1727,7 @@ export function VaultHomepage() {
                                           
                                           {/* Actions Column - Hover Revealed */}
                                           <div className="grid items-start justify-center px-4 py-3 gap-1">
-                                            <div className="opacity-0 grid items-start gap-1 justify-center group-hover:opacity-100 transition-opacity">
+                                            <div className="grid items-start gap-1 justify-center">
                                               <Tooltip>
                                                 <TooltipTrigger asChild>
                                                   <Button
