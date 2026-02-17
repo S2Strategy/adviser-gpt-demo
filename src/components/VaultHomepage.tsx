@@ -2367,7 +2367,7 @@ export function VaultHomepage() {
                         };
 
                         return (
-                          <div className="space-y-3">
+                          <div className="space-y-6">
                             {documentViewMode === "quarter" ? (
                               (sortedQuarters as Array<[string, DocType[]]>).map(([quarter, quarterDocs]) => (
                                 <Collapsible
