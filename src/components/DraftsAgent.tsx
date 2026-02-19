@@ -1,5 +1,5 @@
-import React, { useRef, useState, useMemo } from 'react';
-import { Upload, X, Globe, PlusCircle, Save, FolderOpen, Filter } from 'lucide-react';
+import React, { useRef, useState, useMemo, useEffect } from 'react';
+import { Upload, X, Globe, PlusCircle, Save, FolderOpen, Filter, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
@@ -15,8 +15,12 @@ import { SavedDraftsPanel } from '@/components/SavedDraftsPanel';
 import { FiltersPanel, DateRange } from '@/components/FiltersPanel';
 import { SavedDraft } from '@/types/drafts';
 import { useToast } from '@/hooks/use-toast';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { useVaultEdits } from '@/hooks/useVaultState';
+import { createImportSession } from '@/utils/importStorage';
+import { QuestionItem } from '@/types/vault';
 import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 export interface UploadedFile {
   id: string;
@@ -89,6 +93,9 @@ interface DraftsAgentProps {
   // Prompt
   prompt: string;
   onPromptChange: (value: string) => void;
+  promptHistory: string[];
+  onDeletePromptHistory: (index: number) => void;
+  onSavePromptFromHistory: (promptText: string) => void;
   
   // Actions
   onGenerate: () => void;
@@ -126,15 +133,21 @@ export function DraftsAgent({
   onClearAllFilters,
   prompt,
   onPromptChange,
+  promptHistory,
+  onDeletePromptHistory,
+  onSavePromptFromHistory,
   onGenerate,
   isLoading = false,
   onLoadPrompt,
   onLoadDraft,
 }: DraftsAgentProps) {
   const { toast } = useToast();
-  const { edits } = useVaultEdits();
+  const { profile } = useUserProfile();
+  const { edits, saveManyEdits } = useVaultEdits();
   const informationalFilesInputRef = useRef<HTMLInputElement>(null);
+  const sampleFileInputRef = useRef<HTMLInputElement>(null);
   const [selectedDataFile, setSelectedDataFile] = useState<string>("");
+  const [isUploadingSample, setIsUploadingSample] = useState(false);
 
   // Get available Samples from Vault: MOCK_CONTENT_ITEMS + edits (type "Samples" only)
   const sampleDocuments = useMemo(() => {
@@ -281,6 +294,41 @@ export function DraftsAgent({
     }
   };
 
+  const handleSampleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingSample(true);
+    try {
+      const session = createImportSession(undefined, file, profile.fullName || 'Current User');
+      const itemId = `sample-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const newItem: QuestionItem = {
+        id: itemId,
+        type: 'Samples',
+        tags: [],
+        documentTitle: file.name,
+        documentId: session.id,
+        updatedAt: new Date().toISOString(),
+        updatedBy: profile.fullName || 'Current User',
+      };
+      saveManyEdits([[itemId, newItem]]);
+      onSampleFileAdd(file);
+      toast({
+        title: 'Sample uploaded',
+        description: `${file.name} was saved as a Sample and added to the Vault.`,
+      });
+    } catch (err) {
+      console.error('Error uploading sample:', err);
+      toast({
+        title: 'Upload failed',
+        description: err instanceof Error ? err.message : 'Could not save sample.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUploadingSample(false);
+      if (sampleFileInputRef.current) sampleFileInputRef.current.value = '';
+    }
+  };
+
   const buttonText = hasContent ? 'Update Draft' : 'Generate Draft';
   const placeholderText = hasContent ? 'What should I update?' : 'What should I write?';
   const isButtonDisabled = !prompt.trim() || isLoading || (hasContent && hasPendingDiffs);
@@ -298,7 +346,26 @@ export function DraftsAgent({
   };
 
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [promptToSave, setPromptToSave] = useState<string | undefined>(undefined);
   const [activeTab, setActiveTab] = useState<'agent' | 'prompts' | 'drafts'>('agent');
+  const [promptTabsActive, setPromptTabsActive] = useState<'examples' | 'history'>(
+    promptHistory.length > 0 && hasContent ? 'history' : 'examples'
+  );
+  const [filesCollapsed, setFilesCollapsed] = useState(hasContent);
+
+  // Update prompt tabs active state when history or content changes
+  useEffect(() => {
+    if (promptHistory.length > 0 && hasContent) {
+      setPromptTabsActive('history');
+    } else {
+      setPromptTabsActive('examples');
+    }
+  }, [promptHistory.length, hasContent]);
+
+  // Update files collapsed state when content changes
+  useEffect(() => {
+    setFilesCollapsed(hasContent);
+  }, [hasContent]);
 
   const handleLoadPrompt = (promptText: string) => {
     onPromptChange(promptText);
@@ -323,94 +390,238 @@ export function DraftsAgent({
         </div>
 
         <TabsContent value="agent" className="flex-1 flex flex-col overflow-hidden m-0">
-          <div className="p-6 space-y-8 flex-1 overflow-y-auto">
+          <div className="p-6 space-y-6 flex-1 overflow-y-auto">
         <div>
           <h2 className="text-lg font-semibold mb-4">Drafts Agent</h2>
         </div>
 
-        {/* Writing Sample - from Vault Add Content -> Samples only */}
-        <div className="space-y-1">
-          <Label className="text-sm font-medium">Writing Sample</Label>
-          <p className="text-xs text-foreground/70">Choose a sample from the Vault to guide style, structure, and tone. Add samples via Vault → Add Content → Samples.</p>
-          
-          {sampleFile ? (
-            <div className="flex flex-wrap gap-2">
-              <FileCard file={sampleFile} onRemove={onSampleFileRemove} />
-            </div>
-          ) : sampleDocuments.length > 0 ? (
-            <Select onValueChange={handleSampleSelect}>
-              <SelectTrigger className="w-full font-medium">
-                <FolderOpen className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Select from Vault" />
-              </SelectTrigger>
-              <SelectContent>
-                {sampleDocuments.map((doc) => (
-                  <SelectItem key={doc.id} value={doc.id}>
-                    {doc.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            <p className="text-xs text-foreground/60 py-2">
-              No samples yet. Add samples via Vault → Add Content → Samples.
-            </p>
-          )}
-        </div>
+        {/* Files & Samples - Collapsible only after draft is generated */}
+        {hasContent ? (
+          <Collapsible open={!filesCollapsed} onOpenChange={(open) => setFilesCollapsed(!open)}>
+            <CollapsibleTrigger className="w-full">
+              <div className="flex items-center justify-between w-full p-2 rounded-lg border border-foreground/10 hover:bg-foreground/5 transition-colors">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">Samples & Files</span>
+                  {filesCollapsed && (
+                    <span className="text-xs text-foreground/60">
+                      {sampleFile ? '1 sample' : '0 samples'}, {informationalFiles.length} {informationalFiles.length === 1 ? 'input' : 'inputs'}
+                    </span>
+                  )}
+                </div>
+                {filesCollapsed ? (
+                  <ChevronDown className="h-4 w-4 text-foreground/60" />
+                ) : (
+                  <ChevronUp className="h-4 w-4 text-foreground/60" />
+                )}
+              </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 mt-4">
+              {/* Writing Sample - from Vault Add Content -> Samples only */}
+              <div className="space-y-1">
+                <Label className="text-sm font-medium">Writing Sample</Label>
+                <p className="text-xs text-foreground/70">Choose a sample from the Vault to guide style, structure, and tone. Add samples via Vault → Add Content → Samples.</p>
+                
+                {sampleFile ? (
+                  <div className="flex flex-wrap gap-2">
+                    <FileCard file={sampleFile} onRemove={onSampleFileRemove} />
+                  </div>
+                ) : sampleDocuments.length > 0 ? (
+                  <Select onValueChange={handleSampleSelect}>
+                    <SelectTrigger className="w-full font-medium">
+                      <FolderOpen className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="Select from Vault" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sampleDocuments.map((doc) => (
+                        <SelectItem key={doc.id} value={doc.id}>
+                          {doc.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="space-y-2 py-2">
+                    <p className="text-xs text-foreground/60">No samples yet. Upload one to store it as a Sample in the Vault.</p>
+                    <input
+                      ref={sampleFileInputRef}
+                      type="file"
+                      className="hidden"
+                      accept=".pdf,.doc,.docx,.txt"
+                      onChange={handleSampleFileUpload}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => sampleFileInputRef.current?.click()}
+                      disabled={isUploadingSample}
+                      className="w-full"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      {isUploadingSample ? 'Uploading…' : 'Upload a sample'}
+                    </Button>
+                  </div>
+                )}
+              </div>
 
-        {/* Add Informational Inputs Section */}
-        <div className="space-y-1">
-          <Label className="text-sm font-medium">Informational Inputs</Label>
-          <p className="text-xs text-foreground/70">
-          Add files with data to inform draft generation. These files are not stored.
-          </p>
-          
-          {/* Data Files Dropdown */}
-          {dataFiles.length > 0 && (
-            <div className="mb-2">
-              <Select value={selectedDataFile} onValueChange={handleDataFileSelect}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select Data File..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {dataFiles.map((file) => (
-                    <SelectItem key={file.id} value={file.id}>
-                      {file.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+              {/* Add Informational Inputs Section */}
+              <div className="space-y-1">
+                <Label className="text-sm font-medium">Informational Inputs</Label>
+                <p className="text-xs text-foreground/70">
+                Add files with data to inform draft generation. These files are not stored.
+                </p>
+                
+                {/* Data Files Dropdown */}
+                {dataFiles.length > 0 && (
+                  <div className="mb-2">
+                    <Select value={selectedDataFile} onValueChange={handleDataFileSelect}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select Data File..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {dataFiles.map((file) => (
+                          <SelectItem key={file.id} value={file.id}>
+                            {file.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
-          <input
-            ref={informationalFilesInputRef}
-            type="file"
-            multiple
-            className="hidden"
-            onChange={handleInformationalFilesSelect}
-            accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.csv"
-          />
-          {informationalFiles.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {informationalFiles.map((file) => (
-                <FileCard
-                  key={file.id}
-                  file={file}
-                  onRemove={() => onInformationalFileRemove(file.id)}
+                <input
+                  ref={informationalFilesInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={handleInformationalFilesSelect}
+                  accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.csv"
                 />
-              ))}
+                {informationalFiles.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {informationalFiles.map((file) => (
+                      <FileCard
+                        key={file.id}
+                        file={file}
+                        onRemove={() => onInformationalFileRemove(file.id)}
+                      />
+                    ))}
+                  </div>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={() => informationalFilesInputRef.current?.click()}
+                  className="w-full"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Add Informational Inputs
+                </Button>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        ) : (
+          <div className="space-y-6">
+            {/* Writing Sample - from Vault Add Content -> Samples only */}
+            <div className="space-y-1">
+              <Label className="text-sm font-medium">Writing Sample</Label>
+              <p className="text-xs text-foreground/70">Choose a sample from the Vault to guide style, structure, and tone. Add samples via Vault → Add Content → Samples.</p>
+              
+              {sampleFile ? (
+                <div className="flex flex-wrap gap-2">
+                  <FileCard file={sampleFile} onRemove={onSampleFileRemove} />
+                </div>
+              ) : sampleDocuments.length > 0 ? (
+                <Select onValueChange={handleSampleSelect}>
+                  <SelectTrigger className="w-full font-medium">
+                    <FolderOpen className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Select from Vault" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sampleDocuments.map((doc) => (
+                      <SelectItem key={doc.id} value={doc.id}>
+                        {doc.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="space-y-2 py-2">
+                  <p className="text-xs text-foreground/60">No samples yet. Upload one to store it as a Sample in the Vault.</p>
+                  <input
+                    ref={sampleFileInputRef}
+                    type="file"
+                    className="hidden"
+                    accept=".pdf,.doc,.docx,.txt"
+                    onChange={handleSampleFileUpload}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => sampleFileInputRef.current?.click()}
+                    disabled={isUploadingSample}
+                    className="w-full"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    {isUploadingSample ? 'Uploading…' : 'Upload a sample'}
+                  </Button>
+                </div>
+              )}
             </div>
-          )}
-          <Button
-            variant="outline"
-            onClick={() => informationalFilesInputRef.current?.click()}
-            className="w-full"
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            Add Informational Inputs
-          </Button>
-        </div>
+
+            {/* Add Informational Inputs Section */}
+            <div className="space-y-1">
+              <Label className="text-sm font-medium">Informational Inputs</Label>
+              <p className="text-xs text-foreground/70">
+              Add files with data to inform draft generation. These files are not stored.
+              </p>
+              
+              {/* Data Files Dropdown */}
+              {dataFiles.length > 0 && (
+                <div className="mb-2">
+                  <Select value={selectedDataFile} onValueChange={handleDataFileSelect}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select Data File..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {dataFiles.map((file) => (
+                        <SelectItem key={file.id} value={file.id}>
+                          {file.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <input
+                ref={informationalFilesInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={handleInformationalFilesSelect}
+                accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.csv"
+              />
+              {informationalFiles.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {informationalFiles.map((file) => (
+                    <FileCard
+                      key={file.id}
+                      file={file}
+                      onRemove={() => onInformationalFileRemove(file.id)}
+                    />
+                  ))}
+                </div>
+              )}
+              <Button
+                variant="outline"
+                onClick={() => informationalFilesInputRef.current?.click()}
+                className="w-full"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Add Informational Inputs
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Include Web Sources Toggle */}
         <div className="space-y-1">
@@ -546,7 +757,10 @@ export function DraftsAgent({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowSaveDialog(true)}
+                onClick={() => {
+                  setPromptToSave(undefined);
+                  setShowSaveDialog(true);
+                }}
                 className="h-7 text-xs"
               >
                 <Save className="h-3 w-3 mr-1" />
@@ -563,8 +777,96 @@ export function DraftsAgent({
             disabled={isLoading}
           />
 
-        {/* Sample Prompts */}
-        {!hasContent && (
+        {/* Prompt Examples and History Tabs - Only show after draft is generated */}
+        {hasContent ? (
+          <Tabs value={promptTabsActive} onValueChange={(v) => setPromptTabsActive(v as 'examples' | 'history')} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="examples" className="text-xs">Prompt Examples</TabsTrigger>
+              <TabsTrigger value="history" className="text-xs">Prompt History</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="examples" className="mt-4">
+              <div className="grid grid-cols-1 gap-2">
+                {samplePrompts.map((samplePrompt, index) => (
+                  <Button
+                    key={index}
+                    variant="outline"
+                    size="sm"
+                    className="text-sm font-normal bg-sidebar-background/50 flex flex-wrap justify-between min-h-14 h-auto px-4 py-2 items-center text-sidebar-foreground hover:bg-sidebar-background/70 border-foreground/10 hover:border-foreground/20 whitespace-normal text-left"
+                    onClick={() => handleSamplePromptClick(samplePrompt)}
+                  >
+                    <span className="flex flex-1">{samplePrompt}</span>
+                    <PlusCircle className="h-4 w-4 text-sidebar-foreground/70 flex-shrink-0 ml-2" />
+                  </Button>
+                ))}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="history" className="mt-4">
+              {promptHistory.length > 0 ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-foreground/80">Previously submitted prompts:</p>
+                  <div className="grid grid-cols-1 gap-2">
+                    {promptHistory.map((historyPrompt, index) => (
+                      <div
+                        key={index}
+                        className="text-sm font-normal bg-sidebar-background/50 flex flex-wrap justify-between min-h-14 h-auto px-4 py-2 items-center text-sidebar-foreground border border-foreground/10 hover:border-foreground/20 whitespace-normal rounded-md"
+                      >
+                        <span className="flex flex-1 pr-2">{historyPrompt}</span>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-background/70"
+                                onClick={() => onPromptChange(historyPrompt)}
+                              >
+                                <PlusCircle className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Load into prompt box</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-background/70"
+                              onClick={() => {
+                                setPromptToSave(historyPrompt);
+                                setShowSaveDialog(true);
+                              }}
+                            >
+                              <Save className="h-4 w-4" />
+                            </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Save prompt</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0 text-sidebar-foreground/70 hover:text-destructive hover:bg-sidebar-background/70"
+                                onClick={() => onDeletePromptHistory(index)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Delete from history</TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-foreground/60 py-2">No prompt history yet.</p>
+              )}
+            </TabsContent>
+          </Tabs>
+        ) : (
           <div className="space-y-2">
             <p className="text-sm text-foreground/80">Try one of these examples:</p>
             <div className="grid grid-cols-1 gap-2">
@@ -589,8 +891,13 @@ export function DraftsAgent({
           {/* Save Prompt Dialog */}
           <SavePromptDialog
             open={showSaveDialog}
-            onOpenChange={setShowSaveDialog}
-            prompt={prompt}
+            onOpenChange={(open) => {
+              setShowSaveDialog(open);
+              if (!open) {
+                setPromptToSave(undefined);
+              }
+            }}
+            prompt={promptToSave || prompt}
           />
 
           {/* Generate Button */}

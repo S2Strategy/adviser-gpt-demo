@@ -44,6 +44,7 @@ export function Drafts() {
   const [includeVaultContent, setIncludeVaultContent] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [lastSentPrompt, setLastSentPrompt] = useState('');
+  const [promptHistory, setPromptHistory] = useState<string[]>([]);
 
   // Filter state management
   const [showFiltersPanel, setShowFiltersPanel] = useState(false);
@@ -148,6 +149,13 @@ export function Drafts() {
       setOriginalContent(finalContent);
       setPrompt('');
       setShowCtaMessage(true);
+      
+      // Add prompt to history (most recent first, avoid duplicates, limit to 20)
+      setPromptHistory(prev => {
+        const filtered = prev.filter(p => p !== promptText);
+        return [promptText, ...filtered].slice(0, 20);
+      });
+      
       toast({
         title: "Draft generated ✓",
         description: "Your draft has been generated successfully.",
@@ -200,6 +208,13 @@ export function Drafts() {
       setHasPendingDiffs(true);
       setPrompt('');
       setShowCtaMessage(true);
+      
+      // Add prompt to history (most recent first, avoid duplicates, limit to 20)
+      setPromptHistory(prev => {
+        const filtered = prev.filter(p => p !== promptText);
+        return [promptText, ...filtered].slice(0, 20);
+      });
+      
       toast({
         title: "Draft updated ✓",
         description: "Review the changes and accept or reject them.",
@@ -363,6 +378,16 @@ export function Drafts() {
     setSelectedPriorSamples([]);
   };
 
+  // Prompt history handlers
+  const handleDeletePromptHistory = (index: number) => {
+    setPromptHistory(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSavePromptFromHistory = (promptText: string) => {
+    // This will be handled by DraftsAgent component
+    // We'll pass the prompt text to trigger the save dialog
+  };
+
   // Clear draft handler
   const handleClearDraft = () => {
     setContent('');
@@ -372,6 +397,7 @@ export function Drafts() {
     setPrompt('');
     setLastSentPrompt('');
     setShowCtaMessage(false);
+    setPromptHistory([]); // Clear prompt history when starting new draft
     setSampleFile(null);
     setInformationalFiles([]);
     setIncludeWebSources(false);
@@ -480,6 +506,9 @@ export function Drafts() {
                 onClearAllFilters={handleClearAllFilters}
                 prompt={prompt}
                 onPromptChange={setPrompt}
+                promptHistory={promptHistory}
+                onDeletePromptHistory={handleDeletePromptHistory}
+                onSavePromptFromHistory={handleSavePromptFromHistory}
                 onGenerate={handleGenerateOrUpdate}
                 isLoading={isLoading}
                 onLoadPrompt={setPrompt}

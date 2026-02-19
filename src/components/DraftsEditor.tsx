@@ -207,17 +207,6 @@ export function DraftEditor({
 
       {/* Conversational Editor Content */}
       <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
-        {/* User bubble (top right) - shown after generate/update */}
-        {lastSentPrompt && (
-          <div className="flex justify-end w-full">
-            <div className="max-w-[90%] flex justify-end items-end flex-col">
-              <div className="py-2.5 px-4 rounded-lg bg-foreground/5 border border-gray-200 text-foreground text-sm leading-6 whitespace-pre-wrap">
-                {lastSentPrompt}
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* System reply: draft content */}
         {(content.trim() || isLoading) && (
           <div className="flex justify-start w-full">
