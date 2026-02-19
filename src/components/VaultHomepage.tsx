@@ -218,7 +218,12 @@ export function VaultHomepage() {
   });
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<Set<string>>(new Set());
   const [quarterFilter, setQuarterFilter] = useState<string>("all");
-  const [documentViewMode, setDocumentViewMode] = useState<"quarter" | "type">("quarter");
+  const DOCUMENT_VIEW_MODE_KEY = "vault-document-view-mode";
+  const [documentViewMode, setDocumentViewMode] = useState<"quarter" | "type">(() => {
+    if (typeof window === "undefined") return "type";
+    const saved = window.localStorage.getItem(DOCUMENT_VIEW_MODE_KEY);
+    return saved === "quarter" || saved === "type" ? (saved as "quarter" | "type") : "type";
+  });
   const [quarterAssignDocument, setQuarterAssignDocument] = useState<{ name: string; currentQuarter?: string } | null>(null);
   const [quarterAssignSelected, setQuarterAssignSelected] = useState<string>("unassigned");
   const [collapsedDocSections, setCollapsedDocSections] = useState<Set<string>>(new Set());
@@ -376,7 +381,39 @@ export function VaultHomepage() {
     }
     
     // Migrate items to new tag format
-    return migrateQuestionItems(items);
+    const migratedItems = migrateQuestionItems(items);
+    
+    // Also include items from edits that don't exist in MOCK_CONTENT_ITEMS
+    // These are items that were created (e.g., uploaded Samples) but don't have a corresponding mock item
+    const mockItemIds = new Set(migratedItems.map(item => item.id));
+    const editOnlyItems: QuestionItem[] = [];
+    
+    Object.entries(edits).forEach(([itemId, edit]) => {
+      // Skip if this item already exists in mock data
+      if (mockItemIds.has(itemId)) return;
+      
+      // Skip deleted items
+      if (edit?.deleted) return;
+      
+      // Only include items that have a documentTitle (so they can be grouped as documents)
+      if (edit?.documentTitle) {
+        editOnlyItems.push({
+          id: itemId,
+          type: edit.type || 'Questionnaires',
+          tags: edit.tags || [],
+          question: edit.question || '',
+          answer: edit.answer || '',
+          documentTitle: edit.documentTitle,
+          documentId: edit.documentId || itemId,
+          updatedAt: edit.updatedAt || new Date().toISOString(),
+          updatedBy: edit.updatedBy || 'Unknown',
+          quarter: edit.quarter,
+          archived: edit.archived || false,
+        } as QuestionItem);
+      }
+    });
+    
+    return [...migratedItems, ...migrateQuestionItems(editOnlyItems)];
   };
 
   const allItems = flattenItems();
@@ -2083,7 +2120,10 @@ export function VaultHomepage() {
                             variant={documentViewMode === "type" ? "default" : "ghost"}
                             size="sm"
                             className="rounded-full h-8 px-4"
-                            onClick={() => setDocumentViewMode("type")}
+                            onClick={() => {
+                              setDocumentViewMode("type");
+                              window.localStorage.setItem(DOCUMENT_VIEW_MODE_KEY, "type");
+                            }}
                           >
                             By Type
                           </Button>
@@ -2091,7 +2131,10 @@ export function VaultHomepage() {
                             variant={documentViewMode === "quarter" ? "default" : "ghost"}
                             size="sm"
                             className="rounded-full h-8 px-4"
-                            onClick={() => setDocumentViewMode("quarter")}
+                            onClick={() => {
+                              setDocumentViewMode("quarter");
+                              window.localStorage.setItem(DOCUMENT_VIEW_MODE_KEY, "quarter");
+                            }}
                           >
                             By Quarter
                           </Button>
@@ -2120,6 +2163,7 @@ export function VaultHomepage() {
                         type DisplayType = "Data files" | "Insights" | "Questionnaires" | "Samples";
                         const getDisplayType = (docType: string): DisplayType => {
                           if (docType === "Data Files") return "Data files";
+                          if (docType === "Samples") return "Samples";
                           if (docType === "Policy Docs") return "Insights";
                           if (docType === "Commentary Docs") return "Samples";
                           return "Questionnaires";
@@ -2145,7 +2189,9 @@ export function VaultHomepage() {
                             const docKey = item.documentTitle;
                             if (!documentMap.has(docKey)) {
                               let docType = "Questionnaires";
-                              if (item.type === "Policies" || item.type === "Policy") {
+                              if (item.type === "Samples") {
+                                docType = "Samples";
+                              } else if (item.type === "Policies" || item.type === "Policy") {
                                 docType = "Policy Docs";
                               } else if (item.type === "Commentary") {
                                 docType = "Commentary Docs";

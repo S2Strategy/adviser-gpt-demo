@@ -114,8 +114,30 @@ export function PolicyDocs() {
         const file = uploadedFile.file;
 
         if (!autoCreateQA) {
-          // Upload without QA extraction
-          await uploadDocumentToStorage(file);
+          // Upload without QA extraction - still create a QuestionItem so it appears in Documents view
+          const documentId = await uploadDocumentToStorage(file);
+          
+          // Create import session for document tracking
+          const session: ImportSession = createImportSession(
+            undefined, // No strategy for Policy Docs
+            file,
+            profile.fullName || "Current User"
+          );
+
+          // Create a single QuestionItem to represent the document
+          const itemId = `sample-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          const newItem: QuestionItem = {
+            id: itemId,
+            type: "Samples",
+            tags: [],
+            documentTitle: file.name,
+            documentId: session.id,
+            quarter: selectedQuarter || undefined,
+            updatedAt: new Date().toISOString(),
+            updatedBy: profile.fullName || "Current User",
+          };
+
+          saveManyEdits([[itemId, newItem]]);
           
           toast({
             title: "Document uploaded successfully",
@@ -149,7 +171,7 @@ export function PolicyDocs() {
             const itemId = `qa-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`;
             const newItem: QuestionItem = {
               id: itemId,
-              type: "Policies",
+              type: "Samples",
               tags: tags,
               question: qa.question,
               answer: qa.answer,

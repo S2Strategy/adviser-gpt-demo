@@ -136,11 +136,11 @@ export function DraftsAgent({
   const informationalFilesInputRef = useRef<HTMLInputElement>(null);
   const [selectedDataFile, setSelectedDataFile] = useState<string>("");
 
-  // Get available Samples (Policies) from Vault: MOCK_CONTENT_ITEMS + edits
+  // Get available Samples from Vault: MOCK_CONTENT_ITEMS + edits (type "Samples" only)
   const sampleDocuments = useMemo(() => {
     const uniqueDocs = new Map<string, { id: string; name: string; uploadedAt: string; uploadedBy: string }>();
 
-    // From MOCK_CONTENT_ITEMS: items with type Policies or Policy
+    // From MOCK_CONTENT_ITEMS: items with type Samples
     const mockItems = migrateQuestionItems(MOCK_CONTENT_ITEMS.flatMap(doc =>
       doc.items.map(item => ({
         ...item,
@@ -148,8 +148,8 @@ export function DraftsAgent({
         documentId: doc.id
       }))
     ));
-    const policiesFromMock = mockItems.filter(item => item.type === "Policies" || item.type === "Policy");
-    policiesFromMock.forEach(item => {
+    const samplesFromMock = mockItems.filter(item => item.type === "Samples");
+    samplesFromMock.forEach(item => {
       const docId = item.documentId || item.id;
       const name = item.documentTitle || 'Untitled';
       if (!uniqueDocs.has(docId)) {
@@ -162,10 +162,10 @@ export function DraftsAgent({
       }
     });
 
-    // From edits: entries with type Policies (edit-only documents from Add Content -> Samples)
+    // From edits: entries with type Samples (documents from Add Content -> Samples)
     Object.entries(edits).forEach(([itemId, edit]) => {
       const type = edit?.type;
-      if (type !== "Policies" && type !== "Policy") return;
+      if (type !== "Samples") return;
       const documentId = edit.documentId || itemId;
       const documentTitle = edit.documentTitle || 'Untitled';
       if (!uniqueDocs.has(documentId)) {
@@ -201,25 +201,25 @@ export function DraftsAgent({
     return Array.from(uniqueDocs.values());
   }, []);
 
-  // Convert a Policies (Samples) document to a File object (from MOCK and/or edits)
+  // Convert a Samples document to a File object (from MOCK and/or edits)
   const convertDocumentToFile = (docId: string): File => {
     const items: Array<{ question?: string; answer?: string; body?: string }> = [];
 
     // From MOCK_CONTENT_ITEMS: ContentItem with id === docId or items with documentId === docId
     const mockDoc = MOCK_CONTENT_ITEMS.find(d => d.id === docId);
     if (mockDoc) {
-      const policiesItems = mockDoc.items.filter(item => item.type === "Policies" || item.type === "Policy");
-      items.push(...policiesItems);
+      const samplesItems = mockDoc.items.filter(item => item.type === "Samples");
+      items.push(...samplesItems);
     } else {
       const mockItemsWithDocId = MOCK_CONTENT_ITEMS.flatMap(doc =>
-        doc.items.filter(item => (item.documentId || doc.id) === docId && (item.type === "Policies" || item.type === "Policy"))
+        doc.items.filter(item => (item.documentId || doc.id) === docId && item.type === "Samples")
       );
       items.push(...mockItemsWithDocId);
     }
 
-    // From edits: all entries with documentId === docId and type Policies
+    // From edits: all entries with documentId === docId and type Samples
     Object.entries(edits).forEach(([, edit]) => {
-      if ((edit?.type === "Policies" || edit?.type === "Policy") && (edit?.documentId === docId)) {
+      if (edit?.type === "Samples" && edit?.documentId === docId) {
         items.push({
           question: edit.question,
           answer: edit.answer,
@@ -331,7 +331,7 @@ export function DraftsAgent({
         {/* Writing Sample - from Vault Add Content -> Samples only */}
         <div className="space-y-1">
           <Label className="text-sm font-medium">Writing Sample</Label>
-          <p className="text-xs text-foreground/70">Choose a sample from the vault to guide style, structure, and tone. Add samples via Vault → Add Content → Samples.</p>
+          <p className="text-xs text-foreground/70">Choose a sample from the Vault to guide style, structure, and tone. Add samples via Vault → Add Content → Samples.</p>
           
           {sampleFile ? (
             <div className="flex flex-wrap gap-2">
@@ -362,7 +362,7 @@ export function DraftsAgent({
         <div className="space-y-1">
           <Label className="text-sm font-medium">Informational Inputs</Label>
           <p className="text-xs text-foreground/70">
-          Add files with data to inform draft generation.
+          Add files with data to inform draft generation. These files are not stored.
           </p>
           
           {/* Data Files Dropdown */}
