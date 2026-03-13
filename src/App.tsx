@@ -24,8 +24,6 @@ import { AddContent } from "./pages/AddContent";
 import WordPluginDemo from "./pages/WordPluginDemo";
 import FileUpload from "./pages/FileUpload";
 import SearchResults from "./pages/SearchResults";
-import Auth from "./pages/Auth";
-import ResetPassword from "./pages/ResetPassword";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { CodeGate } from "./components/CodeGate";
 
@@ -44,11 +42,6 @@ const App = () => (
             <BrowserRouter>
             <TourOverlay />
             <Routes>
-              {/* Public routes - no authentication required */}
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              
-              {/* Protected routes - authentication required */}
               <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
               <Route path="/vault" element={<ProtectedRoute><Vault /></ProtectedRoute>} />
               <Route path="/search" element={<ProtectedRoute><SearchResults /></ProtectedRoute>} />

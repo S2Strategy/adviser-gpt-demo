@@ -6,7 +6,23 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { TourStep } from "@/types/tour";
 
 const TOOLTIP_WIDTH = 320;
-const TOOLTIP_GAP = 12; // gap between spotlight edge and card
+const INTRO_CARD_WIDTH = 420;
+const TOOLTIP_GAP = 12;
+
+/** Personal/free email domains not accepted as work email */
+const PERSONAL_EMAIL_DOMAINS = new Set([
+  "gmail.com", "googlemail.com", "yahoo.com", "yahoo.co.uk", "ymail.com",
+  "hotmail.com", "hotmail.co.uk", "outlook.com", "live.com", "msn.com", "outlook.co.uk",
+  "icloud.com", "me.com", "mac.com", "aol.com", "mail.com", "protonmail.com", "proton.me",
+  "zoho.com", "gmx.com", "gmx.net", "mail.ru", "yandex.com", "inbox.com", "fastmail.com",
+]);
+
+function isWorkEmail(email: string): boolean {
+  const trimmed = email.trim().toLowerCase();
+  if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return false;
+  const domain = trimmed.split("@")[1];
+  return !PERSONAL_EMAIL_DOMAINS.has(domain);
+} // gap between spotlight edge and card
 const ARROW_SIZE = 10;  // half-width of the caret triangle
 
 interface TourTooltipProps {
@@ -226,8 +242,10 @@ export function TourTooltip({
   const isLast = stepIndex === totalSteps - 1;
   const isIntroStep = step.id === "welcome-details";
   const isBookDemoStep = step.id === "book-demo";
+  const cardWidth = isIntroStep ? INTRO_CARD_WIDTH : TOOLTIP_WIDTH;
 
-  const emailValid = !workEmail || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(workEmail);
+  const emailFormatValid = !workEmail || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(workEmail.trim());
+  const emailValid = emailFormatValid && (!workEmail.trim() || isWorkEmail(workEmail));
   const showErrors = touched && isIntroStep;
 
   const anchored = useMemo<AnchoredPosition | null>(() => {
@@ -243,9 +261,9 @@ export function TourTooltip({
     const vh = window.innerHeight;
     const vw = window.innerWidth;
     const top = Math.max(8, Math.min(vh - cardHeight - 8, vh / 2 - cardHeight / 2));
-    const left = Math.max(8, Math.min(vw - TOOLTIP_WIDTH - 8, vw / 2 - TOOLTIP_WIDTH / 2));
+    const left = Math.max(8, Math.min(vw - cardWidth - 8, vw / 2 - cardWidth / 2));
     return { top, left, anchored: null };
-  }, [anchored, cardHeight]);
+  }, [anchored, cardHeight, cardWidth]);
 
   useLayoutEffect(() => {
     if (!cardRef.current) return;
@@ -279,26 +297,26 @@ export function TourTooltip({
       {floating.anchored && <Arrow side={floating.anchored.arrowSide} offset={floating.anchored.arrowOffset} />}
 
       {/* Header */}
-      <div className="px-5 pt-5 pb-3">
+      <div className={isIntroStep ? "px-6 pt-6 pb-3" : "px-5 pt-5 pb-3"}>
         <span className="text-[11px] font-semibold text-muted-foreground tracking-wider uppercase">
           {stepIndex + 1} of {totalSteps}
         </span>
       </div>
 
       {/* Body */}
-      <div className="px-5 pb-5 space-y-3">
+      <div className={isIntroStep ? "px-6 pb-6 space-y-4" : "px-5 pb-5 space-y-3"}>
         <h3
           className="font-semibold text-foreground"
-          style={{ fontSize: "15px", lineHeight: "1.4", letterSpacing: "-0.3px" }}
+          style={{ fontSize: isIntroStep ? "17px" : "15px", lineHeight: "1.4", letterSpacing: "-0.3px" }}
         >
           {step.title}
         </h3>
         {isIntroStep ? (
-          <div className="space-y-3 mt-1">
-            <p className="text-muted-foreground" style={{ fontSize: "13px", lineHeight: "1.6" }}>
+          <div className="space-y-4 mt-1">
+            <p className="text-muted-foreground" style={{ fontSize: "14px", lineHeight: "1.6" }}>
               {step.content}
             </p>
-            <div className="space-y-3 mt-2">
+            <div className="space-y-4 mt-3">
               <div className="space-y-1.5">
                 <Label htmlFor="tour-name" className="text-xs font-medium">Name</Label>
                 <Input
@@ -306,7 +324,7 @@ export function TourTooltip({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Jane Doe"
-                  className="h-8 text-sm"
+                  className={isIntroStep ? "h-9 text-sm" : "h-8 text-sm"}
                 />
                 {showErrors && !name.trim() && (
                   <p className="text-[11px] text-destructive">Please enter your name.</p>
@@ -320,13 +338,16 @@ export function TourTooltip({
                   onChange={(e) => setWorkEmail(e.target.value)}
                   placeholder="you@firm.com"
                   type="email"
-                  className="h-8 text-sm"
+                  className={isIntroStep ? "h-9 text-sm" : "h-8 text-sm"}
                 />
                 {showErrors && !workEmail.trim() && (
                   <p className="text-[11px] text-destructive">Please enter your work email.</p>
                 )}
-                {showErrors && workEmail.trim() && !emailValid && (
+                {showErrors && workEmail.trim() && !emailFormatValid && (
                   <p className="text-[11px] text-destructive">Enter a valid email address.</p>
+                )}
+                {showErrors && workEmail.trim() && emailFormatValid && !emailValid && (
+                  <p className="text-[11px] text-destructive">Please use a work email (no Gmail, Yahoo, etc.).</p>
                 )}
               </div>
               <div className="space-y-1.5">
@@ -336,7 +357,7 @@ export function TourTooltip({
                   value={company}
                   onChange={(e) => setCompany(e.target.value)}
                   placeholder="Your firm name"
-                  className="h-8 text-sm"
+                  className={isIntroStep ? "h-9 text-sm" : "h-8 text-sm"}
                 />
                 {showErrors && !company.trim() && (
                   <p className="text-[11px] text-destructive">Please enter your company.</p>
@@ -352,7 +373,7 @@ export function TourTooltip({
       </div>
 
       {/* Progress dots */}
-      <div className="flex items-center justify-center gap-1.5 pb-4">
+      <div className={isIntroStep ? "flex items-center justify-center gap-1.5 pb-5" : "flex items-center justify-center gap-1.5 pb-4"}>
         {Array.from({ length: totalSteps }).map((_, i) => (
           <div
             key={i}
@@ -364,7 +385,7 @@ export function TourTooltip({
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-end px-5 pb-5 gap-2">
+      <div className={isIntroStep ? "flex items-center justify-end px-6 pb-6 gap-2" : "flex items-center justify-end px-5 pb-5 gap-2"}>
         <div className="flex items-center gap-2">
           {!isFirst && (
             <Button variant="outline" size="sm" onClick={onPrev} className="h-8 px-3 gap-1">
@@ -389,7 +410,7 @@ export function TourTooltip({
           position: "fixed",
           top: floating.top,
           left: floating.left,
-          width: TOOLTIP_WIDTH,
+          width: cardWidth,
           zIndex: 9999,
           pointerEvents: opacity > 0 ? "auto" : "none",
           opacity,

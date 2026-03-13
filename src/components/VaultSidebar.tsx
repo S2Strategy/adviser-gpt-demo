@@ -88,7 +88,7 @@ export function VaultSidebar() {
       setIsAccountOpen(false);
       
       // Navigate to login page
-      navigate('/auth');
+      navigate('/');
   };
 
   const handleProfileClick = () => {
