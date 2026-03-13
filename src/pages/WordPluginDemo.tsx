@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useTour } from "@/contexts/TourContext";
 import {
   Bold,
@@ -7,7 +6,6 @@ import {
   Underline,
   List,
   ListOrdered,
-  ChevronDown,
   Search,
   X,
   Settings,
@@ -133,73 +131,114 @@ export default function WordPluginDemo() {
           className="w-[360px] bg-white border-l border-[#e3e3e3] px-3 py-2 flex flex-col"
         >
           <div className="flex items-center justify-between mb-2">
-            <div className="font-semibold text-[18px]">AdviserGPT</div>
-            <div className="inline-flex items-center gap-2">
-              <button className="h-6 w-6 rounded bg-[#ebebeb] inline-flex items-center justify-center">
-                <Info className="h-3.5 w-3.5 text-[#666]" />
+            <div className="font-semibold text-[15px] leading-none tracking-tight text-[#1f1f1f]">AdviserGPT</div>
+            <button className="h-7 w-7 rounded-full bg-[#e3e3e3] inline-flex items-center justify-center">
+              <X className="h-4 w-4 text-[#6f6f6f]" />
+            </button>
+          </div>
+
+          <div className="flex items-start justify-between mb-2">
+            <div className="font-semibold text-[12px] leading-none text-[#111827]">[DEMO] Granite Peak Asset Management</div>
+            <div className="flex flex-col items-center gap-2 ml-2">
+              <button className="h-7 w-7 rounded-md bg-[#5f5f5f] inline-flex items-center justify-center">
+                <Info className="h-4 w-4 text-white" />
               </button>
-              <X className="h-4 w-4 text-[#7b7b7b]" />
+              <Settings className="h-4 w-4 text-[#4a4a4a]" />
             </div>
           </div>
 
-          <div className="rounded-md border border-[#e4e4e4] p-2 mb-2">
-            <div className="flex items-center justify-between">
-              <div className="font-semibold text-[12px]">[DEMO] Granite Peak Asset Management</div>
-              <Settings className="h-3.5 w-3.5 text-[#777]" />
-            </div>
-            <div className="grid grid-cols-3 mt-2 rounded-md border border-[#e8e8e8] overflow-hidden text-[11px]">
-              <button className={`h-7 font-medium ${isImproveView ? "bg-white text-[#666]" : "bg-[#f5f6f8] text-[#111]"}`}>Answer</button>
-              <button className={`h-7 border-l border-[#e8e8e8] ${isImproveView ? "bg-[#f5f6f8] text-[#111] font-medium" : "bg-white text-[#666]"}`}>Improve</button>
-              <button className="h-7 border-l border-[#e8e8e8] bg-white text-[#666]">Save</button>
-            </div>
+          <div className="rounded-xl bg-[#ececef] p-1 mb-3 grid grid-cols-3 gap-1">
+            <button className={`h-10 rounded-lg text-[11px] font-medium ${isImproveView ? "text-[#333]" : "bg-white text-[#111] shadow-sm"}`}>
+              Answer
+            </button>
+            <button className={`h-10 rounded-lg text-[11px] ${isImproveView ? "bg-white text-[#111] shadow-sm font-medium" : "text-[#333]"}`}>
+              Improve
+            </button>
+            <button className="h-10 rounded-lg text-[11px] text-[#333]">Save</button>
           </div>
 
           {!isImproveView && (
-          <div data-tour-id="word-plugin-bulk-answer" className="rounded-md border border-[#e4e4e4] p-2 mb-2">
-            <div className="grid grid-cols-3 gap-1 mb-2">
-              <button className="h-7 rounded border border-[#e5e5e5] text-[11px] text-[#444] inline-flex items-center justify-center gap-1">
-                <MessageSquareText className="h-3.5 w-3.5" />
-                Single
-              </button>
-              <button className={`h-7 rounded text-[11px] font-medium inline-flex items-center justify-center gap-1 ${
-                isBulkView ? "bg-[#162042] text-white" : "border border-[#e5e5e5] text-[#444] bg-white"
-              }`}>
-                <Zap className="h-3.5 w-3.5" />
-                Bulk
-              </button>
-              <button className="h-7 rounded border border-[#e5e5e5] text-[11px] text-[#444]">Update</button>
-            </div>
-
-            <div className="flex items-center justify-between text-[11px] text-[#666] mb-2">
-              <div className="inline-flex items-center gap-1 border border-[#ececec] rounded px-2 py-1">
-                <FileText className="h-3.5 w-3.5" />
-                <span>Document: All Documents</span>
+            <div data-tour-id="word-plugin-bulk-answer" className="rounded-xl border border-[#e4e4e4] p-2 mb-3">
+              <div className="rounded-xl bg-[#f1f2f5] p-1 grid grid-cols-3 gap-1 mb-3">
+                <button className={`h-10 rounded-lg text-[11px] font-medium inline-flex items-center justify-center gap-1 ${
+                  !isBulkView ? "bg-[#111b3f] text-white" : "text-[#2f2f2f]"
+                }`}>
+                  <MessageSquareText className="h-4 w-4" />
+                  Single
+                </button>
+                <button className={`h-10 rounded-lg text-[11px] font-medium inline-flex items-center justify-center gap-1 ${
+                  isBulkView ? "bg-[#111b3f] text-white" : "text-[#2f2f2f]"
+                }`}>
+                  <Zap className="h-4 w-4" />
+                  Bulk
+                </button>
+                <button className="h-10 rounded-lg text-[11px] font-medium inline-flex items-center justify-center gap-1 text-[#2f2f2f]">
+                  <Database className="h-4 w-4" />
+                  Update
+                </button>
               </div>
-              <button className="inline-flex items-center gap-1 text-[#3d64b8]">
-                <Plus className="h-3 w-3" /> Add Filter
-              </button>
-            </div>
 
-            <div className="rounded-lg border border-[#e5e5e5] p-3 mt-2 bg-[#fafafa]">
-              <div className="flex items-start gap-2">
-                <div className="h-7 w-7 rounded-full bg-[#eef0f7] inline-flex items-center justify-center mt-0.5">
-                  <Zap className="h-3.5 w-3.5 text-[#162042]" />
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-10 flex-1 rounded-xl border border-[#e3e3e3] px-3 inline-flex items-center gap-2 text-[12px] text-[#313131] bg-white">
+                  <FileText className="h-4 w-4" />
+                  <span>Document: All Documents</span>
                 </div>
-                <div>
-                  <h4 className="text-[16px] font-semibold text-[#1f1f1f]">Bulk Answer Agent</h4>
-                  <p className="text-[12px] leading-5 text-[#555] mt-1">
-                    An AI agent will answer multiple highlighted questions in your document simultaneously.
-                    Use the highlighter tool in Word to select questions, then run the bulk answer agent.
-                  </p>
-                </div>
+                <button className="h-8 w-8 inline-flex items-center justify-center text-[#6d7785]">
+                  <RotateCcw className="h-4 w-4" />
+                </button>
+                <button className="inline-flex items-center gap-1 text-[12px] text-[#2e5aac]">
+                  <Plus className="h-4 w-4" />
+                  Add Filter
+                </button>
               </div>
-              <div className="h-px bg-[#e6e6e6] my-3" />
-              <button className="h-11 px-6 rounded-md bg-[#162042] text-white text-[15px] font-semibold inline-flex items-center gap-2">
-                <Zap className="h-4 w-4" />
-                Bulk Answer
-              </button>
+
+              {isBulkView ? (
+                <div className="rounded-xl border border-[#e5e5e5] bg-[#fafafa] p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="h-10 w-10 rounded-full bg-[#eef0f7] inline-flex items-center justify-center">
+                      <Zap className="h-5 w-5 text-[#162042]" />
+                    </div>
+                    <div>
+                      <h4 className="text-[16px] font-semibold text-[#1f1f1f]">Bulk Answer Agent</h4>
+                      <p className="text-[12px] leading-5 text-[#555] mt-1">
+                        Use the Word highlighter to select multiple questions and answer them all at once.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="h-px bg-[#e6e6e6] my-4" />
+                  <button className="h-10 px-5 rounded-md bg-[#162042] text-white text-[14px] font-semibold inline-flex items-center gap-2">
+                    <Zap className="h-4 w-4" />
+                    Bulk Answer
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="text-[12px] font-medium text-[#2b2b2b]">Ask</div>
+                    <button className="inline-flex items-center gap-1 text-[12px] text-[#9aa0a8]">
+                      <RotateCcw className="h-4 w-4" />
+                      Reset
+                    </button>
+                  </div>
+
+                  <textarea
+                    className="w-full h-28 rounded-xl border border-[#e4e4e4] px-3 py-3 text-[12px] text-[#5b5f68] resize-none"
+                    placeholder="Type your question or select text from the document..."
+                  />
+
+                  <div className="grid grid-cols-2 gap-3 mt-4">
+                    <button className="h-12 rounded-xl border border-[#e5e5e5] bg-[#f5f5f5] text-[#a8a8a8] text-[11px] font-medium inline-flex items-center justify-center gap-2">
+                      <Zap className="h-4 w-4" />
+                      Answer With AI
+                    </button>
+                    <button className="h-12 rounded-xl border border-[#e5e5e5] bg-[#f5f5f5] text-[#a8a8a8] text-[11px] font-medium inline-flex items-center justify-center gap-2">
+                      <Search className="h-4 w-4" />
+                      Search Vault
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
-          </div>
           )}
 
           {isImproveView && (
@@ -224,14 +263,8 @@ export default function WordPluginDemo() {
             </div>
           )}
 
-          <div className="mt-auto pt-2 text-[11px] text-[#7a7a7a]">
-            <div className="flex items-center justify-between mb-2">
-              <span>Use "Answer With AI" to generate answers or "Search Vault" to search for content.</span>
-              <div className="inline-flex items-center gap-1">
-                <RotateCcw className="h-3.5 w-3.5" />
-                <Info className="h-3.5 w-3.5" />
-              </div>
-            </div>
+          <div className="mt-auto pt-4 text-[10px] leading-tight text-[#6f7580] text-center">
+            Use "Answer With AI" to generate answers or "Search Vault" to search for content.
           </div>
         </aside>
       </div>

@@ -17,7 +17,6 @@ import { SuggestedUpdates } from "./pages/SuggestedUpdates";
 import { DuplicateDetail } from "./pages/DuplicateDetail";
 import { ProfilePage } from "./components/ProfilePage";
 import { FirmSettings } from "./pages/FirmSettings";
-import { RIAOutreach } from "./pages/RIAOutreach";
 import { Commentary } from "./pages/Commentary";
 import { Drafts } from "./pages/Drafts";
 import { AddContent } from "./pages/AddContent";
@@ -51,7 +50,6 @@ const App = () => (
               <Route path="/vault/duplicates/:actionId" element={<ProtectedRoute><DuplicateDetail /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
               <Route path="/firm-settings" element={<ProtectedRoute><FirmSettings /></ProtectedRoute>} />
-              <Route path="/outreach" element={<ProtectedRoute><RIAOutreach /></ProtectedRoute>} />
               <Route path="/commentary" element={<ProtectedRoute><Commentary /></ProtectedRoute>} />
               <Route path="/drafts" element={<ProtectedRoute><Drafts /></ProtectedRoute>} />
               <Route path="/vault/add-content" element={<ProtectedRoute><AddContent /></ProtectedRoute>} />

@@ -5,7 +5,7 @@ export const mainTourSteps: TourStep[] = [
     id: "welcome-details",
     tourId: "welcome-details-overlay",
     title: "Tell us about you",
-    content: "Share a few details so we can tailor this tour and future demos to your practice.",
+    content: "Share a few details so we can tailor this tour and future demos to your firm.",
     placement: "bottom",
   },
   {
@@ -49,7 +49,7 @@ export const mainTourSteps: TourStep[] = [
     tourId: "add-content-options",
     title: "Add Content page",
     content:
-      "This page is where you upload prior art into your Vault, including completed RFPs, DDQs, data files, insights, and writing samples.",
+      "This page is where you upload 'prior art' into your Vault, including completed RFPs, DDQs, quarterly data files, insight docs, and writing samples.",
     placement: "left",
     route: "/vault/add-content",
   },
@@ -58,7 +58,7 @@ export const mainTourSteps: TourStep[] = [
     tourId: "homepage-trust-score",
     title: "Generated Answer and Trust Score",
     content:
-      "Every answer to a question is returned with our patented Trust Score, which gives you confidence that the answer is sourced and generated from your compliance-approved language.",
+      "Every answer to a question is returned with our patented Trust Score, which gives you confidence that the answer is sourced and generated from your compliance-approved language and in your firm's tone of voice",
     placement: "left",
     route: "/",
   },
@@ -76,7 +76,7 @@ export const mainTourSteps: TourStep[] = [
     tourId: "word-plugin-bulk-answer",
     title: "Show Bulk Answer in MS Word Plug-in",
     content:
-      "Users can highlight many questions at a time, section by section or the entire document, and answer them at once automatically using your Vault. The Trust Score is always displayed as comments in the margin as your answers are populated. We maintain your text, tables, and image formatting.",
+      "Users can highlight many questions at a time, section by section or the entire document, and answer them at once automatically using your Vault. The Trust Score and answer sources are always displayed as comments in the margin as your answers are populated. We maintain your text, tables, and image formatting.",
     placement: "left",
     route: "/word-plugin-demo",
   },
@@ -103,7 +103,7 @@ export const mainTourSteps: TourStep[] = [
     tourId: "drafts-completed",
     title: "Show completed Draft",
     content:
-      "AdviserGPT enables users to draft client communications and market insights with their firm's tone of voice and compliance-approved language.",
+      "AdviserGPT enables users to draft client communications and commentary with their firm's tone of voice and compliance-approved language combined with quarterly client attribution and reporting data..",
     placement: "right",
     route: "/drafts",
   },
@@ -112,7 +112,7 @@ export const mainTourSteps: TourStep[] = [
     tourId: "book-demo-overlay",
     title: "Book a demo",
     content:
-      "Ready to see AdviserGPT in action? Share your details and we'll reach out to schedule a personalized demo for your firm.",
+      "Ready to see AdviserGPT in action? Contact us at https://www.advisergpt.ai/learn-more and we'll reach out to schedule a personalized demo for your firm.",
     placement: "bottom",
   },
 ];
