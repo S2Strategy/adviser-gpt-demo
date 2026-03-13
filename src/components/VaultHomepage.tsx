@@ -68,6 +68,7 @@ import { STRATEGIES, CONTENT_TYPES, STATUS_OPTIONS, TAGS_INFO, QuestionItem, Tag
 import { FiltersPanel, DateRange } from "./FiltersPanel";
 import { migrateQuestionItem, migrateQuestionItems } from "@/utils/tagMigration";
 import { smartSearch, getSemanticVariations, getSearchSuggestions } from "@/utils/smartSearch";
+import { useTour } from "@/contexts/TourContext";
 import { format, subDays, subMonths } from "date-fns";
 
 export function VaultHomepage() {
@@ -79,6 +80,7 @@ export function VaultHomepage() {
   const { toast } = useToast();
   const { getAllTagTypes, getTagTypeValues } = useTagTypes();
   const { profile } = useUserProfile();
+  const { isActive, steps, currentStepIndex } = useTour();
   
   // Extract URL parameters (fallback to window.location when router is stale after navigate())
   const location = useLocation();
@@ -244,6 +246,26 @@ export function VaultHomepage() {
       navigate(`/search?${location.search}`, { replace: true });
     }
   }, [location.pathname, location.search, navigate]);
+
+  // When tour (or URL) requests Q&A tab, switch to it so search/filter and content are visible
+  useEffect(() => {
+    if (location.pathname !== "/vault") return;
+    const params = new URLSearchParams(location.search);
+    if (params.get("tab") === "qa") {
+      setActiveTab("documents");
+    }
+  }, [location.pathname, location.search]);
+
+  // During the filter tour step, auto-open the filter panel and highlight it.
+  useEffect(() => {
+    const currentStep = steps[currentStepIndex];
+    if (!isActive) return;
+    if (currentStep?.id === "vault-search-filter") {
+      setShowFiltersPanel(true);
+    } else {
+      setShowFiltersPanel(false);
+    }
+  }, [isActive, steps, currentStepIndex]);
 
   // Update Q&A content bounds for floating bar positioning (Q&A Pairs tab only)
   useEffect(() => {
@@ -1367,7 +1389,7 @@ export function VaultHomepage() {
         <div className="flex-1 flex flex-col overflow-hidden bg-background mt-4 ml-4 rounded-tl-2xl vault-scroll">
           <div className="flex-1 overflow-y-auto">
               {/* Main Content */}
-              <div className="">
+              <div data-tour-id="vault-main" className="">
                 {/* Header */}
                 <div className="border-b border-foreground/10 bg-background">
                   <div className="flex items-center justify-between px-6 py-6 max-w-[100rem] mx-auto">
@@ -1375,6 +1397,7 @@ export function VaultHomepage() {
                     
                     <div className="flex items-center gap-3">
                     <Button
+                    data-tour-id="vault-add-content"
                     variant="default"
                     onClick={() => navigate('/vault/add-content')}
                     className="text-sm"
@@ -1435,7 +1458,7 @@ export function VaultHomepage() {
 
                 {/* Search Section - only when Q&A Pairs tab is selected */}
                 {activeTab === "documents" && (
-                  <div id="search-section" className="bg-sidebar-background/50">
+                  <div id="search-section" data-tour-id="vault-search-filter" className="bg-sidebar-background/50">
                     <div className="p-6 flex items-center gap-3 max-w-[100rem] mx-auto">
                       <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-foreground/70" />
@@ -1706,15 +1729,16 @@ export function VaultHomepage() {
                                     const tags = displayData.tags || [];
                                     const isEvenRow = index % 2 === 0;
                                     
-                                    return (
+return (
                                       <React.Fragment key={item.id}>
                                         {/* Main Row */}
                                         <div
+                                          data-tour-id={index === 0 ? "vault-top-qa" : undefined}
                                           className={`group grid bg-background hover:bg-itemHoverBackground transition-all items-start grid-cols-[40px,1fr,1fr,200px,200px,min-content] ${
                                             isSelected ? 'bg-itemHoverBackground' : ''
                                           } ${
-                                            displayData.archived 
-                                              ? 'opacity-60 bg-muted/20 border-l-2 border-muted' 
+                                            displayData.archived
+                                              ? 'opacity-60 bg-muted/20 border-l-2 border-muted'
                                               : ''
                                           } ${
                                             isEvenRow && !isSelected && !displayData.archived ? 'bg-sidebar-background' : ''
@@ -2545,6 +2569,7 @@ export function VaultHomepage() {
       <FiltersPanel
         isOpen={showFiltersPanel}
         onClose={() => setShowFiltersPanel(false)}
+        showBackdrop={!(isActive && steps[currentStepIndex]?.id === "vault-search-filter")}
         selectedTagFilters={selectedTagFilters}
         onTagFiltersChange={setSelectedTagFilters}
         selectedDocuments={selectedDocuments}

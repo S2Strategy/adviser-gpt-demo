@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Logo from '@/assets/AdviserGPT-logo.svg?react';
 import { useSearchParams, useLocation } from 'react-router-dom';
 import { 
@@ -22,6 +22,8 @@ import { FiltersPanel, DateRange } from './FiltersPanel';
 import { getExampleQuestions, getAvailableSources, getMockVaultData, getAnswerModeResponse, getChatModeResponse, getExampleResponse } from '@/utils/contentUtils';
 import { migrateQuestionItems } from '@/utils/tagMigration';
 import { format } from 'date-fns';
+import { useTour } from "@/contexts/TourContext";
+import { mainTourSteps } from "@/tour/steps";
 
 
 
@@ -79,6 +81,8 @@ export function AdviserGPTHome() {
   const { saveChatResult } = useChatResults();
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
+
+  const { isActive, startTour, steps, currentStepIndex } = useTour();
   
   // State management
   const [inputValue, setInputValue] = useState('');
@@ -111,6 +115,13 @@ export function AdviserGPTHome() {
 
   // Get current example questions based on mode
   const exampleQuestions = getExampleQuestions(selectedMode);
+  const investmentPhilosophyExample = useMemo(() => {
+    const answerModeExamples = Object.values(getExampleQuestions('answer'));
+    return answerModeExamples.find(q => q.toLowerCase().includes('investment philosophy'))
+      ?? answerModeExamples[0]
+      ?? "What is our investment philosophy?";
+  }, []);
+  const hasAutoRunHomepageTrustStep = useRef(false);
 
   // File handling functions
 
@@ -201,6 +212,15 @@ export function AdviserGPTHome() {
       }
     }, 50 + Math.random() * 100); // Random delay between 50-150ms for realistic typing
   };
+
+  // Launch main tour on first visit to home if not completed
+  useEffect(() => {
+    if (isActive) return;
+    if (typeof window === "undefined") return;
+    const completed = window.localStorage.getItem("tour-completed") === "true";
+    if (completed) return;
+    startTour(mainTourSteps);
+  }, [isActive, startTour]);
 
   // Handle URL parameters
   useEffect(() => {
@@ -569,6 +589,33 @@ export function AdviserGPTHome() {
       }, 0);
     });
   };
+
+  // On the homepage trust-score step: auto-select an investment philosophy example,
+  // generate an answer, and keep Sources open to mirror the guided demo flow.
+  useEffect(() => {
+    const currentStep = steps[currentStepIndex];
+    if (!isActive || currentStep?.id !== "homepage-trust-score") {
+      hasAutoRunHomepageTrustStep.current = false;
+      return;
+    }
+
+    setShowSourcePanel(true);
+    setSelectedMode('answer');
+
+    if (!hasAutoRunHomepageTrustStep.current && !isGenerating && !currentAnswer) {
+      hasAutoRunHomepageTrustStep.current = true;
+      setInputValue(investmentPhilosophyExample);
+      startChatWithQuestion(investmentPhilosophyExample);
+    }
+  }, [
+    isActive,
+    steps,
+    currentStepIndex,
+    isGenerating,
+    currentAnswer,
+    investmentPhilosophyExample,
+    startChatWithQuestion,
+  ]);
 
   const handleCopy = () => {
     if (currentAnswer) {

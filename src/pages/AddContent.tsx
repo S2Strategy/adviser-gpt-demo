@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronRight, Home, FileText, MessageSquare, FileSpreadsheet, Database, FileCheck, Megaphone } from "lucide-react";
 import { VaultSidebar } from "@/components/VaultSidebar";
@@ -9,12 +9,14 @@ import { ExcelQAPair } from "@/components/AddContent/ExcelQAPair";
 import { DataUpdates } from "@/components/AddContent/DataUpdates";
 import { PolicyDocs } from "@/components/AddContent/PolicyDocs";
 import { CommentaryDocs } from "@/components/AddContent/CommentaryDocs";
+import { useTour } from "@/contexts/TourContext";
 
 type UploadType = "questionnaire" | "single-qa" | "excel-qa" | "data-updates" | "policy-docs" | "commentary" | null;
 
 export function AddContent() {
   const navigate = useNavigate();
   const [selectedType, setSelectedType] = useState<UploadType>(null);
+  const { isActive, steps, currentStepIndex } = useTour();
 
   const uploadTypes = [
     {
@@ -82,6 +84,13 @@ export function AddContent() {
 
   const selectedTypeData = uploadTypes.find((t) => t.id === selectedType);
 
+  useEffect(() => {
+    const step = steps[currentStepIndex];
+    if (isActive && step?.id === "add-content-page") {
+      setSelectedType(null);
+    }
+  }, [isActive, steps, currentStepIndex]);
+
   return (
     <div className="h-screen bg-sidebar-background flex gap-4">
       {/* Vault Sidebar */}
@@ -115,7 +124,7 @@ export function AddContent() {
           </div>
 
           <div className="flex-1 p-8">
-            <div className="max-w-4xl mx-auto h-full">
+            <div data-tour-id="add-content-options" className="max-w-4xl mx-auto h-full">
               {!selectedType ? (
                 /* Upload Type Selection */
                 <div className="space-y-4">

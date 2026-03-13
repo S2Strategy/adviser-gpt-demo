@@ -3,6 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { TourProvider } from "./contexts/TourContext";
+import { TourOverlay } from "./components/tour/TourOverlay";
 import Index from "./pages/Index";
 import Vault from "./pages/Vault";
 import NotFound from "./pages/NotFound";
@@ -19,6 +21,7 @@ import { RIAOutreach } from "./pages/RIAOutreach";
 import { Commentary } from "./pages/Commentary";
 import { Drafts } from "./pages/Drafts";
 import { AddContent } from "./pages/AddContent";
+import WordPluginDemo from "./pages/WordPluginDemo";
 import FileUpload from "./pages/FileUpload";
 import SearchResults from "./pages/SearchResults";
 import Auth from "./pages/Auth";
@@ -33,9 +36,11 @@ const App = () => (
       <AuthProvider>
         <SavedSearchesProvider>
           <DraftsProvider>
+            <TourProvider>
             <Toaster />
             <Sonner />
             <BrowserRouter>
+            <TourOverlay />
             <Routes>
               {/* Public routes - no authentication required */}
               <Route path="/auth" element={<Auth />} />
@@ -55,12 +60,14 @@ const App = () => (
               <Route path="/commentary" element={<ProtectedRoute><Commentary /></ProtectedRoute>} />
               <Route path="/drafts" element={<ProtectedRoute><Drafts /></ProtectedRoute>} />
               <Route path="/vault/add-content" element={<ProtectedRoute><AddContent /></ProtectedRoute>} />
+              <Route path="/word-plugin-demo" element={<ProtectedRoute><WordPluginDemo /></ProtectedRoute>} />
               <Route path="/file-upload" element={<ProtectedRoute><FileUpload /></ProtectedRoute>} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
+            </TourProvider>
           </DraftsProvider>
         </SavedSearchesProvider>
       </AuthProvider>
@@ -69,3 +76,4 @@ const App = () => (
 );
 
 export default App;
+

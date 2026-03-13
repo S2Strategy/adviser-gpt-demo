@@ -13,6 +13,8 @@ interface Answer {
   question: string;
   answer: string;
   version: number;
+  vaultRatio?: number;
+  aiRatio?: number;
   uploadedFiles?: Array<{
     id: string;
     name: string;
@@ -176,6 +178,15 @@ export function AnswerLoadingState({
               <Badge className="bg-accent text-white flex items-center gap-1">
                 AdviserGPT • <span className="font-semibold">{mode === 'answer' ? 'Vault Only' : mode === 'chat' ? 'Vault + Web' : 'RIA Outreach'}</span>
               </Badge>
+              {mode === 'answer' && answer && (
+                <Badge
+                  data-tour-id="homepage-trust-score"
+                  variant="outline"
+                  className="bg-sidebar-primary text-sidebar-primary-foreground border-sidebar-primary"
+                >
+                  Trust Score {Math.round(answer.vaultRatio ?? 99)}%
+                </Badge>
+              )}
             </div>
 
             {/* Action Buttons */}

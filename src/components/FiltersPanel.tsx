@@ -43,6 +43,7 @@ export type DateRange = {
 interface FiltersPanelProps {
   isOpen: boolean;
   onClose: () => void;
+  showBackdrop?: boolean;
   // New tag filter structure: tag type -> selected values
   selectedTagFilters: Record<string, string[]>; // tagType -> selected values array
   onTagFiltersChange: (tagFilters: Record<string, string[]>) => void;
@@ -70,6 +71,7 @@ interface FiltersPanelProps {
 export function FiltersPanel({
   isOpen,
   onClose,
+  showBackdrop = true,
   selectedTagFilters,
   onTagFiltersChange,
   selectedDocuments,
@@ -294,8 +296,12 @@ export function FiltersPanel({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 transition duration-200" onClick={onClose}>
+    <div
+      className={`fixed inset-0 z-50 transition duration-200 ${showBackdrop ? "bg-black/50" : "bg-transparent"}`}
+      onClick={onClose}
+    >
       <div 
+        data-tour-id="vault-filter-panel"
         className={`fixed right-4 top-4 h-[calc(100%-32px)] flex flex-col w-96 bg-background rounded-2xl shadow-xl transition-all duration-300 transform
           ${
             isOpen ? 'translate-x-0 opacity-100 pointer-events-auto' : 'translate-x-full opacity-0 pointer-events-none'

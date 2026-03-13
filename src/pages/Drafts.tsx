@@ -22,12 +22,14 @@ import {
   GenerateDraftParams,
   UpdateDraftParams,
 } from '@/utils/draftsLLM';
+import { useTour } from '@/contexts/TourContext';
 
 export function Drafts() {
   const { toast } = useToast();
   const { saveEdit } = useVaultEdits();
   const { profile } = useUserProfile();
   const { savedDrafts } = useDrafts();
+  const { isActive, steps, currentStepIndex } = useTour();
 
   // Editor state
   const [content, setContent] = useState('');
@@ -421,13 +423,43 @@ export function Drafts() {
     handleClearDraft();
   };
 
+  useEffect(() => {
+    const currentStep = steps[currentStepIndex];
+    if (!isActive) return;
+    if (currentStep?.id !== 'drafts-completed') return;
+    if (content.trim()) return;
+
+    const demoContent = [
+      "Subject: Quarterly Market Update",
+      "",
+      "Dear Clients,",
+      "",
+      "Global equities advanced through the quarter while core fixed income remained resilient in a mixed rate environment.",
+      "Our portfolios stayed aligned with your long-term objectives, emphasizing quality balance sheets, disciplined valuation,",
+      "and diversified exposures across sectors and regions.",
+      "",
+      "We continue to monitor policy changes, earnings revisions, and liquidity conditions. At this stage, we are maintaining",
+      "our strategic allocations and using tactical rebalancing opportunities where volatility creates valuation dislocations.",
+      "",
+      "Thank you for your continued trust in our team. Please contact us with any questions about positioning or outlook.",
+      "",
+      "Sincerely,",
+      "Granite Peak Asset Management",
+    ].join('\n');
+
+    setContent(demoContent);
+    setOriginalContent(demoContent);
+    setUpdatedContent(null);
+    setHasPendingDiffs(false);
+  }, [isActive, steps, currentStepIndex, content]);
+
   return (
     <div className="h-screen bg-sidebar-background flex gap-4">
       {/* Vault Sidebar */}
       <VaultSidebar />
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden bg-background mt-4 rounded-tl-2xl vault-scroll">
+      <main data-tour-id="drafts-workspace" className="flex-1 flex flex-col overflow-hidden bg-background mt-4 rounded-tl-2xl vault-scroll">
         <div className="flex-1 overflow-hidden flex flex-col">
           {/* Header */}
           <div className="border-b border-foreground/10 bg-background flex-shrink-0">
@@ -453,7 +485,7 @@ export function Drafts() {
           {/* Split Screen Content */}
           <div className="flex-1 flex overflow-hidden">
             {/* Left: Drafts Editor */}
-            <div className="flex-1 overflow-hidden">
+            <div data-tour-id="drafts-completed" className="flex-1 overflow-hidden">
               <DraftEditor
                 content={content}
                 onContentChange={setContent}
