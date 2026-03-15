@@ -23,15 +23,11 @@ import { AddContent } from "./pages/AddContent";
 import WordPluginDemo from "./pages/WordPluginDemo";
 import FileUpload from "./pages/FileUpload";
 import SearchResults from "./pages/SearchResults";
-import ProtectedRoute from "./components/ProtectedRoute";
-import { CodeGate } from "./components/CodeGate";
-
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <CodeGate>
       <AuthProvider>
         <SavedSearchesProvider>
           <DraftsProvider>
@@ -41,20 +37,20 @@ const App = () => (
             <BrowserRouter>
             <TourOverlay />
             <Routes>
-              <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-              <Route path="/vault" element={<ProtectedRoute><Vault /></ProtectedRoute>} />
-              <Route path="/search" element={<ProtectedRoute><SearchResults /></ProtectedRoute>} />
-              <Route path="/vault/saved-searches" element={<ProtectedRoute><SavedSearchesPage /></ProtectedRoute>} />
-              <Route path="/vault/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
-              <Route path="/vault/suggested-updates" element={<ProtectedRoute><SuggestedUpdates /></ProtectedRoute>} />
-              <Route path="/vault/duplicates/:actionId" element={<ProtectedRoute><DuplicateDetail /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-              <Route path="/firm-settings" element={<ProtectedRoute><FirmSettings /></ProtectedRoute>} />
-              <Route path="/commentary" element={<ProtectedRoute><Commentary /></ProtectedRoute>} />
-              <Route path="/drafts" element={<ProtectedRoute><Drafts /></ProtectedRoute>} />
-              <Route path="/vault/add-content" element={<ProtectedRoute><AddContent /></ProtectedRoute>} />
-              <Route path="/word-plugin-demo" element={<ProtectedRoute><WordPluginDemo /></ProtectedRoute>} />
-              <Route path="/file-upload" element={<ProtectedRoute><FileUpload /></ProtectedRoute>} />
+              <Route path="/" element={<Index />} />
+              <Route path="/vault" element={<Vault />} />
+              <Route path="/search" element={<SearchResults />} />
+              <Route path="/vault/saved-searches" element={<SavedSearchesPage />} />
+              <Route path="/vault/history" element={<HistoryPage />} />
+              <Route path="/vault/suggested-updates" element={<SuggestedUpdates />} />
+              <Route path="/vault/duplicates/:actionId" element={<DuplicateDetail />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/firm-settings" element={<FirmSettings />} />
+              <Route path="/commentary" element={<Commentary />} />
+              <Route path="/drafts" element={<Drafts />} />
+              <Route path="/vault/add-content" element={<AddContent />} />
+              <Route path="/word-plugin-demo" element={<WordPluginDemo />} />
+              <Route path="/file-upload" element={<FileUpload />} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
@@ -64,7 +60,6 @@ const App = () => (
           </DraftsProvider>
         </SavedSearchesProvider>
       </AuthProvider>
-      </CodeGate>
     </TooltipProvider>
   </QueryClientProvider>
 );

@@ -85,15 +85,15 @@ export function TourOverlay() {
     }
   }, [currentStep, clearRetryTimeout]);
 
-  // Navigate to the step's route if it differs from the current path (compare pathname only; route may include query)
+  // Navigate to the step's route if it differs from the current location.
   useEffect(() => {
     if (!isActive || !currentStep) return;
     clearRetryTimeout();
     setIsStepReady(false);
 
-    const stepPath = currentStep.route?.split("?")[0] ?? "";
-    if (currentStep.route && location.pathname !== stepPath) {
-      navigate(currentStep.route);
+    const currentLocation = `${location.pathname}${location.search}`;
+    if (currentStep.route && currentLocation !== currentStep.route) {
+      navigate(currentStep.route, { replace: true });
       // Wait for route transition before measuring
       const id = setTimeout(measureTarget, 300);
       return () => {
@@ -106,7 +106,7 @@ export function TourOverlay() {
     return () => {
       clearRetryTimeout();
     };
-  }, [isActive, currentStep, location.pathname, navigate, measureTarget, clearRetryTimeout]);
+  }, [isActive, currentStep, location.pathname, location.search, navigate, measureTarget, clearRetryTimeout]);
 
   // Re-measure on resize (scroll is blocked during tour)
   useEffect(() => {

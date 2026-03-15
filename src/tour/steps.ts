@@ -7,6 +7,7 @@ export const mainTourSteps: TourStep[] = [
     title: "Tell us about you",
     content: "Share a few details so we can tailor this tour and future demos to your firm.",
     placement: "bottom",
+    route: "/",
   },
   {
     id: "homepage-overview",
@@ -112,7 +113,8 @@ export const mainTourSteps: TourStep[] = [
     tourId: "book-demo-overlay",
     title: "Book a demo",
     content:
-      "Ready to see AdviserGPT in action? Contact us at https://www.advisergpt.ai/learn-more and we'll reach out to schedule a personalized demo for your firm.",
+      "Ready to see AdviserGPT in action?",
     placement: "bottom",
+    route: "/drafts",
   },
 ];

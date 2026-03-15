@@ -15,7 +15,6 @@ import {
   Settings,
   Sparkles,
   LogOut,
-  Compass,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -27,8 +26,6 @@ import { useSearchHistory } from "@/hooks/useSearchHistory";
 import { useRecentSearches } from "@/hooks/useRecentSearches";
 import { useChatResults } from "@/hooks/useChatResults";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { useTour } from "@/contexts/TourContext";
-import { mainTourSteps } from "@/tour/steps";
 import ChatSidebar from "./ChatSidebar";
 
 interface Conversation {
@@ -76,7 +73,6 @@ export function VaultSidebar() {
   const { recentSearchesForSidebar, removeRecentSearch } = useRecentSearches();
   const { getChatResultByQuery } = useChatResults();
   const { profile } = useUserProfile();
-  const { startTour } = useTour();
 
   const handleLogout = () => {
       // Clear localStorage auth items
@@ -569,45 +565,6 @@ export function VaultSidebar() {
         <div className="p-2">
           <div className="border-t border-sidebar-foreground/10 pt-4 space-y-2">
             <ul className="space-y-1 flex-1">
-             <li>
-                {isCollapsed ? (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigate("/");
-                          startTour(mainTourSteps);
-                        }}
-                        className="h-10 px-2 rounded-md flex items-center justify-center w-full transition active:scale-[0.98] text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent"
-                      >
-                        <Compass className="w-4 h-4" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">Start tour</TooltipContent>
-                  </Tooltip>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      navigate("/");
-                      startTour(mainTourSteps);
-                    }}
-                    className="h-10 px-2 rounded-md flex items-center gap-2 w-full transition active:scale-[0.98] text-sidebar-foreground hover:bg-sidebar-primary/5 border border-transparent"
-                  >
-                    <Compass className="w-4 h-4" />
-                    <span 
-                      className="text-md font-medium"
-                      style={{
-                        lineHeight: "1.5",
-                        letterSpacing: "-0.3px"
-                      }}
-                    >
-                      Start tour
-                    </span>
-                  </button>
-                )}
-              </li>
              <li>
                 {isCollapsed ? (
                   <Tooltip>

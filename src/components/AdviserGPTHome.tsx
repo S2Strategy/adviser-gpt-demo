@@ -23,7 +23,6 @@ import { getExampleQuestions, getAvailableSources, getMockVaultData, getAnswerMo
 import { migrateQuestionItems } from '@/utils/tagMigration';
 import { format } from 'date-fns';
 import { useTour } from "@/contexts/TourContext";
-import { mainTourSteps } from "@/tour/steps";
 
 
 
@@ -82,7 +81,7 @@ export function AdviserGPTHome() {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
 
-  const { isActive, startTour, steps, currentStepIndex } = useTour();
+  const { isActive, steps, currentStepIndex } = useTour();
   
   // State management
   const [inputValue, setInputValue] = useState('');
@@ -212,15 +211,6 @@ export function AdviserGPTHome() {
       }
     }, 50 + Math.random() * 100); // Random delay between 50-150ms for realistic typing
   };
-
-  // Launch main tour on first visit to home if not completed
-  useEffect(() => {
-    if (isActive) return;
-    if (typeof window === "undefined") return;
-    const completed = window.localStorage.getItem("tour-completed") === "true";
-    if (completed) return;
-    startTour(mainTourSteps);
-  }, [isActive, startTour]);
 
   // Handle URL parameters
   useEffect(() => {
