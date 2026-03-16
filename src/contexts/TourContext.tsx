@@ -46,20 +46,32 @@ function clampStepIndex(index: number, minIndex: number, stepsLength: number): n
 }
 
 export function TourProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<TourState>({
-    isActive: false,
-    currentStepIndex: 0,
-    steps: [],
+  const [state, setState] = useState<TourState>(() => {
+    if (typeof window === "undefined") {
+      return {
+        isActive: true,
+        currentStepIndex: 0,
+        steps: mainTourSteps,
+      };
+    }
+
+    const introSubmitted = isIntroSubmitted();
+    const minIndex = introSubmitted ? INTRO_LOCK_INDEX : 0;
+    const requestedIndex = readStoredStepIndex();
+    const stepIndex = clampStepIndex(requestedIndex, minIndex, mainTourSteps.length);
+
+    return {
+      isActive: true,
+      currentStepIndex: stepIndex,
+      steps: mainTourSteps,
+    };
   });
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const completed = readBoolean(TOUR_COMPLETED_KEY, false);
-    if (completed) {
-      setState({ isActive: false, currentStepIndex: 0, steps: [] });
-      return;
-    }
+    // Demo environment: always keep users in the tour, even if they had completed it previously.
+    window.localStorage.setItem(TOUR_COMPLETED_KEY, "false");
 
     const introSubmitted = isIntroSubmitted();
     if (introSubmitted) {

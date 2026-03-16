@@ -113,7 +113,7 @@ export const mainTourSteps: TourStep[] = [
     tourId: "book-demo-overlay",
     title: "Book a demo",
     content:
-      "Ready to see AdviserGPT in action?",
+      "Ready to see AdviserGPT in action? Contact us and we'll reach out to schedule a personalized demo for your firm.",
     placement: "bottom",
     route: "/drafts",
   },

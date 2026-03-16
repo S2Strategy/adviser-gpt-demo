@@ -17,7 +17,7 @@ export function TourOverlay() {
 
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const [isStepReady, setIsStepReady] = useState(false);
-  const [chromeOpacity, setChromeOpacity] = useState(1);
+  const [tooltipOpacity, setTooltipOpacity] = useState(1);
   const retryTimeoutRef = useRef<number | null>(null);
   const measureTimeoutRef = useRef<number | null>(null);
   const fadeTimeoutRef = useRef<number | null>(null);
@@ -129,7 +129,7 @@ export function TourOverlay() {
   useEffect(() => {
     if (!isActive) {
       setIsStepReady(false);
-      setChromeOpacity(1);
+      setTooltipOpacity(1);
     }
   }, [isActive]);
 
@@ -140,7 +140,7 @@ export function TourOverlay() {
         window.clearTimeout(revealTimeoutRef.current);
       }
       revealTimeoutRef.current = window.setTimeout(() => {
-        setChromeOpacity(1);
+        setTooltipOpacity(1);
         revealTimeoutRef.current = null;
       }, 20);
     }
@@ -198,7 +198,7 @@ export function TourOverlay() {
 
   const showPendingCard = !isStepReady && currentStep.id === "homepage-trust-score";
   const fadeToStep = (direction: "next" | "prev") => {
-    setChromeOpacity(0);
+    setTooltipOpacity(0);
     if (fadeTimeoutRef.current !== null) {
       window.clearTimeout(fadeTimeoutRef.current);
     }
@@ -235,7 +235,7 @@ export function TourOverlay() {
         targetRect={isStepReady ? targetRect : null}
         padding={padding}
         radius={radius}
-        opacity={chromeOpacity}
+        opacity={1}
       />
       {(isStepReady || showPendingCard) && (
         <TourTooltip
@@ -244,7 +244,7 @@ export function TourOverlay() {
           totalSteps={steps.length}
           targetRect={isStepReady ? targetRect : null}
           padding={padding}
-          opacity={chromeOpacity}
+          opacity={tooltipOpacity}
           onNext={() => fadeToStep("next")}
           onPrev={() => fadeToStep("prev")}
           onEnd={endTour}
