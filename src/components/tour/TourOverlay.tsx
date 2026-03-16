@@ -162,6 +162,13 @@ export function TourOverlay() {
     };
 
     const blockKeys = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const isTypingTarget =
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target?.isContentEditable === true;
+      if (isTypingTarget) return;
+
       const scrollKeys = ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "];
       if (scrollKeys.includes(e.key)) {
         e.preventDefault();

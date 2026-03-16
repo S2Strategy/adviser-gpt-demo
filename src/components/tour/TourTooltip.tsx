@@ -298,10 +298,15 @@ export function TourTooltip({
 
     const vh = window.innerHeight;
     const vw = window.innerWidth;
+    if (step.id === "homepage-overview") {
+      const top = Math.max(12, Math.min(vh - cardHeight - 12, 40));
+      const left = Math.max(12, Math.min(vw - cardWidth - 12, vw - cardWidth - 60));
+      return { top, left, anchored: null };
+    }
     const top = Math.max(8, Math.min(vh - cardHeight - 8, vh / 2 - cardHeight / 2));
     const left = Math.max(8, Math.min(vw - cardWidth - 8, vw / 2 - cardWidth / 2));
     return { top, left, anchored: null };
-  }, [anchored, cardHeight, cardWidth]);
+  }, [anchored, cardHeight, cardWidth, step.id]);
 
   useLayoutEffect(() => {
     if (!cardRef.current) return;

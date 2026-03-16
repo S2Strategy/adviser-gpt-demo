@@ -59,7 +59,7 @@ export const mainTourSteps: TourStep[] = [
     tourId: "homepage-trust-score",
     title: "Generated Answer and Trust Score",
     content:
-      "Every answer to a question is returned with our patented Trust Score, which gives you confidence that the answer is sourced and generated from your compliance-approved language and in your firm's tone of voice",
+      "Every answer to a question is returned with our patented Trust Score, which gives you confidence that the answer is sourced and generated from your compliance-approved language and in your firm's tone of voice.",
     placement: "left",
     route: "/",
   },
@@ -68,7 +68,7 @@ export const mainTourSteps: TourStep[] = [
     tourId: "word-plugin-panel",
     title: "AdviserGPT Microsoft 365 Plug-in",
     content:
-      "This is the AdviserGPT Plug-in view inside a Micrrosoft Word document workflow, where you can draft, improve, and search approved language alongside the document.",
+      "This is the AdviserGPT Plug-in view inside a Microsoft Word document workflow, where you can draft, improve, and search approved language alongside the document.",
     placement: "left",
     route: "/word-plugin-demo",
   },
@@ -86,7 +86,7 @@ export const mainTourSteps: TourStep[] = [
     tourId: "word-plugin-improve",
     title: "Improve in MSFT Word Plug-in",
     content:
-      "Users can iterate and improve their answers generated, and save to the Vault if the user wants. Collaboration between coworkers and compliance teams is handled in MS Office documents via comments. All changes are tracked in our audit trail.",
+      "Users can iterate and improve their generated answers, and save to the Vault if the user wants. Collaboration between coworkers and compliance teams is handled in MS Office documents via comments. All changes are tracked in our audit trail.",
     placement: "left",
     route: "/word-plugin-demo",
   },
@@ -104,7 +104,7 @@ export const mainTourSteps: TourStep[] = [
     tourId: "drafts-completed",
     title: "Show completed Draft",
     content:
-      "AdviserGPT enables users to draft client communications and commentary with their firm's tone of voice and compliance-approved language combined with quarterly client attribution and reporting data..",
+      "AdviserGPT enables users to draft client communications and commentary with their firm's tone of voice and compliance-approved language combined with quarterly client attribution and reporting data.",
     placement: "right",
     route: "/drafts",
   },
