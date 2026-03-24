@@ -28,7 +28,7 @@ export async function postLeadMetric(payload: LeadPayload): Promise<boolean> {
   };
   const apiKey = getLeadApiKey();
   if (apiKey) {
-    headers["x-api-key"] = apiKey;
+    headers["x-lead-api-key"] = apiKey;
   }
 
   try {
