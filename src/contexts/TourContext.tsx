@@ -14,9 +14,11 @@ const TourContext = createContext<TourContextValue | null>(null);
 const TOUR_COMPLETED_KEY = "demo-tour-completed";
 const TOUR_ACTIVE_KEY = "demo-tour-active";
 const TOUR_STEP_INDEX_KEY = "demo-tour-step-index";
+const TOUR_MIGRATION_KEY = "demo-tour-v2-no-intro";
+/** @deprecated removed intro step — cleaned up on migrate */
 const TOUR_INTRO_SUBMITTED_KEY = "demo-tour-intro-submitted";
+/** @deprecated removed intro step — cleaned up on migrate */
 const TOUR_USER_PROFILE_KEY = "tour-user-profile";
-const INTRO_LOCK_INDEX = 1;
 
 function readBoolean(key: string, fallback: boolean): boolean {
   if (typeof window === "undefined") return fallback;
@@ -25,24 +27,32 @@ function readBoolean(key: string, fallback: boolean): boolean {
   return value === "true";
 }
 
+function migrateTourStorageIfNeeded(): void {
+  if (typeof window === "undefined") return;
+  if (window.localStorage.getItem(TOUR_MIGRATION_KEY) === "true") return;
+
+  const raw = window.localStorage.getItem(TOUR_STEP_INDEX_KEY);
+  const parsed = raw ? Number.parseInt(raw, 10) : 0;
+  if (Number.isFinite(parsed) && parsed > 0) {
+    window.localStorage.setItem(TOUR_STEP_INDEX_KEY, String(parsed - 1));
+  }
+
+  window.localStorage.removeItem(TOUR_INTRO_SUBMITTED_KEY);
+  window.localStorage.removeItem(TOUR_USER_PROFILE_KEY);
+  window.localStorage.setItem(TOUR_MIGRATION_KEY, "true");
+}
+
 function readStoredStepIndex(): number {
   if (typeof window === "undefined") return 0;
+  migrateTourStorageIfNeeded();
   const raw = window.localStorage.getItem(TOUR_STEP_INDEX_KEY);
   if (!raw) return 0;
   const parsed = Number.parseInt(raw, 10);
-  return Number.isFinite(parsed) ? parsed : 0;
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
 }
 
-function isIntroSubmitted(): boolean {
-  if (typeof window === "undefined") return false;
-  return (
-    readBoolean(TOUR_INTRO_SUBMITTED_KEY, false) ||
-    Boolean(window.localStorage.getItem(TOUR_USER_PROFILE_KEY))
-  );
-}
-
-function clampStepIndex(index: number, minIndex: number, stepsLength: number): number {
-  return Math.min(Math.max(index, minIndex), Math.max(stepsLength - 1, minIndex));
+function clampStepIndex(index: number, stepsLength: number): number {
+  return Math.min(Math.max(index, 0), Math.max(stepsLength - 1, 0));
 }
 
 export function TourProvider({ children }: { children: ReactNode }) {
@@ -55,10 +65,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
       };
     }
 
-    const introSubmitted = isIntroSubmitted();
-    const minIndex = introSubmitted ? INTRO_LOCK_INDEX : 0;
-    const requestedIndex = readStoredStepIndex();
-    const stepIndex = clampStepIndex(requestedIndex, minIndex, mainTourSteps.length);
+    const stepIndex = clampStepIndex(readStoredStepIndex(), mainTourSteps.length);
 
     return {
       isActive: true,
@@ -73,14 +80,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
     // Demo environment: always keep users in the tour, even if they had completed it previously.
     window.localStorage.setItem(TOUR_COMPLETED_KEY, "false");
 
-    const introSubmitted = isIntroSubmitted();
-    if (introSubmitted) {
-      window.localStorage.setItem(TOUR_INTRO_SUBMITTED_KEY, "true");
-    }
-
-    const minIndex = introSubmitted ? INTRO_LOCK_INDEX : 0;
-    const requestedIndex = readStoredStepIndex();
-    const stepIndex = clampStepIndex(requestedIndex, minIndex, mainTourSteps.length);
+    const stepIndex = clampStepIndex(readStoredStepIndex(), mainTourSteps.length);
 
     window.localStorage.setItem(TOUR_ACTIVE_KEY, "true");
     window.localStorage.setItem(TOUR_STEP_INDEX_KEY, String(stepIndex));
@@ -97,8 +97,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
 
   const startTour = useCallback((steps: TourStep[]) => {
     if (steps.length === 0) return;
-    const minIndex = isIntroSubmitted() ? INTRO_LOCK_INDEX : 0;
-    setState({ isActive: true, currentStepIndex: minIndex, steps });
+    setState({ isActive: true, currentStepIndex: 0, steps });
   }, []);
 
   const nextStep = useCallback(() => {
@@ -119,8 +118,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
 
   const prevStep = useCallback(() => {
     setState((prev) => {
-      const minIndex = isIntroSubmitted() ? INTRO_LOCK_INDEX : 0;
-      if (prev.currentStepIndex > minIndex) {
+      if (prev.currentStepIndex > 0) {
         return { ...prev, currentStepIndex: prev.currentStepIndex - 1 };
       }
       return prev;
@@ -158,4 +156,3 @@ export function useTour(): TourContextValue {
   if (!ctx) throw new Error("useTour must be used inside <TourProvider>");
   return ctx;
 }
-
