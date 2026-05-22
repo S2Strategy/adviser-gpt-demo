@@ -1,10 +1,29 @@
 import { useState, useMemo, useRef, useLayoutEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { TourStep } from "@/types/tour";
+import { hasPostedLead, postLeadMetric } from "@/lib/leadMetrics";
 
 const TOOLTIP_WIDTH = 320;
-const TOOLTIP_GAP = 12; // gap between spotlight edge and card
+const INTRO_CARD_WIDTH = 420;
+const TOOLTIP_GAP = 12;
+
+/** Personal/free email domains not accepted as work email */
+const PERSONAL_EMAIL_DOMAINS = new Set([
+  "gmail.com", "googlemail.com", "yahoo.com", "yahoo.co.uk", "ymail.com",
+  "hotmail.com", "hotmail.co.uk", "outlook.com", "live.com", "msn.com", "outlook.co.uk",
+  "icloud.com", "me.com", "mac.com", "aol.com", "mail.com", "protonmail.com", "proton.me",
+  "zoho.com", "gmx.com", "gmx.net", "mail.ru", "yandex.com", "inbox.com", "fastmail.com",
+]);
+
+function isWorkEmail(email: string): boolean {
+  const trimmed = email.trim().toLowerCase();
+  if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return false;
+  const domain = trimmed.split("@")[1];
+  return !PERSONAL_EMAIL_DOMAINS.has(domain);
+} // gap between spotlight edge and card
 const ARROW_SIZE = 10;  // half-width of the caret triangle
 
 interface TourTooltipProps {
@@ -213,15 +232,59 @@ export function TourTooltip({
   onPrev,
   onEnd,
 }: TourTooltipProps) {
+  const [name, setName] = useState(() => {
+    if (typeof window === "undefined") return "";
+    try {
+      const raw = window.localStorage.getItem("tour-user-profile");
+      if (!raw) return "";
+      const parsed = JSON.parse(raw) as { name?: string };
+      return parsed.name ?? "";
+    } catch {
+      return "";
+    }
+  });
+  const [workEmail, setWorkEmail] = useState(() => {
+    if (typeof window === "undefined") return "";
+    try {
+      const raw = window.localStorage.getItem("tour-user-profile");
+      if (!raw) return "";
+      const parsed = JSON.parse(raw) as { workEmail?: string };
+      return parsed.workEmail ?? "";
+    } catch {
+      return "";
+    }
+  });
+  const [company, setCompany] = useState(() => {
+    if (typeof window === "undefined") return "";
+    try {
+      const raw = window.localStorage.getItem("tour-user-profile");
+      if (!raw) return "";
+      const parsed = JSON.parse(raw) as { company?: string };
+      return parsed.company ?? "";
+    } catch {
+      return "";
+    }
+  });
+  const [touched, setTouched] = useState(false);
+  const [isIntroSubmitted, setIsIntroSubmitted] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("demo-tour-intro-submitted") === "true";
+  });
+  const [isSubmittingIntro, setIsSubmittingIntro] = useState(false);
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [cardHeight, setCardHeight] = useState(260);
 
   const isFirst = stepIndex === 0;
   const isLast = stepIndex === totalSteps - 1;
+  const isIntroStep = step.id === "welcome-details";
   const isBookDemoStep = step.id === "book-demo";
-  /** Homepage is first step: no Back button */
+  /** Step 2 (Web App Homepage): no Back button so it doesn't cancel or confuse */
   const showBackButton = !isFirst && step.id !== "homepage-overview" && !isBookDemoStep;
-  const cardWidth = TOOLTIP_WIDTH;
+  const cardWidth = isIntroStep ? INTRO_CARD_WIDTH : TOOLTIP_WIDTH;
+
+  const emailFormatValid = !workEmail || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(workEmail.trim());
+  const emailValid = emailFormatValid && (!workEmail.trim() || isWorkEmail(workEmail));
+  const showErrors = touched && isIntroStep;
 
   const anchored = useMemo<AnchoredPosition | null>(() => {
     if (!targetRect) return null;
@@ -251,7 +314,47 @@ export function TourTooltip({
     if (Math.abs(measured - cardHeight) > 1) {
       setCardHeight(measured);
     }
-  }, [step.id, cardHeight]);
+  }, [step.id, name, workEmail, company, touched, cardHeight]);
+
+  const handleNext = async () => {
+    if (isIntroStep) {
+      if (isIntroSubmitted) {
+        onNext();
+        return;
+      }
+      setTouched(true);
+      const hasAllValues = name.trim() && workEmail.trim() && company.trim() && emailValid;
+      if (!hasAllValues) return;
+      if (isSubmittingIntro) return;
+
+      setIsSubmittingIntro(true);
+      try {
+        const profile = {
+          name: name.trim(),
+          workEmail: workEmail.trim(),
+          company: company.trim(),
+        };
+        const leadPayload = {
+          fullName: profile.name,
+          email: profile.workEmail,
+          companyName: profile.company,
+        };
+
+        window.localStorage.setItem("tour-user-profile", JSON.stringify(profile));
+        window.localStorage.setItem("demo-tour-intro-submitted", "true");
+        setIsIntroSubmitted(true);
+
+        if (!hasPostedLead()) {
+          await postLeadMetric(leadPayload);
+        }
+      } catch {
+        // ignore storage errors
+      } finally {
+        setIsSubmittingIntro(false);
+      }
+    }
+    onNext();
+  };
 
   const cardContent = (
     <div className="rounded-xl border border-border bg-background shadow-2xl overflow-visible relative">
@@ -260,7 +363,7 @@ export function TourTooltip({
 
       {/* Header */}
       {!isBookDemoStep && (
-        <div className="px-5 pt-5 pb-3">
+        <div className={isIntroStep ? "px-6 pt-6 pb-3" : "px-5 pt-5 pb-3"}>
           <span className="text-[11px] font-semibold text-muted-foreground tracking-wider uppercase">
             {stepIndex + 1} of {totalSteps}
           </span>
@@ -268,14 +371,71 @@ export function TourTooltip({
       )}
 
       {/* Body */}
-      <div className={isBookDemoStep ? "px-6 pt-8 pb-8 space-y-6" : "px-5 pb-5 space-y-3"}>
+      <div className={isIntroStep ? "px-6 pb-6 space-y-4" : isBookDemoStep ? "px-6 pt-8 pb-8 space-y-6" : "px-5 pb-5 space-y-3"}>
         <h3
           className={`font-semibold text-foreground ${isBookDemoStep ? "text-center" : ""}`}
-          style={{ fontSize: "15px", lineHeight: "1.4", letterSpacing: "-0.3px" }}
+          style={{ fontSize: isIntroStep ? "17px" : "15px", lineHeight: "1.4", letterSpacing: "-0.3px" }}
         >
           {step.title}
         </h3>
-        {isBookDemoStep ? (
+        {isIntroStep ? (
+          <div className="space-y-4 mt-1">
+            <p className="text-muted-foreground" style={{ fontSize: "14px", lineHeight: "1.6" }}>
+              {step.content}
+            </p>
+            <div className="space-y-4 mt-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="tour-name" className="text-xs font-medium">Name</Label>
+                <Input
+                  id="tour-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Jane Doe"
+                  className={isIntroStep ? "h-9 text-sm" : "h-8 text-sm"}
+                  disabled={isIntroSubmitted}
+                />
+                {showErrors && !name.trim() && (
+                  <p className="text-[11px] text-destructive">Please enter your name.</p>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="tour-email" className="text-xs font-medium">Work email</Label>
+                <Input
+                  id="tour-email"
+                  value={workEmail}
+                  onChange={(e) => setWorkEmail(e.target.value)}
+                  placeholder="you@firm.com"
+                  type="email"
+                  className={isIntroStep ? "h-9 text-sm" : "h-8 text-sm"}
+                  disabled={isIntroSubmitted}
+                />
+                {showErrors && !workEmail.trim() && (
+                  <p className="text-[11px] text-destructive">Please enter your work email.</p>
+                )}
+                {showErrors && workEmail.trim() && !emailFormatValid && (
+                  <p className="text-[11px] text-destructive">Enter a valid email address.</p>
+                )}
+                {showErrors && workEmail.trim() && emailFormatValid && !emailValid && (
+                  <p className="text-[11px] text-destructive">Please use a work email (no Gmail, Yahoo, etc.).</p>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="tour-company" className="text-xs font-medium">Company</Label>
+                <Input
+                  id="tour-company"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  placeholder="Your firm name"
+                  className={isIntroStep ? "h-9 text-sm" : "h-8 text-sm"}
+                  disabled={isIntroSubmitted}
+                />
+                {showErrors && !company.trim() && (
+                  <p className="text-[11px] text-destructive">Please enter your company.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : isBookDemoStep ? (
           <div className="flex flex-col items-center text-center gap-5">
             <p className="text-muted-foreground max-w-[260px]" style={{ fontSize: "13px", lineHeight: "1.6" }}>
               {step.content}
@@ -300,7 +460,7 @@ export function TourTooltip({
 
       {/* Progress dots */}
       {!isBookDemoStep && (
-        <div className="flex items-center justify-center gap-1.5 pb-4">
+        <div className={isIntroStep ? "flex items-center justify-center gap-1.5 pb-5" : "flex items-center justify-center gap-1.5 pb-4"}>
           {Array.from({ length: totalSteps }).map((_, i) => (
             <div
               key={i}
@@ -314,7 +474,7 @@ export function TourTooltip({
 
       {/* Footer */}
       {!isBookDemoStep && (
-        <div className="flex items-center justify-end px-5 pb-5 gap-2">
+        <div className={isIntroStep ? "flex items-center justify-end px-6 pb-6 gap-2" : "flex items-center justify-end px-5 pb-5 gap-2"}>
           <div className="flex items-center gap-2">
             {showBackButton && (
               <Button variant="outline" size="sm" onClick={onPrev} className="h-8 px-3 gap-1">
@@ -322,8 +482,19 @@ export function TourTooltip({
                 Back
               </Button>
             )}
-            <Button size="sm" onClick={onNext} className="h-8 px-4 gap-1">
-              {isLast ? "Finish" : "Next"}
+            <Button
+              size="sm"
+              onClick={handleNext}
+              className="h-8 px-4 gap-1"
+              disabled={isIntroStep && isSubmittingIntro}
+            >
+              {isIntroStep && isSubmittingIntro
+                ? "Submitting..."
+                : isIntroStep && isIntroSubmitted
+                  ? "Continue"
+                  : isLast
+                    ? "Finish"
+                    : "Next"}
               {!isLast && <ChevronRight className="w-3.5 h-3.5" />}
             </Button>
           </div>

@@ -2,6 +2,14 @@ import type { TourStep } from "@/types/tour";
 
 export const mainTourSteps: TourStep[] = [
   {
+    id: "welcome-details",
+    tourId: "welcome-details-overlay",
+    title: "Tell us about you",
+    content: "Share a few details so we can tailor this tour and future demos to your firm.",
+    placement: "bottom",
+    route: "/",
+  },
+  {
     id: "homepage-overview",
     tourId: "homepage-overview-overlay",
     title: "Web App Homepage",
