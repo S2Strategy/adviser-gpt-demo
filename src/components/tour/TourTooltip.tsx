@@ -16,6 +16,7 @@ interface TourTooltipProps {
   opacity?: number;
   onNext: () => void;
   onPrev: () => void;
+  onRestart: () => void;
   onEnd: () => void;
 }
 
@@ -211,6 +212,7 @@ export function TourTooltip({
   opacity = 1,
   onNext,
   onPrev,
+  onRestart,
   onEnd,
 }: TourTooltipProps) {
   const cardRef = useRef<HTMLDivElement | null>(null);
@@ -280,16 +282,27 @@ export function TourTooltip({
             <p className="text-muted-foreground max-w-[260px]" style={{ fontSize: "13px", lineHeight: "1.6" }}>
               {step.content}
             </p>
-            <a
-              href="https://www.advisergpt.ai/learn-more"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex justify-center"
-            >
-              <Button size="sm" className="h-8 px-4">
-                Book demo
+            <div className="flex flex-col items-center gap-2 w-full">
+              <a
+                href="https://www.advisergpt.ai/learn-more"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex justify-center w-full"
+              >
+                <Button size="sm" className="h-8 px-4 w-full max-w-[200px]">
+                  Book demo
+                </Button>
+              </a>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 px-4 w-full max-w-[200px]"
+                onClick={onRestart}
+              >
+                Restart tour
               </Button>
-            </a>
+            </div>
           </div>
         ) : (
           <p className="text-muted-foreground mt-1" style={{ fontSize: "13px", lineHeight: "1.6" }}>
