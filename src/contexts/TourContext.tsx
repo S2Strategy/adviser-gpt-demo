@@ -4,6 +4,7 @@ import { mainTourSteps } from "@/tour/steps";
 
 interface TourContextValue extends TourState {
   startTour: (steps: TourStep[]) => void;
+  restartTour: () => void;
   nextStep: () => void;
   prevStep: () => void;
   endTour: () => void;
@@ -100,6 +101,15 @@ export function TourProvider({ children }: { children: ReactNode }) {
     setState({ isActive: true, currentStepIndex: 0, steps });
   }, []);
 
+  const restartTour = useCallback(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(TOUR_COMPLETED_KEY, "false");
+      window.localStorage.setItem(TOUR_ACTIVE_KEY, "true");
+      window.localStorage.setItem(TOUR_STEP_INDEX_KEY, "0");
+    }
+    setState({ isActive: true, currentStepIndex: 0, steps: mainTourSteps });
+  }, []);
+
   const nextStep = useCallback(() => {
     setState((prev) => {
       const currentStep = prev.steps[prev.currentStepIndex];
@@ -145,7 +155,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
   }, [state.isActive, nextStep, prevStep]);
 
   return (
-    <TourContext.Provider value={{ ...state, startTour, nextStep, prevStep, endTour }}>
+    <TourContext.Provider value={{ ...state, startTour, restartTour, nextStep, prevStep, endTour }}>
       {children}
     </TourContext.Provider>
   );

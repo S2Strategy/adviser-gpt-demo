@@ -11,7 +11,7 @@ import { TourTooltip } from "./TourTooltip";
  * Rendered once at the app root — portal-renders into document.body.
  */
 export function TourOverlay() {
-  const { isActive, currentStepIndex, steps, nextStep, prevStep, endTour } = useTour();
+  const { isActive, currentStepIndex, steps, nextStep, prevStep, restartTour, endTour } = useTour();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -219,6 +219,17 @@ export function TourOverlay() {
     }, 80);
   };
 
+  const fadeToRestart = () => {
+    setTooltipOpacity(0);
+    if (fadeTimeoutRef.current !== null) {
+      window.clearTimeout(fadeTimeoutRef.current);
+    }
+    fadeTimeoutRef.current = window.setTimeout(() => {
+      restartTour();
+      fadeTimeoutRef.current = null;
+    }, 80);
+  };
+
   return createPortal(
     <>
       {/* Full-screen click/pointer blocker — sits behind the spotlight and tooltip */}
@@ -254,6 +265,7 @@ export function TourOverlay() {
           opacity={tooltipOpacity}
           onNext={() => fadeToStep("next")}
           onPrev={() => fadeToStep("prev")}
+          onRestart={fadeToRestart}
           onEnd={endTour}
         />
       )}
