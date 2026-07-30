@@ -1,7 +1,7 @@
-import { AdviserGPTHome } from "@/components/AdviserGPTHome";
+import { OrrigoHome } from "@/components/OrrigoHome";
 
 const Index = () => {
-  return <AdviserGPTHome />;
+  return <OrrigoHome />;
 };
 
 export default Index;

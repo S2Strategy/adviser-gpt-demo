@@ -176,7 +176,7 @@ export function AnswerLoadingState({
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Badge className="bg-accent text-white flex items-center gap-1">
-                AdviserGPT • <span className="font-semibold">{mode === 'answer' ? 'Vault Only' : mode === 'chat' ? 'Vault + Web' : 'RIA Outreach'}</span>
+                Orrigo • <span className="font-semibold">{mode === 'answer' ? 'Vault Only' : mode === 'chat' ? 'Vault + Web' : 'RIA Outreach'}</span>
               </Badge>
               {mode === 'answer' && answer && (
                 <Badge
