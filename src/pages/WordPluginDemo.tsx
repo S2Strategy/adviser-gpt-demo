@@ -131,7 +131,7 @@ export default function WordPluginDemo() {
           className="w-[360px] bg-white border-l border-[#e3e3e3] px-3 py-2 flex flex-col"
         >
           <div className="flex items-center justify-between mb-2">
-            <div className="font-semibold text-[15px] leading-none tracking-tight text-[#1f1f1f]">AdviserGPT</div>
+            <div className="font-semibold text-[15px] leading-none tracking-tight text-[#1f1f1f]">Orrigo</div>
             <button className="h-7 w-7 rounded-full bg-[#e3e3e3] inline-flex items-center justify-center">
               <X className="h-4 w-4 text-[#6f6f6f]" />
             </button>

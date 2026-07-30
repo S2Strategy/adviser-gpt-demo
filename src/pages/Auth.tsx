@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import Logo from '@/assets/AdviserGPT-logo.svg?react';
+import Logo from '@/assets/Orrigo-full-logo.svg?react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,7 +22,7 @@ export default function Auth() {
 
     try {
       const success = login(email, password);
-      
+
       if (success) {
         toast({
           title: "Login successful",
@@ -53,12 +53,12 @@ export default function Auth() {
         <div className="flex justify-center mb-16">
           <Logo className="h-12 w-auto" />
         </div>
-        
+
         <Card className="bg-background">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
             <CardDescription>
-              Sign in to your AdviserGPT account
+              Sign in to your Orrigo account
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -76,7 +76,7 @@ export default function Auth() {
                   className="bg-white/80 border border-foreground/30 backdrop-blur-sm transition focus:border-sidebar-primary focus-within:border-sidebar-primary focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-0 focus:outline-none"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <Input
@@ -89,19 +89,19 @@ export default function Auth() {
                   className="bg-white/80 border border-foreground/30 backdrop-blur-sm transition focus:border-sidebar-primary focus-within:border-sidebar-primary focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-0 focus:outline-none"
                 />
               </div>
-              
-              <Button 
-                type="submit" 
-                className="w-full" 
+
+              <Button
+                type="submit"
+                className="w-full"
                 disabled={isLoading}
               >
                 {isLoading ? 'Signing in...' : 'Log In'}
               </Button>
             </form>
-            
+
             <div className="mt-6 text-center">
-              <Link 
-                to="/reset-password" 
+              <Link
+                to="/reset-password"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 Reset password

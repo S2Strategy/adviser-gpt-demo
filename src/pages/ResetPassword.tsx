@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import Logo from '@/assets/AdviserGPT-logo.svg?react';
+import Logo from '@/assets/Orrigo-full-logo.svg?react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,7 +31,7 @@ export default function ResetPassword() {
 
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       setIsSubmitted(true);
       toast({
         title: "Reset link sent",
@@ -55,7 +55,7 @@ export default function ResetPassword() {
           <div className="flex justify-center mb-8">
             <Logo className="h-12 w-auto" />
           </div>
-          
+
           <Card>
             <CardHeader className="text-center">
               <CardTitle className="text-2xl font-bold">Check Your Email</CardTitle>
@@ -68,12 +68,12 @@ export default function ResetPassword() {
                 Didn't receive the email? Check your spam folder or try again.
               </p>
               <div className="space-y-2">
-                <Button 
+                <Button
                   onClick={() => {
                     setIsSubmitted(false);
                     setEmail('');
                   }}
-                  variant="outline" 
+                  variant="outline"
                   className="w-full"
                 >
                   Try Different Email
@@ -97,7 +97,7 @@ export default function ResetPassword() {
         <div className="flex justify-center mb-8">
           <Logo className="h-12 w-auto" />
         </div>
-        
+
         <Card>
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">Reset Password</CardTitle>
@@ -119,19 +119,19 @@ export default function ResetPassword() {
                   autoFocus
                 />
               </div>
-              
-              <Button 
-                type="submit" 
-                className="w-full" 
+
+              <Button
+                type="submit"
+                className="w-full"
                 disabled={isLoading}
               >
                 {isLoading ? 'Sending...' : 'Send Reset Link'}
               </Button>
             </form>
-            
+
             <div className="mt-6 text-center">
-              <Link 
-                to="/auth" 
+              <Link
+                to="/auth"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 Back to Login

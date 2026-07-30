@@ -58,9 +58,9 @@ export const mainTourSteps: TourStep[] = [
   {
     id: "word-plugin-demo",
     tourId: "word-plugin-panel",
-    title: "AdviserGPT Microsoft 365 Plug-in",
+    title: "Orrigo Microsoft 365 Plug-in",
     content:
-      "This is the AdviserGPT Plug-in view inside a Microsoft Word document workflow, where you can draft, improve, and search approved language alongside the document.",
+      "This is the Orrigo Plug-in view inside a Microsoft Word document workflow, where you can draft, improve, and search approved language alongside the document.",
     placement: "left",
     route: "/word-plugin-demo",
   },
@@ -96,7 +96,7 @@ export const mainTourSteps: TourStep[] = [
     tourId: "drafts-completed",
     title: "Show completed Draft",
     content:
-      "AdviserGPT enables users to draft client communications and commentary with their firm's tone of voice and compliance-approved language combined with quarterly client attribution and reporting data.",
+      "Orrigo enables users to draft client communications and commentary with their firm's tone of voice and compliance-approved language combined with quarterly client attribution and reporting data.",
     placement: "right",
     route: "/drafts",
   },
@@ -105,7 +105,7 @@ export const mainTourSteps: TourStep[] = [
     tourId: "book-demo-overlay",
     title: "Book a demo",
     content:
-      "Ready to see AdviserGPT in action? Contact us and we'll reach out to schedule a personalized demo for your firm.",
+      "Ready to see Orrigo in action? Contact us and we'll reach out to schedule a personalized demo for your firm.",
     placement: "bottom",
     route: "/drafts",
   },
