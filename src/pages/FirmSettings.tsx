@@ -326,7 +326,7 @@ export function FirmSettings() {
                           <p className="text-sm text-foreground/70">Manage your billing information and subscription details</p>
                         </div>
                         <Button className="bg-sidebar-primary hover:bg-sidebar-primary/80">
-                          Subscribe to AdviserGPT
+                          Subscribe to Orrigo
                         </Button>
                       </div>
                     </CardContent>

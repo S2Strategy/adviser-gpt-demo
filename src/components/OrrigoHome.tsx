@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import Logo from '@/assets/AdviserGPT-logo.svg?react';
+import Logo from '@/assets/Orrigo-logo.svg?react';
 import { useSearchParams, useLocation } from 'react-router-dom';
-import { 
-  PlusCircle, 
+import {
+  PlusCircle,
   BookOpenText,
   ShieldPlus,
   X,
@@ -74,7 +74,7 @@ type SourceWithStrategies = Source & {
   strategies?: string[];
 };
 
-export function AdviserGPTHome() {
+export function OrrigoHome() {
   const { toast } = useToast();
   const { addRecentSearch, getLastMode, setLastMode } = useRecentSearches();
   const { saveChatResult } = useChatResults();
@@ -82,7 +82,7 @@ export function AdviserGPTHome() {
   const location = useLocation();
 
   const { isActive, steps, currentStepIndex } = useTour();
-  
+
   // State management
   const [inputValue, setInputValue] = useState('');
   const [selectedMode, setSelectedMode] = useState<'answer' | 'chat' | 'riaOutreach'>(() => getLastMode());
@@ -96,7 +96,7 @@ export function AdviserGPTHome() {
   const [followUpFiles, setFollowUpFiles] = useState<UploadedFile[]>([]);
   const [streamingAnswer, setStreamingAnswer] = useState<string>('');
   const processedStoredResult = useRef<string | null>(null);
-  
+
   // Filter state management
   const [showFiltersPanel, setShowFiltersPanel] = useState(false);
   const [selectedTagFilters, setSelectedTagFilters] = useState<Record<string, string[]>>({});
@@ -126,7 +126,7 @@ export function AdviserGPTHome() {
 
   const handleFileUpload = (files: FileList | null, isFollowUp: boolean = false) => {
     if (!files) return;
-    
+
     const newFiles: UploadedFile[] = Array.from(files).map(file => ({
       id: `${Date.now()}-${Math.random()}`,
       name: file.name,
@@ -191,7 +191,7 @@ export function AdviserGPTHome() {
     const normalizedAnswer = fullAnswer.replace(/\n\s*\n/g, ' ').replace(/\s+/g, ' ').trim();
     const words = normalizedAnswer.split(' ');
     const totalWords = words.length;
-    
+
     const streamInterval = setInterval(() => {
       if (currentIndex < words.length) {
         // Add 1-3 words at a time for realistic streaming
@@ -199,7 +199,7 @@ export function AdviserGPTHome() {
         const newText = words.slice(0, currentIndex + wordsToAdd).join(' ');
         setStreamingAnswer(newText);
         currentIndex += wordsToAdd;
-        
+
         // Update progress based on text completion (0-95%)
         const textProgress = Math.min((currentIndex / totalWords) * 95, 95);
         setLoadingProgress(textProgress);
@@ -217,7 +217,7 @@ export function AdviserGPTHome() {
     const resetParam = searchParams.get('reset');
     const queryParam = searchParams.get('query');
     const modeParam = searchParams.get('mode');
-    
+
     if (resetParam === 'true') {
       // Reset all state to pristine values, but preserve the last selected mode
       setInputValue('');
@@ -231,19 +231,19 @@ export function AdviserGPTHome() {
       setUploadedFiles([]);
       setFollowUpFiles([]);
       setStreamingAnswer('');
-      
+
       // Clear all filters on reset
       handleClearAllFilters();
       setFileHistory([]);
-      
+
       // Remove the reset parameter from URL
       const newSearchParams = new URLSearchParams(searchParams);
       newSearchParams.delete('reset');
       setSearchParams(newSearchParams, { replace: true });
     } else if (queryParam) {
       // Check if we have a stored result in navigation state - if so, don't handle URL params
-      const state = location.state as { 
-        storedChatResult?: ChatResult; 
+      const state = location.state as {
+        storedChatResult?: ChatResult;
         skipLoading?: boolean;
         filters?: {
           tags: string[];
@@ -264,18 +264,18 @@ export function AdviserGPTHome() {
           size: number;
         }>;
       } | null;
-      
+
       if (state?.storedChatResult && state?.skipLoading) {
         // We have a stored result, let the other useEffect handle it
         return;
       }
-      
+
       // Handle query and mode parameters from recent search clicks
       setInputValue(queryParam);
       if (modeParam === 'answer' || modeParam === 'chat' || modeParam === 'riaOutreach') {
         setSelectedMode(modeParam);
       }
-      
+
       // Restore filters and uploaded files from navigation state
       if (state?.filters) {
         // Convert legacy filter format to new format if needed
@@ -294,7 +294,7 @@ export function AdviserGPTHome() {
         setSelectedDateRange(state.filters.dateRange || null);
         setSelectedPriorSamples(state.filters.priorSamples?.map(s => s.id) || []);
       }
-      
+
       if (state?.uploadedFiles) {
         // Convert back to UploadedFile format for the component
         const restoredFiles: UploadedFile[] = state.uploadedFiles.map(file => {
@@ -315,12 +315,12 @@ export function AdviserGPTHome() {
         });
         setUploadedFiles(restoredFiles);
       }
-      
+
       // Auto-run the query if no stored result is available
       setTimeout(() => {
         startChatWithQuestion(queryParam);
       }, 100); // Small delay to ensure state is set
-      
+
       // Clean up URL parameters
       const newSearchParams = new URLSearchParams(searchParams);
       newSearchParams.delete('query');
@@ -332,17 +332,17 @@ export function AdviserGPTHome() {
   // Handle stored chat results from navigation state
   useEffect(() => {
     const state = location.state as { storedChatResult?: ChatResult; skipLoading?: boolean } | null;
-    
+
     if (state?.storedChatResult && state?.skipLoading) {
       const storedResult = state.storedChatResult;
-      
+
       // Prevent processing the same result multiple times
       if (processedStoredResult.current === storedResult.id) {
         return;
       }
-      
+
       processedStoredResult.current = storedResult.id;
-      
+
       // Load the stored chat result directly in completed state
       setInputValue(storedResult.query);
       setSelectedMode(storedResult.mode);
@@ -366,7 +366,7 @@ export function AdviserGPTHome() {
       setSourcesFound(8);
       setShowSourcePanel(false);
       setStreamingAnswer(''); // Clear any streaming text
-      
+
       // Clear the navigation state to prevent re-loading
       window.history.replaceState({}, document.title);
     }
@@ -411,10 +411,10 @@ export function AdviserGPTHome() {
 
   const handleSubmit = async () => {
     if (!inputValue.trim()) return;
-    
+
     // Add to recent searches
     addRecentSearch(
-      inputValue.trim(), 
+      inputValue.trim(),
       selectedMode,
       {
         tagFilters: selectedTagFilters,
@@ -436,22 +436,22 @@ export function AdviserGPTHome() {
         size: file.size
       }))
     );
-    
+
     // Add uploaded files to history for Prior Samples filter
     if (uploadedFiles.length > 0) {
       addToFileHistory(uploadedFiles);
     }
-    
+
     setIsGenerating(true);
     setLoadingProgress(0);
     setLoadingStep('Searching Vault');
     setSourcesFound(8);
-    
+
     // Generate answer based on mode
-    const mockAnswer = selectedMode === 'answer' 
+    const mockAnswer = selectedMode === 'answer'
       ? generateAnswerModeResponse(inputValue)
       : generateChatModeResponse(inputValue);
-    
+
     // Start streaming the answer text
     streamAnswerText(mockAnswer.answer, () => {
       // Set the answer immediately so the component can transition
@@ -473,11 +473,11 @@ export function AdviserGPTHome() {
         }
       };
       setCurrentAnswer(answerWithFilesAndFilters);
-      
+
       // Set the answer immediately - the progress bar collapse is now handled in AnswerLoadingState
       setIsGenerating(false);
       setStreamingAnswer('');
-      
+
       // Save the chat result for future retrieval (async to prevent render issues)
       setTimeout(() => {
         saveChatResult({
@@ -499,7 +499,7 @@ export function AdviserGPTHome() {
     setInputValue(question);
     // Add to recent searches
     addRecentSearch(
-      question, 
+      question,
       selectedMode,
       {
         tagFilters: selectedTagFilters,
@@ -527,17 +527,17 @@ export function AdviserGPTHome() {
 
   const startChatWithQuestion = async (question: string) => {
     if (!question.trim()) return;
-    
+
     setIsGenerating(true);
     setCurrentAnswer(null);
     setShowSourcePanel(false);
     setLoadingProgress(0);
     setLoadingStep('Searching Vault');
     setSourcesFound(8);
-    
+
     // Generate realistic mock answer based on question type with minimal AI formatting
     const template = getExampleResponse(question);
-    
+
     const mockAnswer: Answer = {
       id: `example-${Date.now()}`,
       question,
@@ -549,7 +549,7 @@ export function AdviserGPTHome() {
       version: 1,
       complianceChecks: template.complianceChecks
     };
-    
+
     // Start streaming the answer text
     streamAnswerText(mockAnswer.answer, () => {
       // Set the answer immediately so the component can transition
@@ -558,11 +558,11 @@ export function AdviserGPTHome() {
         uploadedFiles: uploadedFiles
       };
       setCurrentAnswer(answerWithFiles);
-      
+
       // Set the answer immediately - the progress bar collapse is now handled in AnswerLoadingState
       setIsGenerating(false);
       setStreamingAnswer('');
-      
+
       // Save the chat result for future retrieval (async to prevent render issues)
       setTimeout(() => {
         saveChatResult({
@@ -623,14 +623,14 @@ export function AdviserGPTHome() {
   const handleSave = (updatedAnswer?: Answer) => {
     if (updatedAnswer) {
       // Check if this answer matches an existing vault entry
-      const existingEntry = mockVaultData.find(entry => 
+      const existingEntry = mockVaultData.find(entry =>
         entry.question.toLowerCase() === updatedAnswer.question.toLowerCase()
       );
-      
+
       if (existingEntry) {
         // Update existing entry
-        setMockVaultData(prev => prev.map(entry => 
-          entry.id === existingEntry.id 
+        setMockVaultData(prev => prev.map(entry =>
+          entry.id === existingEntry.id
             ? { ...entry, answer: updatedAnswer.answer, lastModified: new Date() }
             : entry
         ));
@@ -701,17 +701,17 @@ export function AdviserGPTHome() {
       {/* Vault Sidebar */}
       <VaultSidebar />
 
-      
+
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden bg-background mt-4 rounded-tl-2xl vault-scroll">
         <div className={`flex-1 overflow-y-auto flex flex-col
           ${!currentAnswer && !isGenerating ? 'p-8' : 'p-0'}`}>
-          
+
           {/* Header - Show when generating or when answer is loaded */}
           {(isGenerating || currentAnswer) && (
             <div className="border-b border-foreground/10">
               <div className="flex items-center justify-between text-sm mb-4 px-6 pt-4">
-                <Logo aria-label="AdviserGPT" className="h-4 w-auto" />
+                <Logo aria-label="Orrigo" className="h-4 w-auto" />
                 <Button
                   variant="outline"
                   size="sm"
@@ -729,12 +729,12 @@ export function AdviserGPTHome() {
             {!currentAnswer && !isGenerating ? (
               /* Initial State */
               <div className="flex flex-col items-center justify-center space-y-12 h-full">
-                <div className="text-center mb-8 space-y-6">
-                  <h2 className="text-4xl font-bold mb-2"><Logo aria-label="AdviserGPT" className="h-8 w-auto mx-auto" /></h2>
+                <div className="text-center mb-8 space-y-3">
+                  <h2 className="text-4xl font-bold"><Logo aria-label="Orrigo" className="h-14 w-auto mx-auto" /></h2>
                   <p className="text-lg text-foreground/90">
                     Every response is sourced from your Vault to match your firm's tone of voice.
                   </p>
-                  
+
                 </div>
 
                 {/* Input Bar */}
@@ -747,11 +747,10 @@ export function AdviserGPTHome() {
                           <TooltipTrigger asChild>
                             <button
                               onClick={() => setSelectedMode('answer')}
-                              className={`flex flex-1 md:flex-none justify-center md:justify-start items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 ${
-                                selectedMode === 'answer'
-                                  ? 'bg-background text-foreground shadow-sm'
-                                  : 'text-foreground/60 hover:text-foreground'
-                              }`}
+                              className={`flex flex-1 md:flex-none justify-center md:justify-start items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 ${selectedMode === 'answer'
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-foreground/60 hover:text-foreground'
+                                }`}
                             >
                               <BookOpenText className="h-4 w-4" />
                               Vault Only
@@ -765,11 +764,10 @@ export function AdviserGPTHome() {
                           <TooltipTrigger asChild>
                             <button
                               onClick={() => setSelectedMode('chat')}
-                              className={`flex flex-1 md:flex-none justify-center md:justify-start items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 ${
-                                selectedMode === 'chat'
-                                  ? 'bg-background text-foreground shadow-sm'
-                                  : 'text-foreground/60 hover:text-foreground'
-                              }`}
+                              className={`flex flex-1 md:flex-none justify-center md:justify-start items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 ${selectedMode === 'chat'
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-foreground/60 hover:text-foreground'
+                                }`}
                             >
                               <ShieldPlus className="h-4 w-4" />
                               Vault + Web
@@ -793,8 +791,8 @@ export function AdviserGPTHome() {
                           Open Filters
                           {(() => {
                             const totalCount = Object.values(selectedTagFilters).reduce((sum, values) => sum + values.length, 0) +
-                                             selectedDocuments.length + selectedPriorSamples.length +
-                                             (selectedDateRange && selectedDateRange.type !== 'any' ? 1 : 0);
+                              selectedDocuments.length + selectedPriorSamples.length +
+                              (selectedDateRange && selectedDateRange.type !== 'any' ? 1 : 0);
                             return totalCount > 0 ? (
                               <Badge variant="secondary" className="text-xs">
                                 {totalCount}
@@ -809,66 +807,66 @@ export function AdviserGPTHome() {
                     {(Object.values(selectedTagFilters).some(values => values.length > 0) ||
                       selectedDocuments.length > 0 || selectedPriorSamples.length > 0 ||
                       (selectedDateRange && selectedDateRange.type !== 'any')) && (
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {Object.entries(selectedTagFilters).map(([tagTypeName, values]) =>
-                          values.map(value => (
-                            <Badge key={`${tagTypeName}-${value}`} variant="secondary" className="flex items-center gap-1">
-                              {tagTypeName}: {value}
-                              <X 
-                                className="h-3 w-3 cursor-pointer hover:text-foreground" 
-                                onClick={() => {
-                                  const newValues = values.filter(v => v !== value);
-                                  if (newValues.length === 0) {
-                                    const newFilters = { ...selectedTagFilters };
-                                    delete newFilters[tagTypeName];
-                                    setSelectedTagFilters(newFilters);
-                                  } else {
-                                    setSelectedTagFilters({ ...selectedTagFilters, [tagTypeName]: newValues });
-                                  }
-                                }}
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {Object.entries(selectedTagFilters).map(([tagTypeName, values]) =>
+                            values.map(value => (
+                              <Badge key={`${tagTypeName}-${value}`} variant="secondary" className="flex items-center gap-1">
+                                {tagTypeName}: {value}
+                                <X
+                                  className="h-3 w-3 cursor-pointer hover:text-foreground"
+                                  onClick={() => {
+                                    const newValues = values.filter(v => v !== value);
+                                    if (newValues.length === 0) {
+                                      const newFilters = { ...selectedTagFilters };
+                                      delete newFilters[tagTypeName];
+                                      setSelectedTagFilters(newFilters);
+                                    } else {
+                                      setSelectedTagFilters({ ...selectedTagFilters, [tagTypeName]: newValues });
+                                    }
+                                  }}
+                                />
+                              </Badge>
+                            ))
+                          )}
+                          {selectedDocuments.map(document => (
+                            <Badge key={document} variant="secondary" className="flex items-center gap-1">
+                              {document}
+                              <X
+                                className="h-3 w-3 cursor-pointer hover:text-foreground"
+                                onClick={() => removeDocument(document)}
                               />
                             </Badge>
-                          ))
-                        )}
-                        {selectedDocuments.map(document => (
-                          <Badge key={document} variant="secondary" className="flex items-center gap-1">
-                            {document}
-                            <X 
-                              className="h-3 w-3 cursor-pointer hover:text-foreground" 
-                              onClick={() => removeDocument(document)}
-                            />
-                          </Badge>
-                        ))}
-                        {selectedDateRange && selectedDateRange.type !== 'any' && (
-                          <Badge variant="secondary" className="flex items-center gap-1">
-                            {selectedDateRange.type === 'custom' && selectedDateRange.from && selectedDateRange.to
-                              ? `${format(selectedDateRange.from, 'MMM d')} - ${format(selectedDateRange.to, 'MMM d, yyyy')}`
-                              : selectedDateRange.type === '7d' ? 'Past 7 days'
-                              : selectedDateRange.type === '30d' ? 'Past 30 days'
-                              : selectedDateRange.type === '3mo' ? 'Past 3 months'
-                              : selectedDateRange.type === '6mo' ? 'Past 6 months'
-                              : selectedDateRange.type === '1y' ? 'Past year'
-                              : 'Date range'}
-                            <X 
-                              className="h-3 w-3 cursor-pointer hover:text-foreground" 
-                              onClick={() => setSelectedDateRange(null)}
-                            />
-                          </Badge>
-                        )}
-                        {selectedPriorSamples.map(sampleId => {
-                          const sample = fileHistory.find(f => f.id === sampleId);
-                          return sample ? (
-                            <Badge key={sampleId} variant="secondary" className="flex items-center gap-1">
-                              {sample.name}
-                              <X 
-                                className="h-3 w-3 cursor-pointer hover:text-foreground" 
-                                onClick={() => removePriorSample(sampleId)}
+                          ))}
+                          {selectedDateRange && selectedDateRange.type !== 'any' && (
+                            <Badge variant="secondary" className="flex items-center gap-1">
+                              {selectedDateRange.type === 'custom' && selectedDateRange.from && selectedDateRange.to
+                                ? `${format(selectedDateRange.from, 'MMM d')} - ${format(selectedDateRange.to, 'MMM d, yyyy')}`
+                                : selectedDateRange.type === '7d' ? 'Past 7 days'
+                                  : selectedDateRange.type === '30d' ? 'Past 30 days'
+                                    : selectedDateRange.type === '3mo' ? 'Past 3 months'
+                                      : selectedDateRange.type === '6mo' ? 'Past 6 months'
+                                        : selectedDateRange.type === '1y' ? 'Past year'
+                                          : 'Date range'}
+                              <X
+                                className="h-3 w-3 cursor-pointer hover:text-foreground"
+                                onClick={() => setSelectedDateRange(null)}
                               />
                             </Badge>
-                          ) : null;
-                        })}
-                      </div>
-                    )}
+                          )}
+                          {selectedPriorSamples.map(sampleId => {
+                            const sample = fileHistory.find(f => f.id === sampleId);
+                            return sample ? (
+                              <Badge key={sampleId} variant="secondary" className="flex items-center gap-1">
+                                {sample.name}
+                                <X
+                                  className="h-3 w-3 cursor-pointer hover:text-foreground"
+                                  onClick={() => removePriorSample(sampleId)}
+                                />
+                              </Badge>
+                            ) : null;
+                          })}
+                        </div>
+                      )}
 
                     {/* Main Input */}
                     <ChatInput
@@ -932,10 +930,10 @@ export function AdviserGPTHome() {
                     )}
 
                     {/* Filters Display - Show during generation or when answer is loaded */}
-                    {((isGenerating && (Object.values(selectedTagFilters).some(values => values.length > 0) || selectedDocuments.length > 0 || selectedPriorSamples.length > 0 || (selectedDateRange && selectedDateRange.type !== 'any'))) || 
+                    {((isGenerating && (Object.values(selectedTagFilters).some(values => values.length > 0) || selectedDocuments.length > 0 || selectedPriorSamples.length > 0 || (selectedDateRange && selectedDateRange.type !== 'any'))) ||
                       (currentAnswer?.filters && (
                         (currentAnswer.filters.tagFilters && Object.values(currentAnswer.filters.tagFilters).some(values => values.length > 0)) ||
-                        currentAnswer.filters.documents?.length > 0 || 
+                        currentAnswer.filters.documents?.length > 0 ||
                         (currentAnswer.filters.dateRange && currentAnswer.filters.dateRange.type !== 'any') ||
                         currentAnswer.filters.priorSamples?.length > 0
                       ))) && (
@@ -960,11 +958,11 @@ export function AdviserGPTHome() {
                                   Date: {selectedDateRange.type === 'custom' && selectedDateRange.from && selectedDateRange.to
                                     ? `${format(selectedDateRange.from, 'MMM d')} - ${format(selectedDateRange.to, 'MMM d, yyyy')}`
                                     : selectedDateRange.type === '7d' ? 'Past 7 days'
-                                    : selectedDateRange.type === '30d' ? 'Past 30 days'
-                                    : selectedDateRange.type === '3mo' ? 'Past 3 months'
-                                    : selectedDateRange.type === '6mo' ? 'Past 6 months'
-                                    : selectedDateRange.type === '1y' ? 'Past year'
-                                    : 'Date range'}
+                                      : selectedDateRange.type === '30d' ? 'Past 30 days'
+                                        : selectedDateRange.type === '3mo' ? 'Past 3 months'
+                                          : selectedDateRange.type === '6mo' ? 'Past 6 months'
+                                            : selectedDateRange.type === '1y' ? 'Past year'
+                                              : 'Date range'}
                                 </Badge>
                               )}
                               {selectedPriorSamples.map(sampleId => {
@@ -996,11 +994,11 @@ export function AdviserGPTHome() {
                                   Date: {currentAnswer.filters.dateRange.type === 'custom' && currentAnswer.filters.dateRange.from && currentAnswer.filters.dateRange.to
                                     ? `${format(currentAnswer.filters.dateRange.from, 'MMM d')} - ${format(currentAnswer.filters.dateRange.to, 'MMM d, yyyy')}`
                                     : currentAnswer.filters.dateRange.type === '7d' ? 'Past 7 days'
-                                    : currentAnswer.filters.dateRange.type === '30d' ? 'Past 30 days'
-                                    : currentAnswer.filters.dateRange.type === '3mo' ? 'Past 3 months'
-                                    : currentAnswer.filters.dateRange.type === '6mo' ? 'Past 6 months'
-                                    : currentAnswer.filters.dateRange.type === '1y' ? 'Past year'
-                                    : 'Date range'}
+                                      : currentAnswer.filters.dateRange.type === '30d' ? 'Past 30 days'
+                                        : currentAnswer.filters.dateRange.type === '3mo' ? 'Past 3 months'
+                                          : currentAnswer.filters.dateRange.type === '6mo' ? 'Past 6 months'
+                                            : currentAnswer.filters.dateRange.type === '1y' ? 'Past year'
+                                              : 'Date range'}
                                 </Badge>
                               )}
                               {currentAnswer.filters.priorSamples?.map(sample => (
@@ -1076,14 +1074,14 @@ export function AdviserGPTHome() {
           // Update current answer sources (if present)
           setCurrentAnswer(prev => {
             if (!prev) return prev;
-            const nextSources: SourceWithStrategies[] = prev.sources.map(s => 
+            const nextSources: SourceWithStrategies[] = prev.sources.map(s =>
               s.id === sourceId ? { ...s, strategies } : s
             );
             return { ...prev, sources: nextSources };
           });
 
           // Update available sources list for consistency in UI
-          setAvailableSources(prev => prev.map(s => 
+          setAvailableSources(prev => prev.map(s =>
             s.id === sourceId ? { ...s, strategies } : s
           ));
         }}

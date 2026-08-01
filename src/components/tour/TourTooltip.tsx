@@ -45,32 +45,32 @@ function computeAnchoredPosition(
   const vw = window.innerWidth;
   const vh = window.innerHeight;
 
-  const spotLeft   = targetRect.left   - padding;
-  const spotTop    = targetRect.top    - padding;
-  const spotRight  = targetRect.right  + padding;
+  const spotLeft = targetRect.left - padding;
+  const spotTop = targetRect.top - padding;
+  const spotRight = targetRect.right + padding;
   const spotBottom = targetRect.bottom + padding;
-  const spotW      = targetRect.width  + padding * 2;
-  const spotH      = targetRect.height + padding * 2;
+  const spotW = targetRect.width + padding * 2;
+  const spotH = targetRect.height + padding * 2;
 
-  const spaceRight  = vw - spotRight;
-  const spaceLeft   = spotLeft;
+  const spaceRight = vw - spotRight;
+  const spaceLeft = spotLeft;
   const spaceBottom = vh - spotBottom;
-  const spaceTop    = spotTop;
+  const spaceTop = spotTop;
 
   const fits = {
-    right:  spaceRight  >= TOOLTIP_WIDTH + TOOLTIP_GAP + ARROW_SIZE,
-    left:   spaceLeft   >= TOOLTIP_WIDTH + TOOLTIP_GAP + ARROW_SIZE,
+    right: spaceRight >= TOOLTIP_WIDTH + TOOLTIP_GAP + ARROW_SIZE,
+    left: spaceLeft >= TOOLTIP_WIDTH + TOOLTIP_GAP + ARROW_SIZE,
     bottom: spaceBottom >= 120 + TOOLTIP_GAP + ARROW_SIZE,
-    top:    spaceTop    >= 120 + TOOLTIP_GAP + ARROW_SIZE,
+    top: spaceTop >= 120 + TOOLTIP_GAP + ARROW_SIZE,
   };
 
   const effective: TourStep["placement"] = fits[placement]
     ? placement
     : (["bottom", "right", "top", "left"] as const).reduce((best, side) => {
-        const space = (s: typeof side) =>
-          s === "right" ? spaceRight : s === "left" ? spaceLeft : s === "bottom" ? spaceBottom : spaceTop;
-        return space(side) > space(best) ? side : best;
-      });
+      const space = (s: typeof side) =>
+        s === "right" ? spaceRight : s === "left" ? spaceLeft : s === "bottom" ? spaceBottom : spaceTop;
+      return space(side) > space(best) ? side : best;
+    });
 
   // Center card alongside spotlight on cross-axis, clamped to viewport
   const crossV = Math.max(8, Math.min(vh - cardHeight - 8, spotTop + spotH / 2 - cardHeight / 2));
@@ -284,7 +284,7 @@ export function TourTooltip({
             </p>
             <div className="flex flex-col items-center gap-2 w-full">
               <a
-                href="https://www.advisergpt.ai/learn-more"
+                href="https://www.orrigo.ai/learn-more"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex justify-center w-full"
@@ -317,9 +317,8 @@ export function TourTooltip({
           {Array.from({ length: totalSteps }).map((_, i) => (
             <div
               key={i}
-              className={`rounded-full transition-all duration-200 ${
-                i === stepIndex ? "w-4 h-1.5 bg-foreground" : "w-1.5 h-1.5 bg-foreground/20"
-              }`}
+              className={`rounded-full transition-all duration-200 ${i === stepIndex ? "w-4 h-1.5 bg-foreground" : "w-1.5 h-1.5 bg-foreground/20"
+                }`}
             />
           ))}
         </div>

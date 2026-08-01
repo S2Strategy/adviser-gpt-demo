@@ -133,7 +133,7 @@ export function TrustAnswerCard({
         <div className="pt-2 px-4 bg-sidebar-background border-b border-foreground/10">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <Badge className="bg-accent text-white flex items-center gap-1">AdviserGPT • <span className="font-semibold">{mode === 'answer' ? 'Vault Only' : 'Vault + Web'}</span></Badge>
+              <Badge className="bg-accent text-white flex items-center gap-1">Orrigo • <span className="font-semibold">{mode === 'answer' ? 'Vault Only' : 'Vault + Web'}</span></Badge>
               {/* Trusted Language Badge - Only show for Answer Mode */}
               {mode === 'answer' && (
                 <Badge variant="outline" className="bg-sidebar-primary text-sidebar-primary-foreground border-sidebar-primary">
